@@ -474,6 +474,18 @@ const sendInvoiceWhatsApp = async (req, res) => {
       });
     }
 
+    // Auto-format recipient phone number to E.164 standard
+    phone = phone.replace(/[\s\-\(\)]/g, '');
+    if (!phone.startsWith('+')) {
+      if (phone.length === 10) {
+        phone = `+91${phone}`;
+      } else if (phone.startsWith('91') && phone.length === 12) {
+        phone = `+${phone}`;
+      } else {
+        phone = `+${phone}`;
+      }
+    }
+
     // Validate phone number format
     if (!whatsappService.isValidE164(phone)) {
       return res.status(400).json({

@@ -16,8 +16,19 @@ const createParty = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Please provide name and phone number' });
     }
 
+    let phone = phoneNumber.replace(/[\s\-\(\)]/g, '');
+    if (!phone.startsWith('+')) {
+      if (phone.length === 10) {
+        phone = `+91${phone}`;
+      } else if (phone.startsWith('91') && phone.length === 12) {
+        phone = `+${phone}`;
+      } else {
+        phone = `+${phone}`;
+      }
+    }
+
     // Standard phone check before creating
-    if (!whatsappService.isValidE164(phoneNumber)) {
+    if (!whatsappService.isValidE164(phone)) {
       return res.status(400).json({
         success: false,
         error: `Phone number '${phoneNumber}' is invalid. Must be in E.164 international format (e.g., +919876543210).`,
@@ -26,7 +37,7 @@ const createParty = async (req, res) => {
 
     const party = await Party.create({
       name,
-      phoneNumber,
+      phoneNumber: phone,
       whatsappEnabled: whatsappEnabled !== false,
       outstandingBalance: outstandingBalance || 0,
     });
