@@ -1,0 +1,84 @@
+// src/models/Product.js
+
+const mongoose = require('mongoose');
+
+const productSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    sku: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    mrp: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    sellingPrice: {
+      type: Number,
+      min: 0,
+    },
+    averageCostPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+    taxRate: {
+      type: Number,
+      required: true,
+      enum: [0, 5, 12, 18, 28],
+      default: 18,
+    },
+    isTaxInclusive: {
+      type: Boolean,
+      default: true,
+    },
+    tallyGuid: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+    },
+    // --- POLYMORPHIC BUSINESS VARIATIONS SCHEMA STRATEGY ---
+    // A single MongoDB collection can handle polymorphic variations efficiently by utilizing 
+    // Mongoose discriminators or by defining a single collection containing all fields with sparse indexes.
+    // In this implementation, we define option-specific attributes on the same collection for performance,
+    // where the active store setting (Retail, Wholesale, or Manufacturing) controls which fields are visible/rendered.
+    barcode: {
+      type: String,
+      trim: true,
+    },
+    minimumOrderQuantity: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
+    batchNumber: {
+      type: String,
+      trim: true,
+    },
+    rawMaterials: [
+      {
+        name: String,
+        quantityNeeded: Number,
+        unitCost: Number,
+      }
+    ],
+    billOfMaterialsCost: {
+      type: Number,
+      default: 0,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+module.exports = mongoose.model('Product', productSchema);

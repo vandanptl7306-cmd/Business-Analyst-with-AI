@@ -1,0 +1,22 @@
+// src/routes/invoice.js
+
+const express = require('express');
+const router = express.Router();
+const { createInvoice, generateComplianceData, getInvoice, getInvoices, getUpcomingInvoiceNumber, updateInvoiceStatus, sendInvoiceWhatsApp, getProfitAnalytics } = require('../controllers/invoiceController');
+const { printInvoice } = require('../controllers/pdfController');
+const { protect, admin } = require('../middleware/auth');
+
+// Apply protection to all invoice routes
+router.use(protect);
+
+router.post('/', createInvoice);
+router.get('/', getInvoices);
+router.get('/next-number', getUpcomingInvoiceNumber);
+router.get('/analytics/profit', admin, getProfitAnalytics);
+router.get('/:id', getInvoice);
+router.get('/:id/print', printInvoice);
+router.post('/:id/compliance', generateComplianceData);
+router.patch('/:id/status', updateInvoiceStatus);
+router.post('/:id/send-whatsapp', sendInvoiceWhatsApp);
+
+module.exports = router;
