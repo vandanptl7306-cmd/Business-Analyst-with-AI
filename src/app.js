@@ -12,6 +12,18 @@ const app = express();
 // Body parser middleware
 app.use(express.json());
 
+// Enable CORS for frontend requests
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 // Basic health check route
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', service: 'Business Analyst with AI Backend' });
@@ -50,12 +62,8 @@ app.use('/api/ml', require('./routes/ml'));
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
-  // Connect to database if MONGO_URI is set
-  if (process.env.MONGO_URI) {
-    await connectDB();
-  } else {
-    console.log('MONGO_URI not specified. Skipping DB connection.');
-  }
+  // Initialize DB Connection or Mock Database fallback
+  await connectDB();
 
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

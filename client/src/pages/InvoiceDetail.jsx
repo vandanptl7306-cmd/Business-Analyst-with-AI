@@ -8,7 +8,7 @@ import { getInvoicePayments } from '../services/payment';
 import InvoiceComplianceForm from '../components/InvoiceComplianceForm';
 import InvoiceStatusBadge from '../components/InvoiceStatusBadge';
 import CheckoutModal from '../components/CheckoutModal';
-import { ArrowLeft, Loader2, FileText, Calendar, Building, Landmark, Percent, Edit3, MessageSquare, Check, Share2, Printer } from 'lucide-react';
+import { ArrowLeft, Loader2, FileText, Calendar, Building, Landmark, Percent, Edit3, MessageSquare, Check, Share2, Printer, DollarSign } from 'lucide-react';
 
 export default function InvoiceDetail() {
   const { id } = useParams();

@@ -3,21 +3,187 @@
 import os
 from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException, Query
+from pydantic import BaseModel
 from pymongo import MongoClient
 import pandas as pd
 import numpy as np
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor, IsolationForest
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
+# Conditional LangChain imports
+try:
+    from langchain_openai import ChatOpenAI
+    from langchain.prompts import PromptTemplate
+    HAS_LANGCHAIN = True
+except ImportError:
+    HAS_LANGCHAIN = False
 
 app = FastAPI(
-    title="Demand Forecasting ML Microservice",
-    description="Stand-alone intelligence layer predicting product sales volumes over 7 to 30 day horizons",
+    title="Demand Forecasting & AI Intelligence Microservice",
+    description="Stand-alone intelligence layer predicting sales, inventory, customers, and business NLP",
     version="1.0.0"
 )
 
-# Connect to MongoDB
+# --- DATABASE RETRY & TIMEOUT CONFIGURATION ---
+# Apply a 2-second timeout for server selection to prevent long hangs when offline
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/business-analyst-with-ai")
-client = MongoClient(MONGO_URI)
+client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=2000)
 db = client.get_database()
+
+def is_mongodb_connected() -> bool:
+    try:
+        client.admin.command('ping')
+        return True
+    except Exception:
+        return False
+
+def get_mock_sales_data(days=90) -> pd.DataFrame:
+    """
+    Generates a realistic mock time series of invoices and purchased items
+    for demonstration and development fallback.
+    """
+    np.random.seed(42)
+    dates = pd.date_range(end=datetime.now(), periods=days, freq="D")
+    products = [
+        {"productId": "prod_1", "description": "Organic Rice", "price": 80.0, "cost": 60.0},
+        {"productId": "prod_2", "description": "Premium Olive Oil", "price": 250.0, "cost": 180.0},
+        {"productId": "prod_3", "description": "Organic Tea", "price": 45.0, "cost": 30.0},
+        {"productId": "prod_4", "description": "Whole Wheat Flour", "price": 50.0, "cost": 38.0},
+        {"productId": "prod_5", "description": "Himalayan Pink Salt", "price": 30.0, "cost": 20.0},
+    ]
+    buyers = ["Client Alpha", "Client Beta", "Gamma Industries", "Delta Retail", "Omega Corp"]
+    
+    flat_data = []
+    for i, date in enumerate(dates):
+        weekday = date.weekday()
+        num_invoices = np.random.randint(2, 6) if weekday >= 5 else np.random.randint(1, 4)
+        
+        # Inject intentional transaction anomalies
+        is_anomaly = False
+        anomaly_type = None
+        if i == 45: # Huge sales drop
+            is_anomaly = True
+            anomaly_type = "drop"
+        elif i == 75: # Huge sales spike
+            is_anomaly = True
+            anomaly_type = "spike"
+            
+        for _ in range(num_invoices):
+            prod = np.random.choice(products)
+            buyer = np.random.choice(buyers)
+            
+            if is_anomaly and anomaly_type == "drop":
+                quantity = 1
+                grand_total = prod["price"] * quantity * 0.05
+                net_profit = (prod["price"] - prod["cost"]) * quantity * 0.05
+            elif is_anomaly and anomaly_type == "spike":
+                quantity = np.random.randint(45, 75)
+                grand_total = prod["price"] * quantity
+                net_profit = (prod["price"] - prod["cost"]) * quantity
+            else:
+                quantity = np.random.randint(1, 8)
+                grand_total = prod["price"] * quantity
+                net_profit = (prod["price"] - prod["cost"]) * quantity
+                
+            flat_data.append({
+                "date": date,
+                "productId": prod["productId"],
+                "description": prod["description"],
+                "quantity": quantity,
+                "price": prod["price"],
+                "unitCostPrice": prod["cost"],
+                "grandTotal": float(grand_total),
+                "netProfit": float(net_profit),
+                "buyerName": buyer,
+                "invoiceNumber": f"INV-{1000 + i}-{np.random.randint(10, 99)}"
+            })
+            
+    return pd.DataFrame(flat_data)
+
+def get_live_sales_data() -> pd.DataFrame:
+    """
+    Pulls invoices from MongoDB and unwinds the item lists into a flat Pandas DataFrame.
+    """
+    if not is_mongodb_connected():
+        return pd.DataFrame()
+        
+    try:
+        invoices_cursor = db.invoices.find({})
+        invoices_list = list(invoices_cursor)
+        if not invoices_list:
+            return pd.DataFrame()
+            
+        flat_data = []
+        for inv in invoices_list:
+            # Safely get date
+            date_val = inv.get("invoiceDate") or inv.get("createdAt") or datetime.now()
+            buyer = inv.get("buyerName", "Cash Sale")
+            inv_num = inv.get("invoiceNumber", "INV-MOCK")
+            grand_total = float(inv.get("grandTotal", 0))
+            net_profit = float(inv.get("netProfit", 0))
+            
+            items = inv.get("items", [])
+            for item in items:
+                desc = item.get("description", "Unknown Product")
+                prod_id = item.get("productId") or desc
+                qty = item.get("quantity", 0)
+                price = item.get("price", 0.0)
+                cost = item.get("unitCostPrice") or item.get("cost") or (price * 0.7)
+                
+                flat_data.append({
+                    "date": date_val,
+                    "productId": prod_id,
+                    "description": desc,
+                    "quantity": qty,
+                    "price": price,
+                    "unitCostPrice": cost,
+                    "grandTotal": grand_total,
+                    "netProfit": net_profit,
+                    "buyerName": buyer,
+                    "invoiceNumber": inv_num
+                })
+        
+        df = pd.DataFrame(flat_data)
+        if not df.empty:
+            df["date"] = pd.to_datetime(df["date"])
+        return df
+    except Exception:
+        return pd.DataFrame()
+
+def get_products_data() -> pd.DataFrame:
+    """
+    Retrieves all product records from MongoDB, falling back to a pre-defined list if empty or offline.
+    """
+    mock_list = [
+        {"productId": "prod_1", "name": "Organic Rice", "sku": "RIC-ORG-01", "mrp": 85.0, "sellingPrice": 80.0, "averageCostPrice": 60.0},
+        {"productId": "prod_2", "name": "Premium Olive Oil", "sku": "OIL-PRE-02", "mrp": 270.0, "sellingPrice": 250.0, "averageCostPrice": 180.0},
+        {"productId": "prod_3", "name": "Organic Tea", "sku": "TEA-ORG-03", "mrp": 50.0, "sellingPrice": 45.0, "averageCostPrice": 30.0},
+        {"productId": "prod_4", "name": "Whole Wheat Flour", "sku": "FLR-WHT-04", "mrp": 55.0, "sellingPrice": 50.0, "averageCostPrice": 38.0},
+        {"productId": "prod_5", "name": "Himalayan Pink Salt", "sku": "SLT-PNK-05", "mrp": 35.0, "sellingPrice": 30.0, "averageCostPrice": 20.0},
+    ]
+    if not is_mongodb_connected():
+        return pd.DataFrame(mock_list)
+        
+    try:
+        products_cursor = db.products.find({})
+        products_list = list(products_cursor)
+        if not products_list:
+            return pd.DataFrame(mock_list)
+            
+        flat_prods = []
+        for p in products_list:
+            flat_prods.append({
+                "productId": str(p.get("_id")) or p.get("sku"),
+                "name": p.get("name"),
+                "sku": p.get("sku"),
+                "mrp": float(p.get("mrp", 0)),
+                "sellingPrice": float(p.get("sellingPrice", 0)),
+                "averageCostPrice": float(p.get("averageCostPrice", 0))
+            })
+        return pd.DataFrame(flat_prods)
+    except Exception:
+        return pd.DataFrame(mock_list)
 
 def get_historical_sales(product_id: str) -> pd.DataFrame:
     """
@@ -291,6 +457,494 @@ def get_dashboard_metrics(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analytics processing failed: {str(e)}")
+@app.get("/api/ai/inventory/eoq")
+def get_inventory_optimization(
+    ordering_cost: float = Query(50.0, description="Cost per setup/order (S)"),
+    holding_cost: float = Query(2.0, description="Annual holding cost per unit (H)"),
+    lead_time_days: int = Query(7, description="Lead time in days (L)")
+):
+    """
+    Pandas-based inventory pipeline calculating Economic Order Quantity (EOQ),
+    Smart Reorder Point (ROP) based on daily demand variance, and classifies products.
+    """
+    try:
+        df_sales = get_live_sales_data()
+        datasource = "MongoDB"
+        if df_sales.empty:
+            df_sales = get_mock_sales_data()
+            datasource = "Mock Fallback (Offline/No Data)"
+            
+        df_products = get_products_data()
+        
+        # Calculate daily & annual demand per product from sales data
+        df_sales["date"] = pd.to_datetime(df_sales["date"])
+        min_date = df_sales["date"].min()
+        max_date = df_sales["date"].max()
+        days_span = max(1, (max_date - min_date).days)
+        
+        sales_summary = []
+        for name, group in df_sales.groupby("description"):
+            # Resample daily to get standard deviation of daily sales
+            daily_group = group.set_index("date").resample("D").agg({"quantity": "sum"}).fillna(0)
+            total_qty = float(group["quantity"].sum())
+            avg_daily = float(total_qty / days_span)
+            std_daily = float(daily_group["quantity"].std()) if len(daily_group) > 1 else 0.0
+            
+            # Moving averages for trend sorting
+            recent_date = df_sales["date"].max()
+            date_30 = recent_date - timedelta(days=30)
+            date_90 = recent_date - timedelta(days=90)
+            
+            sales_30 = group[group["date"] >= date_30]["quantity"].sum()
+            sales_90 = group[group["date"] >= date_90]["quantity"].sum()
+            
+            ma_30 = float(sales_30 / 30.0)
+            ma_90 = float(sales_90 / 90.0)
+            
+            sales_summary.append({
+                "description": name,
+                "annualDemand": avg_daily * 365.0,
+                "averageDailyDemand": avg_daily,
+                "stdDailyDemand": std_daily,
+                "movingAverage30Day": ma_30,
+                "movingAverage90Day": ma_90
+            })
+            
+        df_demands = pd.DataFrame(sales_summary)
+        
+        results = []
+        for idx, row in df_products.iterrows():
+            prod_name = row["name"]
+            sku = row["sku"]
+            prod_id = row["productId"]
+            
+            # Match demand
+            if not df_demands.empty:
+                matched = df_demands[df_demands["description"] == prod_name]
+            else:
+                matched = pd.DataFrame()
+                
+            if not matched.empty:
+                annual_d = matched.iloc[0]["annualDemand"]
+                avg_daily = matched.iloc[0]["averageDailyDemand"]
+                std_daily = matched.iloc[0]["stdDailyDemand"]
+                ma_30 = matched.iloc[0]["movingAverage30Day"]
+                ma_90 = matched.iloc[0]["movingAverage90Day"]
+            else:
+                # No sales history fallback
+                annual_d = 150.0
+                avg_daily = annual_d / 365.0
+                std_daily = 0.5
+                ma_30 = avg_daily
+                ma_90 = avg_daily
+                
+            # EOQ formula: sqrt( (2 * D * S) / H )
+            h = holding_cost if holding_cost > 0 else 2.0
+            eoq_val = np.sqrt((2.0 * annual_d * ordering_cost) / h)
+            eoq_val = round(float(eoq_val), 2)
+            
+            # Safety Stock: Z * std_daily * sqrt(L) where Z=1.65 (95% service level)
+            z_factor = 1.65
+            safety_stock = z_factor * std_daily * np.sqrt(lead_time_days)
+            if safety_stock <= 0:
+                safety_stock = 0.2 * avg_daily * lead_time_days
+            safety_stock = round(max(1.0, float(safety_stock)), 2)
+            
+            # Reorder Point (ROP): (Average Daily Demand * Lead Time) + Safety Stock
+            rop_val = (avg_daily * lead_time_days) + safety_stock
+            rop_val = round(float(rop_val), 2)
+            
+            # Classify Trend Classification: Best-Sellers and Slow-Movers
+            if ma_30 > 1.5 or (ma_30 > ma_90 * 1.15 and ma_30 > 0.5):
+                status = "Best-Sellers"
+            elif ma_30 < 0.25:
+                status = "Slow-Movers"
+            else:
+                status = "Normal"
+                
+            results.append({
+                "productId": prod_id,
+                "name": prod_name,
+                "sku": sku,
+                "annualDemand": round(float(annual_d), 2),
+                "averageDailyDemand": round(float(avg_daily), 2),
+                "eoq": eoq_val,
+                "reorderPoint": rop_val,
+                "safetyStock": safety_stock,
+                "status": status,
+                "movingAverage30Day": round(float(ma_30), 2),
+                "movingAverage90Day": round(float(ma_90), 2)
+            })
+            
+        return {
+            "success": True,
+            "datasource": datasource,
+            "products": results
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Inventory AI error: {str(e)}")
+
+@app.get("/api/ai/customers/segmentation")
+def get_customer_segmentation(
+    num_clusters: int = Query(3, ge=2, le=5, description="Number of segments to form")
+):
+    """
+    Groups customers using RFM analysis.
+    Applies StandardScaler and KMeans clustering to classify customers into segments.
+    """
+    try:
+        df_sales = get_live_sales_data()
+        datasource = "MongoDB"
+        if df_sales.empty:
+            df_sales = get_mock_sales_data()
+            datasource = "Mock Fallback (Offline/No Data)"
+            
+        ref_date = df_sales["date"].max()
+        
+        rfm = df_sales.groupby("buyerName").agg({
+            "date": lambda x: (ref_date - x.max()).days,
+            "invoiceNumber": "nunique",
+            "grandTotal": "sum"
+        }).rename(columns={
+            "date": "recency",
+            "invoiceNumber": "frequency",
+            "grandTotal": "monetary"
+        })
+        
+        # Scale features
+        scaler = StandardScaler()
+        rfm_scaled = scaler.fit_transform(rfm[["recency", "frequency", "monetary"]])
+        
+        # Fit KMeans
+        n_samples = len(rfm)
+        actual_clusters = min(num_clusters, n_samples)
+        
+        kmeans = KMeans(n_clusters=actual_clusters, random_state=42, n_init=10)
+        rfm["cluster"] = kmeans.fit_predict(rfm_scaled)
+        
+        # Compute centers/means to assign labels
+        cluster_means = rfm.groupby("cluster").mean()
+        composite_scores = {}
+        for c in range(actual_clusters):
+            row = cluster_means.loc[c]
+            # Custom weight mapping (low recency, high frequency, high monetary is best)
+            score = (row["frequency"] * 5.0) + (row["monetary"] / 500.0) - (row["recency"] * 0.1)
+            composite_scores[c] = score
+            
+        sorted_clusters = sorted(composite_scores.keys(), key=lambda x: composite_scores[x], reverse=True)
+        
+        labels_map = {}
+        if len(sorted_clusters) == 3:
+            labels_map[sorted_clusters[0]] = "High-Value Customer"
+            labels_map[sorted_clusters[1]] = "Regular Customer"
+            labels_map[sorted_clusters[2]] = "At-Risk Customer"
+        elif len(sorted_clusters) == 2:
+            labels_map[sorted_clusters[0]] = "High-Value Customer"
+            labels_map[sorted_clusters[1]] = "At-Risk Customer"
+        else:
+            for i, c in enumerate(sorted_clusters):
+                if i == 0:
+                    labels_map[c] = "High-Value Customer"
+                elif i == len(sorted_clusters) - 1:
+                    labels_map[c] = "At-Risk Customer"
+                else:
+                    labels_map[c] = f"Regular Customer Segment {i}"
+                    
+        rfm["segmentLabel"] = rfm["cluster"].map(labels_map)
+        
+        # Prepare payload
+        rfm.reset_index(inplace=True)
+        segments_list = []
+        for idx, row in rfm.iterrows():
+            segments_list.append({
+                "buyerName": row["buyerName"],
+                "recency": int(row["recency"]),
+                "frequency": int(row["frequency"]),
+                "monetary": round(float(row["monetary"]), 2),
+                "clusterId": int(row["cluster"]),
+                "segmentLabel": row["segmentLabel"]
+            })
+            
+        summary = rfm["segmentLabel"].value_counts().to_dict()
+        
+        return {
+            "success": True,
+            "datasource": datasource,
+            "segments": segments_list,
+            "summary": summary
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Customer segmentation AI error: {str(e)}")
+
+@app.get("/api/ai/transactions/anomalies")
+def get_transaction_anomalies(
+    contamination: float = Query(0.05, ge=0.01, le=0.2, description="Isolation Forest anomaly rate")
+):
+    """
+    Fits scikit-learn IsolationForest to daily sales volume indicators
+    to detect unusual drops, spikes, or processing errors.
+    """
+    try:
+        df_sales = get_live_sales_data()
+        datasource = "MongoDB"
+        if df_sales.empty:
+            df_sales = get_mock_sales_data()
+            datasource = "Mock Fallback (Offline/No Data)"
+            
+        df_sales["date_only"] = df_sales["date"].dt.strftime("%Y-%m-%d")
+        daily = df_sales.groupby("date_only").agg({
+            "grandTotal": "sum",
+            "invoiceNumber": "nunique",
+            "quantity": "sum"
+        }).rename(columns={
+            "grandTotal": "revenue",
+            "invoiceNumber": "invoiceCount",
+            "quantity": "itemCount"
+        })
+        
+        # Need enough observations to calculate anomalies
+        if len(daily) < 5:
+            datasource = "Mock Fallback (Insufficient Live Data)"
+            df_sales = get_mock_sales_data()
+            df_sales["date_only"] = df_sales["date"].dt.strftime("%Y-%m-%d")
+            daily = df_sales.groupby("date_only").agg({
+                "grandTotal": "sum",
+                "invoiceNumber": "nunique",
+                "quantity": "sum"
+            }).rename(columns={
+                "grandTotal": "revenue",
+                "invoiceNumber": "invoiceCount",
+                "quantity": "itemCount"
+            })
+            
+        X = daily[["revenue", "invoiceCount", "itemCount"]]
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+        
+        clf = IsolationForest(contamination=contamination, random_state=42)
+        daily["anomaly_flag"] = clf.fit_predict(X_scaled)
+        daily["score"] = clf.decision_function(X_scaled)
+        
+        # Classify anomalies
+        daily["rolling_median"] = daily["revenue"].rolling(window=min(14, len(daily)), min_periods=1).median()
+        
+        anomalies_list = []
+        anom_df = daily[daily["anomaly_flag"] == -1].copy()
+        
+        for date_str, row in anom_df.iterrows():
+            rev = float(row["revenue"])
+            median = float(row["rolling_median"])
+            
+            if rev < median * 0.45:
+                anom_type = "Drop (Potential Stockout/Incident)"
+            elif rev > median * 1.65:
+                anom_type = "Spike (Surge/High Sales)"
+            else:
+                anom_type = "Operational Anomaly (Unusual Mix)"
+                
+            anomalies_list.append({
+                "date": date_str,
+                "revenue": round(rev, 2),
+                "invoiceCount": int(row["invoiceCount"]),
+                "quantity": int(row["itemCount"]),
+                "type": anom_type,
+                "anomalyScore": round(float(row["score"]), 4)
+            })
+            
+        anomalies_list = sorted(anomalies_list, key=lambda x: x["date"], reverse=True)
+            
+        return {
+            "success": True,
+            "datasource": datasource,
+            "totalDaysAnalyzed": len(daily),
+            "anomaliesFound": len(anomalies_list),
+            "anomalies": anomalies_list
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Anomaly detection AI error: {str(e)}")
+
+@app.get("/api/ai/price-optimization")
+def get_price_optimization(
+    product_name: str = Query(..., description="Name of the product"),
+    current_price: float = Query(None, description="Optional current selling price")
+):
+    """
+    Simulates competitor pricing scrapes and generates strategic selling suggestions.
+    """
+    try:
+        resolved_price = current_price
+        if resolved_price is None:
+            df_prods = get_products_data()
+            matched = df_prods[df_prods["name"].str.lower() == product_name.lower()]
+            if not matched.empty:
+                resolved_price = float(matched.iloc[0]["sellingPrice"])
+            else:
+                resolved_price = 100.0
+                
+        # Simulate competitors pricing
+        np.random.seed(hash(product_name) % 9999)
+        competitors = [
+            {"competitor": "GlobalRetail Inc", "factor": 0.95},
+            {"competitor": "Mart Express", "factor": 0.97},
+            {"competitor": "BioOrganics Store", "factor": 1.06},
+            {"competitor": "Super Value Grocer", "factor": 1.03}
+        ]
+        
+        comps_prices = []
+        for c in competitors:
+            noise = np.random.uniform(-0.015, 0.015)
+            comp_price = resolved_price * (c["factor"] + noise)
+            comps_prices.append({
+                "competitor": c["competitor"],
+                "price": round(float(comp_price), 2)
+            })
+            
+        prices = [c["price"] for c in comps_prices]
+        avg_price = np.mean(prices)
+        min_price = np.min(prices)
+        max_price = np.max(prices)
+        
+        undercut_price = round(float(min_price * 0.99), 2)
+        match_market = round(float(avg_price), 2)
+        premium_price = round(float(max_price * 0.98), 2)
+        
+        return {
+            "success": True,
+            "productName": product_name,
+            "currentPrice": resolved_price,
+            "competitors": comps_prices,
+            "statistics": {
+                "average": round(float(avg_price), 2),
+                "minimum": round(float(min_price), 2),
+                "maximum": round(float(max_price), 2)
+            },
+            "recommendations": {
+                "undercut": {
+                    "strategy": "Aggressive Undercut (Economy)",
+                    "price": undercut_price,
+                    "rationale": f"Priced 1% below lowest competitor ({min_price}) to capture price-sensitive market share."
+                },
+                "market_average": {
+                    "strategy": "Match Market Average",
+                    "price": match_market,
+                    "rationale": "Align with average competitor pricing to maintain fair margins and market positioning."
+                },
+                "premium": {
+                    "strategy": "Value-Add Premium Pricing",
+                    "price": premium_price,
+                    "rationale": "Position product near the highest pricing point to capture premium customers who associate price with quality."
+                }
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Price optimization error: {str(e)}")
+
+class ChatRequest(BaseModel):
+    message: str
+
+@app.post("/api/ai/chat")
+def post_chat_query(req: ChatRequest):
+    """
+    Translates natural language questions into data insights.
+    Integrates with LangChain (if OPENAI_API_KEY is available) or resolves via an internal engine.
+    """
+    try:
+        df_sales = get_live_sales_data()
+        datasource = "MongoDB"
+        if df_sales.empty:
+            df_sales = get_mock_sales_data()
+            datasource = "Mock Fallback (Offline/No Data)"
+            
+        openai_key = os.getenv("OPENAI_API_KEY")
+        
+        if openai_key and HAS_LANGCHAIN:
+            try:
+                llm = ChatOpenAI(temperature=0, openai_api_key=openai_key, model="gpt-3.5-turbo")
+                
+                # Context summarize
+                revenue_sum = df_sales["grandTotal"].sum()
+                profit_sum = df_sales["netProfit"].sum()
+                item_sales = df_sales.groupby("description")["quantity"].sum().to_dict()
+                top_items_str = ", ".join([f"'{k}': {v} units" for k, v in sorted(item_sales.items(), key=lambda x: x[1], reverse=True)[:5]])
+                total_invoices = df_sales["invoiceNumber"].nunique()
+                
+                cust_sales = df_sales.groupby("buyerName")["grandTotal"].sum().to_dict()
+                top_customers = ", ".join([f"'{k}': Rs. {v:.2f}" for k, v in sorted(cust_sales.items(), key=lambda x: x[1], reverse=True)[:3]])
+                
+                prompt_text = f"""
+                You are a smart AI Business Analyst for a B2B SaaS platform.
+                You are given summaries of the business transactions. Answer the user's question accurately.
+                
+                Business Data Summaries:
+                - Total Sales/Revenue: Rs. {revenue_sum:.2f}
+                - Total Net Profit: Rs. {profit_sum:.2f}
+                - Total Number of Invoices: {total_invoices}
+                - Top Selling Items: {top_items_str}
+                - Top Purchasing Customers: {top_customers}
+                
+                User Query: {req.message}
+                
+                Write a concise, friendly, and helpful business response. Answer the query directly.
+                """
+                prompt = PromptTemplate.from_template(prompt_text)
+                chain = prompt | llm
+                res = chain.invoke({})
+                
+                return {
+                    "success": True,
+                    "agentType": "LangChain LLM Chain",
+                    "datasource": datasource,
+                    "response": res.content.strip()
+                }
+            except Exception:
+                pass
+                
+        # Heuristic NLP Engine
+        msg = req.message.lower()
+        
+        total_revenue = df_sales["grandTotal"].sum()
+        total_profit = df_sales["netProfit"].sum()
+        invoice_count = df_sales["invoiceNumber"].nunique()
+        
+        item_qty = df_sales.groupby("description")["quantity"].sum()
+        best_seller = item_qty.idxmax() if not item_qty.empty else "N/A"
+        best_seller_qty = item_qty.max() if not item_qty.empty else 0
+        
+        cust_rev = df_sales.groupby("buyerName")["grandTotal"].sum()
+        top_buyer = cust_rev.idxmax() if not cust_rev.empty else "N/A"
+        top_buyer_amount = cust_rev.max() if not cust_rev.empty else 0.0
+        
+        if "best-selling" in msg or "best selling" in msg or "top selling" in msg or "top product" in msg or "most popular" in msg:
+            response_text = f"The best-selling item is '{best_seller}' with {best_seller_qty} units sold."
+        elif "revenue" in msg or "sales" in msg or "how much money" in msg or "total earn" in msg:
+            response_text = f"Your total revenue across all sales is Rs. {total_revenue:,.2f}."
+        elif "profit" in msg or "net profit" in msg or "earnings" in msg:
+            response_text = f"Your total net profit is Rs. {total_profit:,.2f}."
+        elif "customer" in msg or "buyer" in msg or "purchaser" in msg:
+            response_text = f"Your top customer is '{top_buyer}' with total purchase value of Rs. {top_buyer_amount:,.2f}."
+        elif "invoice" in msg or "transaction" in msg or "bill" in msg:
+            response_text = f"A total of {invoice_count} invoices have been successfully processed in the system."
+        else:
+            response_text = (
+                f"Here is a summary of your business analytics:\n"
+                f"- **Total Revenue**: Rs. {total_revenue:,.2f}\n"
+                f"- **Total Net Profit**: Rs. {total_profit:,.2f}\n"
+                f"- **Best-Selling Product**: '{best_seller}' ({best_seller_qty} units sold)\n"
+                f"- **Top Customer**: '{top_buyer}' (Rs. {top_buyer_amount:,.2f})\n"
+                f"- **Total Invoices**: {invoice_count}\n\n"
+                f"*(Note: You can ask specific questions like 'What is my total revenue?' or 'Who is the top customer?'. "
+                f"Configure the `OPENAI_API_KEY` environment variable to enable full natural language querying via LangChain!)*"
+            )
+            
+        return {
+            "success": True,
+            "agentType": "Heuristic NLP Engine (No OpenAI Key)",
+            "datasource": datasource,
+            "response": response_text
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Chat Agent AI error: {str(e)}")
+
 
 if __name__ == "__main__":
     import uvicorn

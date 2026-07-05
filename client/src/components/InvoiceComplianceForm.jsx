@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { generateInvoiceCompliance } from '../services/invoice';
-import { Truck, AlertTriangle, CheckCircle2, ShieldAlert, Loader2, ArrowRight } from 'lucide-react';
+import { Truck, AlertTriangle, CheckCircle, ShieldAlert, Loader2, ArrowRight } from 'lucide-react';
 
 const complianceSchema = z.object({
   transporterId: z
@@ -96,7 +96,7 @@ export default function InvoiceComplianceForm({ invoice, onComplianceGenerated }
         // COMPLIANCE GENERATED STATE
         <div className="space-y-4">
           <div className="flex items-center space-x-3 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400">
-            <CheckCircle2 className="h-6 w-6 flex-shrink-0" />
+            <CheckCircle className="h-6 w-6 flex-shrink-0" />
             <div>
               <h4 className="font-semibold text-sm">Compliance Documents Active</h4>
               <p className="text-xs text-emerald-500/80">Invoice is fully compliant and logged in the NIC registry.</p>

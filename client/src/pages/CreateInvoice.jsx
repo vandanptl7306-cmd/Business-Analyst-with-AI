@@ -5,7 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { createInvoice, getUpcomingInvoiceNumber } from '../services/invoice';
 import { getPartiesList } from '../services/party';
 import { getStoreSettings } from '../services/settings';
-import { ArrowLeft, Plus, Trash2, FileText, CheckCircle, ShieldAlert, Loader2, Calculator, Barcode, ShieldWarning } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, FileText, CheckCircle, ShieldAlert, Loader2, Calculator, Barcode } from 'lucide-react';
 
 export default function CreateInvoice() {
   const navigate = useNavigate();
@@ -328,7 +328,7 @@ export default function CreateInvoice() {
           {/* Credit Warning Alerts (Wholesale only) */}
           {businessProfile === 'Wholesale' && buyerName && (
             <div className="p-4 rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 text-xs flex items-center space-x-2.5">
-              <ShieldWarning className="h-4.5 w-4.5 flex-shrink-0" />
+              <ShieldAlert className="h-4.5 w-4.5 flex-shrink-0" />
               <span>Credit Guard: Wholesale credit balance limit check. Customer {buyerName} credit limit is $5,000.00.</span>
             </div>
           )}
