@@ -78,6 +78,11 @@ const invoiceSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    // Record creation timestamp (added per request)
+    recordedAt: {
+      type: Date,
+      default: Date.now,
+    },
     
     // Seller Info
     sellerName: {
