@@ -1,6 +1,7 @@
 # ml-service/app/main.py
 
 import os
+import re
 from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
@@ -996,6 +997,513 @@ def get_price_optimization(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Price optimization error: {str(e)}")
+
+from typing import List, Optional
+
+class InvoiceItem(BaseModel):
+    description: Optional[str] = None
+    hsnCode: Optional[str] = None
+    quantity: Optional[float] = 1.0
+    price: Optional[float] = 0.0
+    basePrice: Optional[float] = 0.0
+    gstRate: Optional[float] = 0.0
+    totalAmount: Optional[float] = 0.0
+    cgst: Optional[float] = 0.0
+    sgst: Optional[float] = 0.0
+    igst: Optional[float] = 0.0
+
+class AuditInvoiceRequest(BaseModel):
+    sellerName: Optional[str] = None
+    sellerGSTIN: str
+    sellerPIN: Optional[str] = None
+    buyerName: Optional[str] = None
+    buyerGSTIN: str
+    buyerBillingAddress: Optional[str] = None
+    buyerPIN: Optional[str] = None
+    items: List[InvoiceItem]
+    subTotal: Optional[float] = 0.0
+    taxTotal: Optional[float] = 0.0
+    grandTotal: Optional[float] = 0.0
+    seller_state: Optional[str] = None
+    buyer_state: Optional[str] = None
+    igst: Optional[float] = None
+    cgst: Optional[float] = None
+    sgst: Optional[float] = None
+
+# Indian GST State Code Mapping
+GST_STATE_CODES = {
+    "01": "Jammu & Kashmir", "02": "Himachal Pradesh", "03": "Punjab", "04": "Chandigarh",
+    "05": "Uttarakhand", "06": "Haryana", "07": "Delhi", "08": "Rajasthan", "09": "Uttar Pradesh",
+    "10": "Bihar", "11": "Sikkim", "12": "Arunachal Pradesh", "13": "Nagaland", "14": "Manipur",
+    "15": "Mizoram", "16": "Tripura", "17": "Meghalaya", "18": "Assam", "19": "West Bengal",
+    "20": "Jharkhand", "21": "Odisha", "22": "Chhattisgarh", "23": "Madhya Pradesh", "24": "Gujarat",
+    "26": "Dadra & Nagar Haveli and Daman & Diu", "27": "Maharashtra", "29": "Karnataka",
+    "30": "Goa", "31": "Lakshadweep", "32": "Kerala", "33": "Tamil Nadu", "34": "Puducherry",
+    "35": "Andaman & Nicobar Islands", "36": "Telangana", "37": "Andhra Pradesh", "38": "Ladakh"
+}
+
+def get_state_from_gstin(gstin: str) -> str:
+    if gstin and len(gstin) >= 2 and gstin[:2].isdigit():
+        return GST_STATE_CODES.get(gstin[:2], gstin[:2])
+    return "Unknown"
+
+def validate_gstin_regex(gstin: str) -> bool:
+    if not gstin or not isinstance(gstin, str):
+        return False
+    # 15-digit alphanumeric standard Indian format
+    gstin_regex = r"^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$"
+    return bool(re.match(gstin_regex, gstin.strip().upper()))
+
+def validate_tax_logic(seller_state: str, buyer_state: str, igst: float, cgst: float, sgst: float) -> list:
+    alerts = []
+    seller_state_clean = seller_state.strip().lower()
+    buyer_state_clean = buyer_state.strip().lower()
+    
+    is_same_state = (seller_state_clean == buyer_state_clean)
+    
+    if is_same_state:
+        if igst > 0.01:
+            alerts.append({
+                "field": "tax_type",
+                "severity": "High",
+                "message": f"Intrastate transaction detected (both in '{seller_state}'); IGST of Rs. {igst:.2f} is present. CGST/SGST should be used instead."
+            })
+    else:
+        if cgst > 0.01 or sgst > 0.01:
+            alerts.append({
+                "field": "tax_type",
+                "severity": "High",
+                "message": f"Interstate transaction detected ('{seller_state}' to '{buyer_state}'); CGST of Rs. {cgst:.2f} or SGST of Rs. {sgst:.2f} is present. IGST should be used instead."
+            })
+    return alerts
+
+def run_compliance_audit(req: AuditInvoiceRequest) -> dict:
+    risk_alerts = []
+    
+    # 1. Validate Seller GSTIN
+    if not req.sellerGSTIN:
+        risk_alerts.append({
+            "field": "sellerGSTIN",
+            "severity": "High",
+            "message": "Seller GSTIN is missing."
+        })
+    elif not validate_gstin_regex(req.sellerGSTIN):
+        risk_alerts.append({
+            "field": "sellerGSTIN",
+            "severity": "High",
+            "message": f"Seller GSTIN '{req.sellerGSTIN}' format is invalid. Must match 15-digit alphanumeric standard format."
+        })
+        
+    # 2. Validate Buyer GSTIN
+    if not req.buyerGSTIN:
+        risk_alerts.append({
+            "field": "buyerGSTIN",
+            "severity": "High",
+            "message": "Buyer GSTIN is missing."
+        })
+    elif not validate_gstin_regex(req.buyerGSTIN):
+        risk_alerts.append({
+            "field": "buyerGSTIN",
+            "severity": "High",
+            "message": f"Buyer GSTIN '{req.buyerGSTIN}' format is invalid. Must match 15-digit alphanumeric standard format."
+        })
+        
+    # Extract states if not provided
+    seller_state = req.seller_state
+    if not seller_state and req.sellerGSTIN:
+        seller_state = get_state_from_gstin(req.sellerGSTIN)
+        
+    buyer_state = req.buyer_state
+    if not buyer_state and req.buyerGSTIN:
+        buyer_state = get_state_from_gstin(req.buyerGSTIN)
+        
+    if not seller_state:
+        seller_state = "Unknown Seller State"
+    if not buyer_state:
+        buyer_state = "Unknown Buyer State"
+        
+    # 3. Validate PIN Codes
+    if req.sellerPIN:
+        if not re.match(r"^\d{6}$", str(req.sellerPIN).strip()):
+            risk_alerts.append({
+                "field": "sellerPIN",
+                "severity": "Medium",
+                "message": f"Seller PIN code '{req.sellerPIN}' must be a valid 6-digit number."
+            })
+            
+    if req.buyerPIN:
+        if not re.match(r"^\d{6}$", str(req.buyerPIN).strip()):
+            risk_alerts.append({
+                "field": "buyerPIN",
+                "severity": "Medium",
+                "message": f"Buyer PIN code '{req.buyerPIN}' must be a valid 6-digit number."
+            })
+            
+    # 4. Item-level validation using Pandas for structured analysis
+    if not req.items:
+        risk_alerts.append({
+            "field": "items",
+            "severity": "High",
+            "message": "Invoice must contain at least one item."
+        })
+    else:
+        # Load items into a pandas DataFrame
+        df_items = pd.DataFrame([item.dict() for item in req.items])
+        
+        # Check negative quantity using pandas
+        if "quantity" in df_items.columns:
+            negative_qty_indices = df_items[df_items["quantity"] <= 0].index.tolist()
+            for idx in negative_qty_indices:
+                desc = req.items[idx].description or f"Item {idx + 1}"
+                risk_alerts.append({
+                    "field": f"items[{idx}].quantity",
+                    "severity": "Medium",
+                    "message": f"For item '{desc}': Quantity ({req.items[idx].quantity}) must be greater than zero."
+                })
+                
+        # Check negative price using pandas
+        if "price" in df_items.columns:
+            negative_price_indices = df_items[df_items["price"] < 0].index.tolist()
+            for idx in negative_price_indices:
+                desc = req.items[idx].description or f"Item {idx + 1}"
+                risk_alerts.append({
+                    "field": f"items[{idx}].price",
+                    "severity": "Medium",
+                    "message": f"For item '{desc}': Price ({req.items[idx].price}) cannot be negative."
+                })
+
+        # Process each item for custom logic checks (HSN and tax splits)
+        for idx, item in enumerate(req.items):
+            desc = item.description or f"Item {idx + 1}"
+            
+            # Check HSN code formatting
+            hsn = item.hsnCode
+            if not hsn:
+                risk_alerts.append({
+                    "field": f"items[{idx}].hsnCode",
+                    "severity": "High",
+                    "message": f"For item '{desc}': HSN/SAC code is missing."
+                })
+            else:
+                hsn_str = str(hsn).strip()
+                if not hsn_str.isdigit():
+                    risk_alerts.append({
+                        "field": f"items[{idx}].hsnCode",
+                        "severity": "High",
+                        "message": f"For item '{desc}': HSN/SAC code '{hsn_str}' must contain numeric values only."
+                    })
+                elif len(hsn_str) not in [2, 4, 6, 8]:
+                    risk_alerts.append({
+                        "field": f"items[{idx}].hsnCode",
+                        "severity": "High",
+                        "message": f"For item '{desc}': HSN/SAC code '{hsn_str}' length ({len(hsn_str)} digits) is invalid. Must be 2, 4, 6, or 8 digits."
+                    })
+            
+            # Verify item tax splits
+            item_igst = item.igst or 0.0
+            item_cgst = item.cgst or 0.0
+            item_sgst = item.sgst or 0.0
+            
+            item_tax_alerts = validate_tax_logic(seller_state, buyer_state, item_igst, item_cgst, item_sgst)
+            for alert in item_tax_alerts:
+                alert["field"] = f"items[{idx}]." + alert["field"]
+                alert["message"] = f"For item '{desc}': " + alert["message"]
+                risk_alerts.append(alert)
+                
+            # Intrastate split discrepancy check
+            if seller_state.strip().lower() == buyer_state.strip().lower():
+                if abs(item_cgst - item_sgst) > 0.02:
+                    risk_alerts.append({
+                        "field": f"items[{idx}].cgst_sgst_mismatch",
+                        "severity": "Medium",
+                        "message": f"For item '{desc}': CGST ({item_cgst:.2f}) and SGST ({item_sgst:.2f}) values must be identical for intrastate sales."
+                    })
+
+    # 5. Perform Invoice-level tax consistency check
+    inv_igst = req.igst if req.igst is not None else sum(item.igst or 0.0 for item in req.items)
+    inv_cgst = req.cgst if req.cgst is not None else sum(item.cgst or 0.0 for item in req.items)
+    inv_sgst = req.sgst if req.sgst is not None else sum(item.sgst or 0.0 for item in req.items)
+    
+    inv_tax_alerts = validate_tax_logic(seller_state, buyer_state, inv_igst, inv_cgst, inv_sgst)
+    risk_alerts.extend(inv_tax_alerts)
+
+    # Compile final compliance status: Flag non-compliant if any "High" severity risk alert is present
+    is_compliant = not any(alert["severity"] == "High" for alert in risk_alerts)
+    
+    return {
+        "is_compliant": is_compliant,
+        "risk_alerts": risk_alerts
+    }
+
+@app.post("/api/ai/audit/invoice")
+def post_invoice_audit(req: AuditInvoiceRequest):
+    """
+    POST API for the compliance Audit Engine bot.
+    Receives invoice payload, evaluates rules via pandas and regex, and returns the compliance state.
+    """
+    try:
+        report = run_compliance_audit(req)
+        return {
+            "success": True,
+            "is_compliant": report["is_compliant"],
+            "risk_alerts": report["risk_alerts"]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Compliance Audit Bot execution failed: {str(e)}")
+
+def get_mock_cashflow_data() -> pd.DataFrame:
+    """
+    Generates realistic historical training data and current outstanding data
+    to train and evaluate the cashflow forecasting RandomForestRegressor.
+    """
+    np.random.seed(42)
+    rows = []
+    today = datetime.now()
+    
+    # 5 primary customers with distinct payment speeds
+    buyers = ["Client Alpha", "Client Beta", "Gamma Industries", "Delta Retail", "Omega Corp"]
+    buyer_speeds = {"Client Alpha": 12.0, "Client Beta": 25.0, "Gamma Industries": 5.0, "Delta Retail": 18.0, "Omega Corp": 35.0}
+    
+    # Historical closed invoices (Paid)
+    for b in buyers:
+        speed = buyer_speeds[b]
+        for i in range(20):
+            inv_date = today - timedelta(days=np.random.randint(45, 200))
+            days_to_pay = max(1, int(np.random.normal(loc=speed, scale=max(1.0, speed * 0.25))))
+            payment_date = inv_date + timedelta(days=days_to_pay)
+            amount = float(np.random.randint(100, 8000))
+            
+            rows.append({
+                "invoice_id": f"mock_hist_{b}_{i}",
+                "buyer": b,
+                "invoice_date": pd.to_datetime(inv_date),
+                "actual_payment_date": pd.to_datetime(payment_date),
+                "amount": amount,
+                "status": "Paid"
+            })
+            
+    # Currently outstanding invoices (Unpaid)
+    for b in buyers:
+        for i in range(4):
+            inv_date = today - timedelta(days=np.random.randint(1, 40))
+            amount = float(np.random.randint(500, 6000))
+            rows.append({
+                "invoice_id": f"mock_unpaid_{b}_{i}",
+                "buyer": b,
+                "invoice_date": pd.to_datetime(inv_date),
+                "actual_payment_date": None,
+                "amount": amount,
+                "status": "Unpaid"
+            })
+            
+    return pd.DataFrame(rows)
+
+def prepare_cashflow_training_data() -> pd.DataFrame:
+    """
+    Pulls closed and open invoices from MongoDB and maps payment dates.
+    Falls back and seeds with synthetic historical data if database is lean.
+    """
+    live_rows = []
+    if is_mongodb_connected():
+        try:
+            invoices = list(db.invoices.find({}))
+            # Fetch payment transaction received dates
+            payment_dates = {}
+            for tx in db.paymenttransactions.find({}):
+                inv_id = str(tx.get("invoiceId"))
+                received_at = tx.get("receivedAt")
+                if received_at:
+                    if inv_id not in payment_dates or received_at > payment_dates[inv_id]:
+                        payment_dates[inv_id] = received_at
+                        
+            for inv in invoices:
+                inv_id = str(inv["_id"])
+                inv_date = inv.get("invoiceDate") or inv.get("createdAt")
+                if not inv_date:
+                    continue
+                
+                status = inv.get("status")
+                amount = inv.get("grandTotal") or inv.get("subTotal") or 0.0
+                buyer = inv.get("buyerName") or "Unknown Buyer"
+                
+                actual_payment_date = None
+                if status == 'Paid':
+                    actual_payment_date = payment_dates.get(inv_id) or inv.get("updatedAt") or (inv_date + timedelta(days=15))
+                    
+                live_rows.append({
+                    "invoice_id": inv_id,
+                    "buyer": buyer,
+                    "invoice_date": pd.to_datetime(inv_date),
+                    "actual_payment_date": pd.to_datetime(actual_payment_date) if actual_payment_date else None,
+                    "amount": amount,
+                    "status": status
+                })
+        except Exception as e:
+            print("Failed to pull MongoDB invoices for cashflow:", e)
+            
+    df_live = pd.DataFrame(live_rows)
+    paid_count = df_live[df_live["status"] == "Paid"].shape[0] if not df_live.empty else 0
+    
+    # If database has few paid invoices, inject mock data to ensure robust ML model training
+    if paid_count < 10:
+        df_mock = get_mock_cashflow_data()
+        if not df_live.empty:
+            df = pd.concat([df_live, df_mock], ignore_index=True)
+        else:
+            df = df_mock
+    else:
+        df = df_live
+        
+    return df
+
+def engineer_cashflow_features(df: pd.DataFrame):
+    """
+    Extracts time-to-pay and builds features: CustomerAverageDaysToPay,
+    InvoiceAmount, MonthOfInvoice, IsWeekendPayment, and CustomerPaymentFrequency.
+    """
+    # Sort for chronological sequence calculations
+    df = df.sort_values(by=["buyer", "invoice_date"]).reset_index(drop=True)
+    
+    # Target label: Days to pay (only for closed invoices)
+    df["ActualDaysToPay"] = (df["actual_payment_date"] - df["invoice_date"]).dt.days
+    
+    # DaysSinceLastInvoice lag calculation
+    df["DaysSinceLastInvoice"] = df.groupby("buyer")["invoice_date"].diff().dt.days.fillna(30.0)
+    
+    # CustomerAverageDaysToPay calculated from Paid invoices
+    paid_invoices = df[df["status"] == "Paid"]
+    cust_avg_pay = paid_invoices.groupby("buyer")["ActualDaysToPay"].mean().to_dict()
+    overall_avg_pay = paid_invoices["ActualDaysToPay"].mean() if not paid_invoices.empty else 15.0
+    
+    df["CustomerAverageDaysToPay"] = df["buyer"].map(cust_avg_pay).fillna(overall_avg_pay)
+    
+    # CustomerPaymentFrequency
+    cust_freq = df.groupby("buyer")["DaysSinceLastInvoice"].mean().to_dict()
+    df["CustomerPaymentFrequency"] = df["buyer"].map(cust_freq).fillna(30.0)
+    
+    # MonthOfInvoice
+    df["MonthOfInvoice"] = df["invoice_date"].dt.month
+    
+    # IsWeekendPayment (1 if payment happened on Sat/Sun)
+    df["IsWeekendPayment"] = df["actual_payment_date"].apply(
+        lambda x: 1 if pd.notnull(x) and x.weekday() in [5, 6] else 0
+    )
+    
+    return df, cust_avg_pay, overall_avg_pay
+
+def train_cashflow_model(df_train: pd.DataFrame):
+    """
+    Fits a RandomForestRegressor predicting ActualDaysToPay.
+    """
+    if df_train.empty:
+        return None
+        
+    X = df_train[["amount", "CustomerAverageDaysToPay", "DaysSinceLastInvoice"]].values
+    y = df_train["ActualDaysToPay"].values
+    
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model.fit(X, y)
+    return model
+
+@app.get("/api/ai/forecast/cashflow")
+def get_cashflow_forecast():
+    """
+    FastAPI endpoint implementing the CashflowProjectionEngine.
+    Returns:
+      - total_expected_inflow: Sum of amount of unpaid invoices expected to be paid in next 30 days
+      - daily_forecast: Array of inflow aggregated by date over next 30 days
+      - at_risk_invoices: Invoices expected to take significantly late to be paid (PredictedDaysToPay > 30)
+    """
+    try:
+        # 1. Fetch data
+        df = prepare_cashflow_training_data()
+        
+        # 2. Extract features
+        df, cust_avg_pay, overall_avg_pay = engineer_cashflow_features(df)
+        
+        # 3. Train ML model on Paid Invoices
+        df_train = df[df["status"] == "Paid"]
+        model = train_cashflow_model(df_train)
+        
+        # 4. Predict expected payment date for outstanding Unpaid Invoices
+        df_unpaid = df[df["status"] != "Paid"]
+        
+        if df_unpaid.empty:
+            return {
+                "success": True,
+                "total_expected_inflow": 0.0,
+                "daily_forecast": [],
+                "at_risk_invoices": []
+            }
+            
+        X_unpaid = df_unpaid[["amount", "CustomerAverageDaysToPay", "DaysSinceLastInvoice"]].values
+        
+        if model is not None:
+            predicted_days = model.predict(X_unpaid)
+        else:
+            predicted_days = df_unpaid["CustomerAverageDaysToPay"].values
+            
+        df_unpaid = df_unpaid.copy()
+        df_unpaid["PredictedDaysToPay"] = predicted_days
+        
+        # Compute PredictedPaymentDate = InvoiceDate + PredictedDaysToPay
+        predicted_dates = []
+        for idx, row in df_unpaid.iterrows():
+            days_to_add = int(np.round(row["PredictedDaysToPay"]))
+            pred_date = row["invoice_date"] + timedelta(days=days_to_add)
+            predicted_dates.append(pred_date)
+            
+        df_unpaid["PredictedPaymentDate"] = predicted_dates
+        
+        # 5. Build 30-day forecast
+        today = datetime.now()
+        thirty_days_later = today + timedelta(days=30)
+        
+        # Select unpaid invoices expected to be paid in next 30 days
+        df_next_30 = df_unpaid[
+            (df_unpaid["PredictedPaymentDate"] >= pd.to_datetime(today.date())) & 
+            (df_unpaid["PredictedPaymentDate"] <= pd.to_datetime(thirty_days_later.date()))
+        ]
+        
+        total_expected_inflow = float(df_next_30["amount"].sum())
+        
+        # Daily forecast mapping (pre-populate 30 days)
+        daily_forecast_map = {}
+        for i in range(31):
+            day_str = (today + timedelta(days=i)).strftime("%Y-%m-%d")
+            daily_forecast_map[day_str] = 0.0
+            
+        for _, row in df_next_30.iterrows():
+            day_str = row["PredictedPaymentDate"].strftime("%Y-%m-%d")
+            if day_str in daily_forecast_map:
+                daily_forecast_map[day_str] += float(row["amount"])
+                
+        daily_forecast_list = [
+            {"date": k, "expected_inflow": v} for k, v in sorted(daily_forecast_map.items())
+        ]
+        
+        # Identifies invoices taking > 30 days to pay as "at risk"
+        df_at_risk = df_unpaid[df_unpaid["PredictedDaysToPay"] > 30]
+        at_risk_list = []
+        for _, row in df_at_risk.iterrows():
+            at_risk_list.append({
+                "invoice_id": str(row["invoice_id"]),
+                "buyer": row["buyer"],
+                "amount": float(row["amount"]),
+                "invoice_date": row["invoice_date"].strftime("%Y-%m-%d"),
+                "predicted_payment_date": row["PredictedPaymentDate"].strftime("%Y-%m-%d"),
+                "predicted_days_to_pay": float(np.round(row["PredictedDaysToPay"], 1)),
+                "customer_average_days_to_pay": float(np.round(row["CustomerAverageDaysToPay"], 1))
+            })
+            
+        return {
+            "success": True,
+            "total_expected_inflow": total_expected_inflow,
+            "daily_forecast": daily_forecast_list,
+            "at_risk_invoices": at_risk_list
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Cashflow forecasting failed: {str(e)}")
 
 class ChatRequest(BaseModel):
     message: str

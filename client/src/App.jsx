@@ -34,9 +34,11 @@ function AppRoutes() {
           isAuthenticated ? (
             <Navigate to="/dashboard" replace />
           ) : (
-            <div className="min-h-screen relative flex items-center justify-center px-4 overflow-hidden bg-slate-950">
-              <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-blue-500/10 blur-[120px] pointer-events-none"></div>
-              <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-purple-500/10 blur-[120px] pointer-events-none"></div>
+            <div className="min-h-screen relative flex items-center justify-center px-4 overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900">
+              {/* Animated gradient orbs */}
+              <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-teal-500/10 blur-3xl pointer-events-none animate-pulse-subtle"></div>
+              <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-amber-500/10 blur-3xl pointer-events-none animate-pulse-subtle" style={{ animationDelay: '1s' }}></div>
+              <div className="absolute top-1/2 right-1/3 w-72 h-72 rounded-full bg-teal-500/5 blur-3xl pointer-events-none animate-pulse-subtle" style={{ animationDelay: '2s' }}></div>
               <Login onToggleMode={() => navigate('/register')} />
             </div>
           )
@@ -49,9 +51,11 @@ function AppRoutes() {
           isAuthenticated ? (
             <Navigate to="/dashboard" replace />
           ) : (
-            <div className="min-h-screen relative flex items-center justify-center px-4 overflow-hidden bg-slate-950">
-              <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-blue-500/10 blur-[120px] pointer-events-none"></div>
-              <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-purple-500/10 blur-[120px] pointer-events-none"></div>
+            <div className="min-h-screen relative flex items-center justify-center px-4 overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900">
+              {/* Animated gradient orbs */}
+              <div className="absolute top-1/3 right-1/3 w-96 h-96 rounded-full bg-amber-500/10 blur-3xl pointer-events-none animate-pulse-subtle"></div>
+              <div className="absolute bottom-1/3 left-1/4 w-96 h-96 rounded-full bg-teal-500/10 blur-3xl pointer-events-none animate-pulse-subtle" style={{ animationDelay: '1s' }}></div>
+              <div className="absolute top-1/2 right-1/2 w-72 h-72 rounded-full bg-amber-500/5 blur-3xl pointer-events-none animate-pulse-subtle" style={{ animationDelay: '2s' }}></div>
               <Register onToggleMode={() => navigate('/login')} />
             </div>
           )

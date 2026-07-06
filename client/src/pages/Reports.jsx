@@ -300,20 +300,20 @@ export default function Reports() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-1">
                     <span className="text-[10px] text-slate-500 uppercase font-bold">Gross Revenue</span>
-                    <h4 className="text-xl font-bold font-mono text-slate-200">${plSummary.totalRevenue.toFixed(2)}</h4>
+                    <h4 className="text-xl font-bold font-mono text-slate-200">${(plSummary.totalRevenue || 0).toFixed(2)}</h4>
                   </div>
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-1">
                     <span className="text-[10px] text-slate-500 uppercase font-bold text-red-400">COGS (Stock Cost)</span>
-                    <h4 className="text-xl font-bold font-mono text-red-400">-${plSummary.totalCogs.toFixed(2)}</h4>
+                    <h4 className="text-xl font-bold font-mono text-red-400">-${(plSummary.totalCogs || 0).toFixed(2)}</h4>
                   </div>
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-1">
                     <span className="text-[10px] text-slate-500 uppercase font-bold">Operational Expense</span>
-                    <h4 className="text-xl font-bold font-mono text-slate-200">-${plSummary.totalExpenses.toFixed(2)}</h4>
+                    <h4 className="text-xl font-bold font-mono text-slate-200">-${(plSummary.totalExpenses || 0).toFixed(2)}</h4>
                   </div>
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 bg-emerald-500/5 border-emerald-500/20 space-y-1">
                     <span className="text-[10px] text-emerald-450 uppercase font-bold">Net Profit (Margin)</span>
                     <h4 className="text-xl font-bold font-mono text-emerald-400">
-                      ${plSummary.netProfit.toFixed(2)} ({plSummary.margin.toFixed(1)}%)
+                      ${(plSummary.netProfit || 0).toFixed(2)} (${(plSummary.margin || 0).toFixed(1)}%)
                     </h4>
                   </div>
                 </div>
@@ -331,7 +331,7 @@ export default function Reports() {
                             <span className="text-slate-500 block uppercase font-bold text-[9px]">{exp._id}</span>
                             <span className="font-semibold text-slate-250 block mt-0.5">{exp._id} Expense</span>
                           </div>
-                          <span className="font-mono font-bold text-red-400">-${exp.totalAmount.toFixed(2)}</span>
+                          <span className="font-mono font-bold text-red-400">-${(exp.totalAmount || 0).toFixed(2)}</span>
                         </div>
                       ))}
                     </div>
@@ -347,15 +347,15 @@ export default function Reports() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-1">
                     <span className="text-[10px] text-slate-500 uppercase font-bold">Total GST Collected</span>
-                    <h4 className="text-2xl font-bold font-mono text-slate-100">${gstLiability.totalCollected.toFixed(2)}</h4>
+                    <h4 className="text-2xl font-bold font-mono text-slate-100">${(gstLiability.totalCollected || 0).toFixed(2)}</h4>
                   </div>
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-1">
                     <span className="text-[10px] text-slate-500 uppercase font-bold text-blue-400">Input Tax Credit (ITC)</span>
-                    <h4 className="text-2xl font-bold font-mono text-blue-400">${gstLiability.inputTaxCredit.toFixed(2)}</h4>
+                    <h4 className="text-2xl font-bold font-mono text-blue-400">${(gstLiability.inputTaxCredit || 0).toFixed(2)}</h4>
                   </div>
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 bg-brand-500/5 border-brand-500/20 space-y-1">
                     <span className="text-[10px] text-brand-450 uppercase font-bold">Net GST Payable</span>
-                    <h4 className="text-2xl font-bold font-mono text-brand-400">${gstLiability.netPayable.toFixed(2)}</h4>
+                    <h4 className="text-2xl font-bold font-mono text-brand-400">${(gstLiability.netPayable || 0).toFixed(2)}</h4>
                   </div>
                 </div>
 
@@ -365,15 +365,15 @@ export default function Reports() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                     <div className="bg-slate-950 border border-slate-850 p-4 rounded-xl text-center space-y-1">
                       <span className="text-[10px] text-slate-500 uppercase font-bold">CGST Split</span>
-                      <div className="font-mono text-base font-bold text-slate-300">${gstLiability.cgst.toFixed(2)}</div>
+                      <div className="font-mono text-base font-bold text-slate-300">${(gstLiability.cgst || 0).toFixed(2)}</div>
                     </div>
                     <div className="bg-slate-950 border border-slate-850 p-4 rounded-xl text-center space-y-1">
                       <span className="text-[10px] text-slate-500 uppercase font-bold">SGST Split</span>
-                      <div className="font-mono text-base font-bold text-slate-300">${gstLiability.sgst.toFixed(2)}</div>
+                      <div className="font-mono text-base font-bold text-slate-300">${(gstLiability.sgst || 0).toFixed(2)}</div>
                     </div>
                     <div className="bg-slate-950 border border-slate-850 p-4 rounded-xl text-center space-y-1">
                       <span className="text-[10px] text-slate-500 uppercase font-bold">IGST Split</span>
-                      <div className="font-mono text-base font-bold text-slate-300">${gstLiability.igst.toFixed(2)}</div>
+                      <div className="font-mono text-base font-bold text-slate-300">${(gstLiability.igst || 0).toFixed(2)}</div>
                     </div>
                   </div>
                 </div>

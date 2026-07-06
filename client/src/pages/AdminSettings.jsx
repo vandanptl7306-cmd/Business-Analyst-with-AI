@@ -21,6 +21,7 @@ export default function AdminSettings() {
   const [gstin, setGstin] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [defaultTemplate, setDefaultTemplate] = useState('Standard');
+  const [themeColor, setThemeColor] = useState('#2563eb');
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -35,6 +36,7 @@ export default function AdminSettings() {
           setGstin(response.settings.gstin || '');
           setLogoUrl(response.settings.logoUrl || '');
           setDefaultTemplate(response.settings.defaultInvoiceTemplate || 'Standard');
+          setThemeColor(response.settings.invoiceThemeColor || '#2563eb');
         }
       } catch (err) {
         setApiError('Failed to load store settings configuration.');
@@ -59,6 +61,7 @@ export default function AdminSettings() {
         gstin,
         logoUrl,
         defaultInvoiceTemplate: defaultTemplate,
+        invoiceThemeColor: themeColor,
       });
       if (response.success) {
         setSettings(response.settings);
@@ -226,6 +229,61 @@ export default function AdminSettings() {
                 <img src={logoUrl} alt="Store logo" className="max-h-16 rounded border border-slate-800" />
               </div>
             )}
+          </div>
+
+          {/* Invoice Theme Color Selector */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center space-x-2 text-slate-350 font-semibold text-sm">
+              <Sliders className="h-4 w-4 text-brand-400" />
+              <span>Invoice Primary Brand Color</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-4">
+              {[
+                { hex: '#2563eb', label: 'Tech Blue' },
+                { hex: '#10b981', label: 'Emerald Green' },
+                { hex: '#ef4444', label: 'Crimson Red' },
+                { hex: '#6366f1', label: 'Sleek Indigo' },
+                { hex: '#f97316', label: 'Amber Orange' },
+                { hex: '#8b5cf6', label: 'Royal Purple' },
+                { hex: '#475569', label: 'Steel Slate' },
+                { hex: '#1e293b', label: 'Dark Slate' },
+              ].map((color) => {
+                const isSelected = themeColor.toLowerCase() === color.hex.toLowerCase();
+                return (
+                  <button
+                    key={color.hex}
+                    type="button"
+                    onClick={() => setThemeColor(color.hex)}
+                    style={{ backgroundColor: color.hex }}
+                    className={`w-10 h-10 rounded-full border-2 transition-all relative group flex items-center justify-center hover:scale-105 active:scale-95 ${
+                      isSelected ? 'border-white ring-4 ring-blue-500/30' : 'border-slate-800'
+                    }`}
+                    title={color.label}
+                  >
+                    {isSelected && (
+                      <span className="text-white text-xs font-bold font-sans">✓</span>
+                    )}
+                  </button>
+                );
+              })}
+              
+              <div className="flex items-center space-x-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl ml-auto">
+                <span className="text-[10px] text-slate-500 uppercase font-bold">Custom:</span>
+                <input
+                  type="color"
+                  value={themeColor}
+                  onChange={(e) => setThemeColor(e.target.value)}
+                  className="w-7 h-7 rounded cursor-pointer bg-transparent border-0 p-0 outline-none"
+                />
+                <input
+                  type="text"
+                  value={themeColor}
+                  onChange={(e) => setThemeColor(e.target.value)}
+                  placeholder="#ffffff"
+                  className="w-16 bg-transparent border-0 text-slate-350 text-[10px] font-mono outline-none uppercase"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Template Selection */}

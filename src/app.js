@@ -59,15 +59,45 @@ app.use('/api/products', require('./routes/product'));
 // Mount ml routes
 app.use('/api/ml', require('./routes/ml'));
 
+// Mount ai routes (Compliance Audit Bot)
+app.use('/api/ai', require('./routes/ai'));
+
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   // Initialize DB Connection or Mock Database fallback
   await connectDB();
 
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+  const maxRetries = 5;
+  let attempt = 0;
+  let port = Number(PORT);
+
+  const tryListen = () => {
+    attempt += 1;
+    const server = app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+    });
+
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.warn(`Port ${port} in use.`);
+        if (attempt <= maxRetries) {
+          port += 1;
+          console.log(`Trying port ${port} (attempt ${attempt}/${maxRetries})`);
+          // Small delay before retrying to avoid tight loop
+          setTimeout(tryListen, 200);
+          return;
+        }
+        console.error(`All ${maxRetries} retry attempts failed. Please free a port or set PORT env variable.`);
+        process.exit(1);
+      }
+      // For other errors, rethrow
+      console.error('Server error:', err);
+      process.exit(1);
+    });
+  };
+
+  tryListen();
 };
 
 startServer();

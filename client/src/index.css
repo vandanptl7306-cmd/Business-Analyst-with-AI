@@ -1,12 +1,164 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Premium Color Scheme */
+:root {
+  --color-navy: #0f172e;
+  --color-deepnavy: #0a0f24;
+  --color-slate: #1a1f35;
+  --color-teal: #14b8a6;
+  --color-accent: #c9a96e;
+  --color-gold: #d4a373;
+  --color-light: #f8fafc;
+  --color-muted: #94a3b8;
+}
+
+/* Global Styles */
 body {
   margin: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #0b0f19;
-  color: #f3f4f6;
+  background: linear-gradient(135deg, #0f172e 0%, #0a0f24 50%, #0f172e 100%);
+  color: #f8fafc;
+  background-attachment: fixed;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', 'Inter', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  @apply text-4xl tracking-tight;
+}
+
+h2 {
+  @apply text-3xl tracking-tight;
+}
+
+h3 {
+  @apply text-2xl tracking-tight;
+}
+
+/* Buttons */
+.btn-premium {
+  @apply px-6 py-3 rounded-xl font-semibold transition-all duration-300 outline-none focus:outline-none shadow-premium hover:shadow-premium-lg;
+}
+
+.btn-primary {
+  @apply btn-premium bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:from-teal-600 hover:to-teal-700 active:scale-95;
+}
+
+.btn-secondary {
+  @apply btn-premium bg-slate-800 text-slate-100 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 active:scale-95;
+}
+
+.btn-outline {
+  @apply btn-premium bg-transparent border-2 border-teal-500 text-teal-400 hover:bg-teal-500/10 active:scale-95;
+}
+
+/* Cards */
+.card-premium {
+  @apply rounded-2xl bg-gradient-to-br from-slate-800/40 to-slate-900/20 border border-slate-700/50 backdrop-blur-xl shadow-premium hover:shadow-premium-lg transition-all duration-300;
+}
+
+.card-elevated {
+  @apply rounded-2xl bg-slate-900/60 border border-slate-700/60 backdrop-blur-lg shadow-premium;
+}
+
+/* Inputs */
+.input-premium {
+  @apply w-full px-4 py-3 rounded-xl bg-slate-950/40 border border-slate-700/50 text-slate-100 placeholder-slate-500 transition-all duration-300 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30 backdrop-blur-sm;
+}
+
+.input-premium:hover {
+  @apply border-slate-600/70 bg-slate-950/50;
+}
+
+/* Gradient Text */
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r;
+}
+
+.gradient-teal-gold {
+  @apply gradient-text from-teal-400 via-teal-300 to-amber-300;
+}
+
+.gradient-navy-teal {
+  @apply gradient-text from-slate-200 via-teal-300 to-teal-400;
+}
+
+/* Badges */
+.badge-premium {
+  @apply inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold;
+}
+
+.badge-teal {
+  @apply badge-premium bg-teal-500/20 text-teal-300 border border-teal-500/30;
+}
+
+.badge-gold {
+  @apply badge-premium bg-amber-500/20 text-amber-300 border border-amber-500/30;
+}
+
+.badge-slate {
+  @apply badge-premium bg-slate-700/50 text-slate-300 border border-slate-600/50;
+}
+
+/* Divider */
+.divider-premium {
+  @apply h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 46, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #14b8a6 0%, #0d99a8 100%);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #2dd4bf 0%, #14b8a6 100%);
+}
+
+/* Selection */
+::selection {
+  background-color: rgba(20, 184, 166, 0.3);
+  color: #f8fafc;
+}
+
+/* Links */
+a {
+  @apply text-teal-400 hover:text-teal-300 transition-colors duration-200;
+}
+
+/* Focus Styles */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  @apply outline-none ring-2 ring-teal-500/50;
+}
+
+/* Smooth Transitions */
+* {
+  @apply transition-colors duration-200;
 }

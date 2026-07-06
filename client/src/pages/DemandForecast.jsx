@@ -63,7 +63,7 @@ export default function DemandForecast() {
       if (data.success) {
         setForecastList(data.forecast);
         setModelType(data.model);
-        const sum = data.forecast.reduce((acc, curr) => acc + curr.predicted_quantity, 0);
+        const sum = data.forecast.reduce((acc, curr) => acc + (curr.predicted_quantity || 0), 0);
         setTotalPredicted(Math.round(sum));
       }
     } catch (err) {
@@ -80,7 +80,7 @@ export default function DemandForecast() {
     }
   }, [selectedProduct, days]);
 
-  const maxVal = Math.max(...forecastList.map(f => f.predicted_quantity), 1);
+  const maxVal = Math.max(...forecastList.map(f => f.predicted_quantity || 0), 1);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 py-10">
@@ -191,12 +191,12 @@ export default function DemandForecast() {
               {/* Dynamic Visual Graph Bar Charts */}
               <div className="h-44 flex items-end justify-between gap-1.5 pt-4 bg-slate-950 p-4 rounded-xl border border-slate-850">
                 {forecastList.map((f, idx) => {
-                  const h = (f.predicted_quantity / maxVal) * 100;
+                  const h = ((f.predicted_quantity || 0) / maxVal) * 100;
                   return (
                     <div key={idx} className="flex-1 flex flex-col items-center group relative">
                       {/* Tooltip */}
                       <span className="absolute bottom-full mb-1 bg-slate-900 border border-slate-800 text-[8px] font-mono text-slate-350 px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                        {f.predicted_quantity}
+                        {f.predicted_quantity !== null && f.predicted_quantity !== undefined ? Number(f.predicted_quantity).toFixed(1) : '0.0'}
                       </span>
                       <div
                         style={{ height: `${Math.max(h, 6)}%` }}
@@ -225,7 +225,7 @@ export default function DemandForecast() {
                           <span>{f.date}</span>
                         </td>
                         <td className="px-4 py-2.5 text-right font-bold text-slate-200">
-                          {f.predicted_quantity.toFixed(2)} units
+                          {f.predicted_quantity !== null && f.predicted_quantity !== undefined ? Number(f.predicted_quantity).toFixed(2) : '0.00'} units
                         </td>
                       </tr>
                     ))}

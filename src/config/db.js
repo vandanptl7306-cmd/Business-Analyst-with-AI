@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 
 const setupMockDB = () => {
   console.log('--------------------------------------------------');
-  console.log('🚀 MOCK DATABASE ACTIVATED (MongoDB is Offline)');
+  console.log('MOCK DATABASE ACTIVATED (MongoDB is Offline)');
   console.log('Sign in using:');
   console.log('   - Email: admin@example.com');
   console.log('   - Password: password123');
@@ -334,6 +334,43 @@ const setupMockDB = () => {
         }
       }
       return Object.values(prodsMap).sort((a, b) => b.totalSalesVal - a.totalSalesVal).slice(0, 5);
+    }
+
+    // Check if it is the product total quantity aggregation for demand forecast
+    if (modelName === 'Invoice' && this._pipeline.some(stage => stage.$group && stage.$group.totalQuantity)) {
+      let targetProductId = null;
+      for (let stage of this._pipeline) {
+        if (stage.$match && stage.$match.$or) {
+          const matchOr = stage.$match.$or;
+          const matchDesc = matchOr.find(o => o['items.description'] !== undefined);
+          if (matchDesc) targetProductId = matchDesc['items.description'];
+        }
+      }
+      
+      let totalQuantity = 0;
+      let count = 0;
+      for (let inv of collection) {
+        for (let item of (inv.items || [])) {
+          if (!targetProductId || item.description === targetProductId) {
+            totalQuantity += item.quantity || 0;
+            count += 1;
+          }
+        }
+      }
+      return [{ _id: null, totalQuantity, count }];
+    }
+
+    // Check if it is the Expense categorization aggregation
+    if (modelName === 'Expense' && this._pipeline.some(stage => stage.$group && stage.$group.totalAmount)) {
+      const expensesMap = {};
+      for (let exp of collection) {
+        const cat = exp.category || 'Other';
+        if (!expensesMap[cat]) {
+          expensesMap[cat] = { _id: cat, totalAmount: 0 };
+        }
+        expensesMap[cat].totalAmount += exp.amount || 0;
+      }
+      return Object.values(expensesMap);
     }
     
     return collection;

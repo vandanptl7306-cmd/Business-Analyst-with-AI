@@ -36,7 +36,7 @@ const getStoreSettings = async (req, res) => {
  */
 const updateStoreSettings = async (req, res) => {
   try {
-    const { shopName, address, phoneNumber, email, gstin, logoUrl, defaultInvoiceTemplate } = req.body;
+    const { shopName, address, phoneNumber, email, gstin, logoUrl, defaultInvoiceTemplate, invoiceThemeColor } = req.body;
 
     let settings = await StoreSettings.findOne({});
     if (!settings) {
@@ -50,6 +50,7 @@ const updateStoreSettings = async (req, res) => {
     settings.gstin = gstin || settings.gstin;
     settings.logoUrl = logoUrl || settings.logoUrl;
     settings.defaultInvoiceTemplate = defaultInvoiceTemplate || settings.defaultInvoiceTemplate;
+    settings.invoiceThemeColor = invoiceThemeColor || settings.invoiceThemeColor;
 
     await settings.save();
 

@@ -1,3 +1,4 @@
+const axios = require('axios');
 const Invoice = require('../models/Invoice');
 const Counter = require('../models/Counter');
 const Party = require('../models/Party');
@@ -157,12 +158,62 @@ const createInvoice = async (req, res) => {
 
     const initialPaid = Number(req.body.amountPaid || 0);
     const outstanding = Number((grandTotal - initialPaid).toFixed(2));
-    
     let defaultStatus = 'Unpaid';
     if (initialPaid >= grandTotal) {
       defaultStatus = 'Paid';
     } else if (initialPaid > 0) {
       defaultStatus = 'Partially Paid';
+    }
+
+    // --- COMPLIANCE AI AUDIT BOT ---
+    try {
+      const auditPayload = {
+        sellerName,
+        sellerGSTIN,
+        sellerPIN,
+        buyerName,
+        buyerGSTIN,
+        buyerBillingAddress,
+        buyerPIN,
+        items: processedItems.map(item => ({
+          description: item.description,
+          hsnCode: item.hsnCode,
+          quantity: item.quantity,
+          price: item.price,
+          basePrice: item.basePrice,
+          gstRate: item.gstRate,
+          totalAmount: item.totalAmount,
+          cgst: item.cgst,
+          sgst: item.sgst,
+          igst: item.igst
+        })),
+        subTotal,
+        taxTotal,
+        grandTotal,
+        igst: processedItems.reduce((acc, item) => acc + (item.igst || 0), 0),
+        cgst: processedItems.reduce((acc, item) => acc + (item.cgst || 0), 0),
+        sgst: processedItems.reduce((acc, item) => acc + (item.sgst || 0), 0)
+      };
+
+      const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
+      const auditResponse = await axios.post(`${ML_SERVICE_URL}/api/ai/audit/invoice`, auditPayload);
+      
+      if (auditResponse.data && auditResponse.data.success) {
+        const report = auditResponse.data;
+        if (!report.is_compliant) {
+          // Identify any High severity alerts to block invoice generation
+          const highAlerts = report.risk_alerts.filter(alert => alert.severity === 'High');
+          if (highAlerts.length > 0) {
+            return res.status(400).json({
+              success: false,
+              error: 'Compliance validations failed (AI Audit Bot blocked)',
+              details: report.risk_alerts.map(alert => alert.message)
+            });
+          }
+        }
+      }
+    } catch (auditErr) {
+      console.warn('AI Compliance Audit Bot is offline or encountered an error. Proceeding with database fallback. Error:', auditErr.message);
     }
 
     const invoice = await Invoice.create({

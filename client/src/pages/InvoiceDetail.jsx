@@ -164,6 +164,9 @@ export default function InvoiceDetail() {
                 <option value="Standard">Standard</option>
                 <option value="Modern">Modern Gradient</option>
                 <option value="Thermal">Thermal Receipt</option>
+                <option value="TaxInvoice">GST Tax Invoice</option>
+                <option value="Minimalist">Minimal Corporate</option>
+                <option value="Commercial">Commercial Invoice</option>
               </select>
             </div>
 
@@ -181,10 +184,12 @@ export default function InvoiceDetail() {
                 <option value="Cancelled">Cancelled</option>
               </select>
             </div>
-
             <button
               type="button"
-              onClick={() => window.open(`http://localhost:5000/api/invoices/${invoice._id}/print?template=${selectedTemplate}`, '_blank')}
+              onClick={() => {
+                const token = localStorage.getItem('token');
+                window.open(`http://localhost:5000/api/invoices/${invoice._id}/print?template=${selectedTemplate}&token=${token}`, '_blank');
+              }}
               className="flex items-center justify-center space-x-1.5 text-xs font-semibold bg-brand-500 hover:bg-brand-400 text-white px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-[0.98]"
             >
               <Printer className="h-4 w-4" />
