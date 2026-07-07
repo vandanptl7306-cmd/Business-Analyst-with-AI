@@ -86,182 +86,168 @@ export default function CustomerLedger() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 py-10">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-8 animate-in fade-in duration-300">
-        
-        {/* Navigation */}
-        <Link
-          to="/dashboard"
-          className="inline-flex items-center space-x-2 text-sm text-slate-400 hover:text-slate-200 transition-colors group"
-        >
-          <ArrowLeft className="h-4 w-4 transform group-hover:-translate-x-1 transition-transform" />
-          <span>Back to Dashboard</span>
-        </Link>
+    <div className="space-y-8 animate-in fade-in duration-300">
+      
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-40 h-40 bg-indigo-50/5 rounded-full blur-2xl"></div>
+        <h1 className="text-2xl font-extrabold tracking-tight text-slate-800">Customer Ledger & Reminders</h1>
+        <p className="text-xs text-slate-500 mt-1">Manage client records, outstanding balances, and trigger automated alerts via WhatsApp</p>
+      </div>
 
-        {/* Header */}
-        <div className="flex items-center space-x-4 mb-6 pb-6 border-b border-slate-800">
-          <div className="p-3 bg-brand-500/10 text-brand-400 rounded-2xl border border-brand-500/20">
-            <Users className="h-8 w-8" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-100">Customer ledger & Reminders</h1>
-            <p className="text-xs text-slate-400 mt-1">Manage client records, balances, and send outstanding payment alerts via WhatsApp</p>
-          </div>
+      {/* Global Notifications */}
+      {successMsg && (
+        <div className="p-4 rounded-xl border border-emerald-250 bg-emerald-50 text-emerald-800 text-xs font-semibold flex items-center space-x-2">
+          <CheckCircle className="h-4.5 w-4.5 text-emerald-600 flex-shrink-0" />
+          <span>{successMsg}</span>
         </div>
+      )}
 
-        {/* Global Notifications */}
-        {successMsg && (
-          <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-450 text-sm flex items-center space-x-2">
-            <CheckCircle className="h-5 w-5 flex-shrink-0" />
-            <span>{successMsg}</span>
+      {apiError && (
+        <div className="p-4 rounded-xl border border-red-200 bg-red-50 text-red-800 text-xs font-semibold flex items-center space-x-2">
+          <ShieldAlert className="h-4.5 w-4.5 text-red-600 flex-shrink-0" />
+          <span>{apiError}</span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Add Customer Form */}
+        <div className="card-module h-fit space-y-5">
+          <div className="flex items-center space-x-2 text-slate-800 font-bold pb-2 border-b border-slate-100">
+            <UserPlus className="h-5 w-5 text-indigo-650" />
+            <span>Add New Customer</span>
           </div>
-        )}
 
-        {apiError && (
-          <div className="p-4 rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 text-sm flex items-center space-x-2">
-            <ShieldAlert className="h-5 w-5 flex-shrink-0" />
-            <span>{apiError}</span>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Add Customer Form */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl h-fit space-y-5">
-            <div className="flex items-center space-x-2 text-slate-200 font-bold pb-2 border-b border-slate-855">
-              <UserPlus className="h-5 w-5 text-brand-400" />
-              <span>Add New Customer</span>
+          <form onSubmit={handleSubmit(onAddCustomer)} className="space-y-4">
+            <div>
+              <label className="block text-[10px] font-bold text-slate-450 uppercase mb-1.5">Customer Name</label>
+              <input
+                type="text"
+                placeholder="Jane Doe"
+                {...register('name')}
+                className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border text-slate-800 placeholder-slate-400 text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-650 ${
+                  errors.name ? 'border-red-500' : 'border-slate-200'
+                }`}
+              />
+              {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
             </div>
 
-            <form onSubmit={handleSubmit(onAddCustomer)} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5">Customer Name</label>
+            <div>
+              <label className="block text-[10px] font-bold text-slate-450 uppercase mb-1.5">Phone (E.164 format)</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <Phone className="h-4 w-4" />
+                </div>
                 <input
                   type="text"
-                  placeholder="Jane Doe"
-                  {...register('name')}
-                  className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border text-slate-200 placeholder-slate-500 text-sm transition-all outline-none focus:ring-2 focus:ring-brand-500 ${
-                    errors.name ? 'border-red-500 focus:ring-red-500' : 'border-slate-800'
+                  placeholder="+919876543210"
+                  {...register('phoneNumber')}
+                  className={`w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-slate-50 border text-slate-800 placeholder-slate-400 text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-650 ${
+                    errors.phoneNumber ? 'border-red-500' : 'border-slate-200'
                   }`}
                 />
-                {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
               </div>
+              {errors.phoneNumber && (
+                <p className="mt-1 text-xs text-red-500">{errors.phoneNumber.message}</p>
+              )}
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5">Phone (E.164 format)</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
-                    <Phone className="h-4 w-4" />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="+919876543210"
-                    {...register('phoneNumber')}
-                    className={`w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-slate-950 border text-slate-200 placeholder-slate-500 text-sm transition-all outline-none focus:ring-2 focus:ring-brand-500 ${
-                      errors.phoneNumber ? 'border-red-500 focus:ring-red-500' : 'border-slate-800'
-                    }`}
-                  />
+            <div>
+              <label className="block text-[10px] font-bold text-slate-450 uppercase mb-1.5">Outstanding Balance ($)</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <DollarSign className="h-4 w-4" />
                 </div>
-                {errors.phoneNumber && (
-                  <p className="mt-1 text-xs text-red-500">{errors.phoneNumber.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5">Outstanding Balance ($)</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
-                    <DollarSign className="h-4 w-4" />
-                  </div>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    {...register('outstandingBalance')}
-                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-sm transition-all outline-none focus:ring-2 focus:ring-brand-500"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2.5 pt-2">
                 <input
-                  type="checkbox"
-                  id="whatsappEnabled"
-                  {...register('whatsappEnabled')}
-                  className="w-4 h-4 text-brand-600 border-slate-855 rounded bg-slate-955 focus:ring-brand-500 cursor-pointer"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  {...register('outstandingBalance')}
+                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-650"
                 />
-                <label htmlFor="whatsappEnabled" className="text-xs text-slate-350 select-none cursor-pointer">
-                  Enable WhatsApp notifications
-                </label>
               </div>
+            </div>
 
-              <button
-                type="submit"
-                className="w-full flex items-center justify-center py-2.5 px-4 rounded-xl bg-brand-500 hover:bg-brand-400 text-white font-semibold transition-all shadow-lg active:scale-[0.98]"
-              >
-                Create Customer
-              </button>
-            </form>
-          </div>
+            <div className="flex items-center space-x-2.5 pt-2">
+              <input
+                type="checkbox"
+                id="whatsappEnabled"
+                {...register('whatsappEnabled')}
+                className="w-4 h-4 text-indigo-650 border-slate-300 rounded bg-slate-50 focus:ring-indigo-500/20 cursor-pointer"
+              />
+              <label htmlFor="whatsappEnabled" className="text-xs text-slate-500 select-none cursor-pointer">
+                Enable WhatsApp notifications
+              </label>
+            </div>
 
-          {/* Customer Records Table */}
-          <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
-            <h2 className="text-xl font-bold text-slate-200">Customer Records</h2>
-
-            {loading ? (
-              <div className="py-12 flex justify-center">
-                <Loader2 className="h-8 w-8 text-brand-500 animate-spin" />
-              </div>
-            ) : parties.length === 0 ? (
-              <div className="py-16 text-center text-slate-500">
-                No customer ledger records stored. Register one on the left to start.
-              </div>
-            ) : (
-              <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950">
-                <table className="min-w-full divide-y divide-slate-800 text-sm">
-                  <thead className="bg-slate-900/50 text-slate-400 text-xs">
-                    <tr>
-                      <th className="px-4 py-3 text-left">Name</th>
-                      <th className="px-4 py-3 text-left">Contact Info</th>
-                      <th className="px-4 py-3 text-right">Outstanding</th>
-                      <th className="px-4 py-3 text-center">Alert Options</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800 text-slate-300">
-                    {parties.map((pt) => (
-                      <tr key={pt._id}>
-                        <td className="px-4 py-4 font-semibold text-slate-200">{pt.name}</td>
-                        <td className="px-4 py-4 font-mono text-xs text-slate-400">{pt.phoneNumber}</td>
-                        <td className="px-4 py-4 text-right font-bold text-red-400">
-                          ${pt.outstandingBalance.toFixed(2)}
-                        </td>
-                        <td className="px-4 py-4 text-center">
-                          {pt.outstandingBalance > 0 ? (
-                            <button
-                              onClick={() => handleSendReminder(pt._id, pt.name)}
-                              disabled={actionLoading === pt._id}
-                              className="inline-flex items-center space-x-1 text-xs text-brand-400 bg-brand-500/10 border border-brand-500/20 px-3 py-1.5 rounded-lg hover:bg-brand-500/20 transition-all font-semibold disabled:opacity-50"
-                            >
-                              {actionLoading === pt._id ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <Send className="h-3 w-3" />
-                              )}
-                              <span>Send Reminder</span>
-                            </button>
-                          ) : (
-                            <span className="text-xs text-slate-500 italic">No balance</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+            <button
+              type="submit"
+              className="w-full flex items-center justify-center py-2.5 px-4 rounded-xl bg-indigo-650 hover:bg-indigo-600 text-white font-bold transition-all shadow-sm cursor-pointer"
+            >
+              Create Customer
+            </button>
+          </form>
         </div>
 
+        {/* Customer Records Table */}
+        <div className="lg:col-span-2 card-module space-y-4">
+          <h2 className="text-xl font-bold text-slate-800">Customer Records</h2>
+
+          {loading ? (
+            <div className="py-12 flex justify-center">
+              <Loader2 className="h-8 w-8 text-indigo-655 animate-spin" />
+            </div>
+          ) : parties.length === 0 ? (
+            <div className="py-16 text-center text-slate-400 text-xs font-semibold">
+              No customer ledger records stored. Register one on the left to start.
+            </div>
+          ) : (
+            <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
+              <table className="min-w-full divide-y divide-slate-100 text-xs">
+                <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase font-bold tracking-wider">
+                  <tr>
+                    <th className="px-4 py-3 text-left">Name</th>
+                    <th className="px-4 py-3 text-left">Contact Info</th>
+                    <th className="px-4 py-3 text-right">Outstanding</th>
+                    <th className="px-4 py-3 text-center">Alert Options</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-600 font-medium">
+                  {parties.map((pt) => (
+                    <tr key={pt._id} className="hover:bg-slate-50/40 transition-colors">
+                      <td className="px-4 py-3.5 font-bold text-slate-800">{pt.name}</td>
+                      <td className="px-4 py-3.5 font-mono text-slate-450">{pt.phoneNumber}</td>
+                      <td className="px-4 py-3.5 text-right font-bold text-red-650 font-mono">
+                        ${pt.outstandingBalance.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3.5 text-center">
+                        {pt.outstandingBalance > 0 ? (
+                          <button
+                            onClick={() => handleSendReminder(pt._id, pt.name)}
+                            disabled={actionLoading === pt._id}
+                            className="inline-flex items-center space-x-1 text-[11px] text-indigo-600 hover:text-indigo-550 font-bold bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+                          >
+                            {actionLoading === pt._id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Send className="h-3 w-3" />
+                            )}
+                            <span>Send Reminder</span>
+                          </button>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic font-semibold">Paid</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
+
     </div>
   );
 }

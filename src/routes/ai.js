@@ -49,4 +49,46 @@ router.get('/forecast/cashflow', protect, async (req, res) => {
   }
 });
 
+/**
+ * @desc    Fetch customer CLV & Churn risk predictions from Python microservice
+ * @route   GET /api/ai/customers/clv-predictions
+ * @access  Private
+ */
+router.get('/customers/clv-predictions', protect, async (req, res) => {
+  try {
+    const response = await axios.get(`${ML_SERVICE_URL}/api/ai/customers/clv-predictions`);
+    return res.status(200).json(response.data);
+  } catch (error) {
+    console.error('AI Customer CLV proxy error:', error.message);
+    if (error.response) {
+      return res.status(error.response.status).json(error.response.data);
+    }
+    return res.status(500).json({
+      success: false,
+      error: 'AI Customer CLV Service is offline or unreachable'
+    });
+  }
+});
+
+/**
+ * @desc    Fetch stock reorder & safety level warnings from Python microservice
+ * @route   GET /api/ai/inventory/reorder-warnings
+ * @access  Private
+ */
+router.get('/inventory/reorder-warnings', protect, async (req, res) => {
+  try {
+    const response = await axios.get(`${ML_SERVICE_URL}/api/ai/inventory/reorder-warnings`);
+    return res.status(200).json(response.data);
+  } catch (error) {
+    console.error('AI Inventory Reorder proxy error:', error.message);
+    if (error.response) {
+      return res.status(error.response.status).json(error.response.data);
+    }
+    return res.status(500).json({
+      success: false,
+      error: 'AI Inventory Reorder Service is offline or unreachable'
+    });
+  }
+});
+
 module.exports = router;

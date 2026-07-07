@@ -36,21 +36,33 @@ const getStoreSettings = async (req, res) => {
  */
 const updateStoreSettings = async (req, res) => {
   try {
-    const { shopName, address, phoneNumber, email, gstin, logoUrl, defaultInvoiceTemplate, invoiceThemeColor } = req.body;
-
     let settings = await StoreSettings.findOne({});
     if (!settings) {
       settings = new StoreSettings({});
     }
 
-    settings.shopName = shopName || settings.shopName;
-    settings.address = address || settings.address;
-    settings.phoneNumber = phoneNumber || settings.phoneNumber;
-    settings.email = email || settings.email;
-    settings.gstin = gstin || settings.gstin;
-    settings.logoUrl = logoUrl || settings.logoUrl;
-    settings.defaultInvoiceTemplate = defaultInvoiceTemplate || settings.defaultInvoiceTemplate;
-    settings.invoiceThemeColor = invoiceThemeColor || settings.invoiceThemeColor;
+    const fields = [
+      'shopName', 'address', 'phoneNumber', 'email', 'gstin', 'logoUrl',
+      'defaultInvoiceTemplate', 'invoiceThemeColor', 'businessType',
+      'printerType', 'regularLayoutTheme', 'regularThemeColor',
+      'printRepeatHeader', 'printCompanyName', 'customCompanyName',
+      'printCompanyLogo', 'customLogoUrl', 'printAddress', 'customAddress',
+      'printEmail', 'customEmail', 'printPhone', 'customPhone',
+      'printGSTIN', 'customGSTIN', 'paperSize', 'orientation',
+      'companyNameTextSize', 'invoiceTextSize', 'printTotalQty',
+      'amountWithDecimal', 'printReceivedAmount', 'printBalanceAmount',
+      'printCurrentBalance', 'printTaxDetails', 'printYouSaved',
+      'printAmountWithGrouping', 'amountInWordsFormat', 'printDescription',
+      'thermalPrintingType', 'thermalUseTextStylingBold', 'thermalAutoCut',
+      'thermalOpenCashDrawer', 'thermalExtraLines', 'thermalCopies',
+      'thermalPrintCompanyName', 'thermalCompanyName'
+    ];
+
+    fields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        settings[field] = req.body[field];
+      }
+    });
 
     await settings.save();
 

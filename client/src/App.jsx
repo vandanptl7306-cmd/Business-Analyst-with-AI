@@ -9,21 +9,32 @@ import Login from './components/Login';
 import Register from './components/Register';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
+import DashboardLayout from './components/DashboardLayout';
 
 import Dashboard from './pages/Dashboard';
-import AdminSettings from './pages/AdminSettings';
+import SettingsPage from './pages/Settings';
 import Unauthorized from './pages/Unauthorized';
 import InvoiceDetail from './pages/InvoiceDetail';
 import CustomerLedger from './pages/CustomerLedger';
 import CreateInvoice from './pages/CreateInvoice';
 import TallySync from './pages/TallySync';
 import Reports from './pages/Reports';
-import BusinessOnboarding from './pages/BusinessOnboarding';
 import DemandForecast from './pages/DemandForecast';
 
 function AppRoutes() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-950">
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 rounded-full border-4 border-slate-800"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-t-indigo-500 animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Routes>
@@ -64,19 +75,20 @@ function AppRoutes() {
 
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/invoices/create" element={<CreateInvoice />} />
-        <Route path="/invoices/:id" element={<InvoiceDetail />} />
-        <Route path="/customers" element={<CustomerLedger />} />
-        <Route path="/tally" element={<TallySync />} />
-        <Route path="/forecast" element={<DemandForecast />} />
-        <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route element={<DashboardLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/invoices/create" element={<CreateInvoice />} />
+          <Route path="/invoices/:id" element={<InvoiceDetail />} />
+          <Route path="/customers" element={<CustomerLedger />} />
+          <Route path="/tally" element={<TallySync />} />
+          <Route path="/forecast" element={<DemandForecast />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
 
-        {/* Protected + Admin Routes */}
-        <Route element={<AdminRoute />}>
-          <Route path="/admin/settings" element={<AdminSettings />} />
-          <Route path="/settings/onboarding" element={<BusinessOnboarding />} />
-          <Route path="/reports" element={<Reports />} />
+          {/* Protected + Admin Routes */}
+          <Route element={<AdminRoute />}>
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/reports" element={<Reports />} />
+          </Route>
         </Route>
       </Route>
 

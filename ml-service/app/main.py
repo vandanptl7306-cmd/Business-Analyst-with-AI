@@ -1612,6 +1612,206 @@ def post_chat_query(req: ChatRequest):
         raise HTTPException(status_code=500, detail=f"Chat Agent AI error: {str(e)}")
 
 
+@app.get("/api/ai/customers/clv-predictions")
+def predict_clv_and_churn():
+    """
+    Analyzes historical client invoices to calculate RFM stats, predict Churn risk,
+    and estimate Customer Lifetime Value (CLV).
+    """
+    try:
+        df = get_live_sales_data()
+        if df.empty:
+            df = get_mock_sales_data()
+
+        # Group invoices by unique invoiceNumber to get customer visits
+        inv_grouped = df.groupby(["invoiceNumber", "buyerName"]).agg({
+            "date": "first",
+            "grandTotal": "first",
+            "netProfit": "first"
+        }).reset_index()
+
+        now = datetime.now()
+        customer_profiles = []
+
+        # Group by buyer
+        for buyer, group in inv_grouped.groupby("buyerName"):
+            group = group.sort_values("date")
+            dates = group["date"].tolist()
+            grand_totals = group["grandTotal"].tolist()
+            profits = group["netProfit"].tolist()
+
+            total_spend = sum(grand_totals)
+            total_profit = sum(profits)
+            frequency = len(dates)
+            last_purchase_date = dates[-1]
+            recency = (now - last_purchase_date).days
+
+            # Calculate average interval in days
+            if frequency > 1:
+                intervals = [(dates[j] - dates[j-1]).days for j in range(1, len(dates))]
+                avg_interval = np.mean(intervals)
+                interval_std = np.std(intervals) if len(intervals) > 1 else 10.0
+            else:
+                avg_interval = 30.0  # default
+                interval_std = 15.0
+
+            # Calculate Churn Probability
+            # If recency is larger than avg_interval, probability climbs
+            if recency <= avg_interval:
+                churn_prob = (recency / avg_interval) * 0.3
+            else:
+                overdue = recency - avg_interval
+                churn_prob = 0.3 + min(0.7, (overdue / (avg_interval * 2)))
+
+            # Cap churn probability between 0 and 1
+            churn_prob = max(0.0, min(1.0, float(churn_prob)))
+
+            # Flag churn warning
+            is_at_risk = recency > (avg_interval + 1.5 * interval_std)
+
+            # Customer Lifetime Value (CLV) calculation:
+            # CLV = Current Total Profit + (Average Profit per Order * Predicted future orders next 90 days)
+            # Predicted orders next 90d = 90 / avg_interval (discounted by survival probability)
+            survival_prob = 1.0 - churn_prob
+            avg_profit_per_order = total_profit / frequency
+            predicted_future_orders = (90.0 / max(avg_interval, 5.0)) * survival_prob
+            predicted_clv = total_spend + (avg_profit_per_order * predicted_future_orders)
+
+            customer_profiles.append({
+                "buyerName": buyer,
+                "recency_days": int(recency),
+                "frequency": int(frequency),
+                "total_spend": float(round(total_spend, 2)),
+                "total_profit": float(round(total_profit, 2)),
+                "avg_interval_days": float(round(avg_interval, 1)),
+                "churn_probability": float(round(churn_prob * 100, 1)),
+                "is_at_risk": bool(is_at_risk),
+                "predicted_clv_90d": float(round(predicted_clv, 2))
+            })
+
+        # Sort profiles: At risk first, then by spend
+        at_risk_list = sorted([c for c in customer_profiles if c["is_at_risk"]], key=lambda x: x["churn_probability"], reverse=True)
+        all_customers = sorted(customer_profiles, key=lambda x: x["predicted_clv_90d"], reverse=True)
+
+        return {
+            "success": True,
+            "all_customers": all_customers,
+            "at_risk_customers": at_risk_list
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"CLV forecasting failed: {str(e)}")
+
+
+@app.get("/api/ai/inventory/reorder-warnings")
+def get_reorder_predictions():
+    """
+    Computes sales velocity, safety stock, and reorder alerts for each product.
+    Determines stock depletion dates and flags urgent reorder warnings.
+    """
+    try:
+        df = get_live_sales_data()
+        if df.empty:
+            df = get_mock_sales_data()
+
+        # Group by product
+        products_df = get_products_data()
+        alerts = []
+
+        now = datetime.now()
+
+        # Lead time default is 7 days, safety stock coefficient (Z) is 1.65 (95% service level)
+        lead_time_days = 7
+        z_score = 1.65
+
+        for _, row in products_df.iterrows():
+            prod_id = row["productId"]
+            name = row["name"]
+            sku = row["sku"]
+
+            # Filter sales for this product
+            prod_sales = df[df["productId"] == prod_id]
+
+            # Current stock simulation (mock levels since MongoDB doesn't store live stock counts)
+            # Default to a mock stock value based on product ID to remain consistent
+            if prod_id == "prod_1":
+                current_stock = 85
+            elif prod_id == "prod_2":
+                current_stock = 15
+            elif prod_id == "prod_3":
+                current_stock = 110
+            elif prod_id == "prod_4":
+                current_stock = 25
+            else:
+                current_stock = 45
+
+            # Calculate daily sales over the last 30 days
+            last_30d_date = now - timedelta(days=30)
+            sales_30d = prod_sales[prod_sales["date"] >= last_30d_date]
+            
+            # Aggregate by day
+            daily_qtys = sales_30d.groupby(sales_30d["date"].dt.date)["quantity"].sum()
+            
+            # Pad empty days with zero sales to get realistic velocity
+            all_days = pd.date_range(start=last_30d_date, end=now, freq="D").date
+            padded_series = pd.Series(0, index=all_days)
+            for d, qty in daily_qtys.items():
+                padded_series[d] = qty
+
+            avg_daily_demand = float(padded_series.mean())
+            std_daily_demand = float(padded_series.std()) if len(padded_series) > 1 else 1.0
+
+            # If no sales at all, set minimum default velocity to prevent division by zero
+            velocity = max(avg_daily_demand, 0.1)
+
+            # Safety Stock = Z * StdDev * sqrt(LeadTime)
+            safety_stock = z_score * std_daily_demand * np.sqrt(lead_time_days)
+            safety_stock = float(round(safety_stock, 1))
+
+            # Reorder Point (ROP) = (Average Daily Sales * Lead Time) + Safety Stock
+            reorder_point = (velocity * lead_time_days) + safety_stock
+            reorder_point = float(round(reorder_point, 1))
+
+            # Days until out of stock
+            days_to_depletion = current_stock / velocity
+            depletion_date = now + timedelta(days=days_to_depletion)
+
+            # Reorder lead date (depletion date minus lead time)
+            must_reorder_by = depletion_date - timedelta(days=lead_time_days)
+
+            # Set status
+            if current_stock <= safety_stock:
+                status = "CRITICAL"
+                recommendation = f"Stock level ({current_stock}) is below safety threshold ({safety_stock}). Restock immediately!"
+            elif current_stock <= reorder_point:
+                status = "REORDER"
+                recommendation = f"Place order of {int(velocity * 30)} units now to avoid out-of-stock before delivery."
+            else:
+                status = "OK"
+                recommendation = f"Stock level healthy. Reorder expected around {must_reorder_by.strftime('%d %b %Y')}."
+
+            alerts.append({
+                "productId": prod_id,
+                "name": name,
+                "sku": sku,
+                "current_stock": current_stock,
+                "daily_sales_velocity": float(round(velocity, 2)),
+                "safety_stock": safety_stock,
+                "reorder_point": reorder_point,
+                "days_to_depletion": float(round(days_to_depletion, 1)),
+                "estimated_depletion_date": depletion_date.strftime("%Y-%m-%d"),
+                "must_reorder_by_date": must_reorder_by.strftime("%Y-%m-%d"),
+                "status": status,
+                "recommendation": recommendation
+            })
+
+        return {
+            "success": True,
+            "alerts": alerts
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Inventory forecasting failed: {str(e)}")
+
+
 if __name__ == "__main__":
     import uvicorn
     # Passing the FastAPI app object directly makes direct script execution robust

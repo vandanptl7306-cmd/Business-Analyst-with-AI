@@ -14,7 +14,7 @@ const setupMockDB = () => {
   const store = {
     users: [
       {
-        _id: new mongoose.Types.ObjectId(),
+        _id: new mongoose.Types.ObjectId('60c72b2f9b1d8b2c88888888'),
         name: 'Admin User',
         email: 'admin@example.com',
         password: '$2a$10$lL9WYyb4pN4751xlnlSmDuQYGTdI1iVrTwAOIb2omo1zLtDE10VzO',

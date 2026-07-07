@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&family=Poppins:wght@600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,11 +6,17 @@
 
 /* Premium Color Scheme */
 :root {
+  --primary-bg: #F8FAFC;
+  --card-bg: #FFFFFF;
+  --accent-ai: #6366F1;
+  --text-main: #1E293B;
+  --text-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
   --color-navy: #0f172e;
   --color-deepnavy: #0a0f24;
   --color-slate: #1a1f35;
   --color-teal: #14b8a6;
-  --color-accent: #c9a96e;
+  --color-accent: #6366F1;
   --color-gold: #d4a373;
   --color-light: #f8fafc;
   --color-muted: #94a3b8;
@@ -22,8 +28,8 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #0f172e 0%, #0a0f24 50%, #0f172e 100%);
-  color: #f8fafc;
+  background: #f8fafc;
+  color: #1e293b;
   background-attachment: fixed;
 }
 
@@ -161,4 +167,128 @@ textarea:focus-visible {
 /* Smooth Transitions */
 * {
   @apply transition-colors duration-200;
+}
+
+/* Dashboard Layout System: Grid of Truth */
+.dashboard-grid-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+  background-color: var(--primary-bg);
+  color: var(--text-main);
+  font-family: 'Inter', sans-serif;
+}
+
+.dashboard-sidebar {
+  grid-column: 1;
+  background-color: #0b0f24; /* deep navy theme */
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  color: #e2e8f0;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.dashboard-workspace {
+  grid-column: 2;
+  padding: 2.5rem;
+  background-color: #f8fafc;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-grid-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .dashboard-sidebar {
+    grid-column: 1;
+    width: 100%;
+    height: auto;
+    position: relative;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  .dashboard-workspace {
+    grid-column: 1;
+    padding: 1.5rem;
+  }
+}
+
+/* Color Variables and Typography already defined above in :root */
+
+/* Glassmorphism */
+.glass-ai-panel {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(99, 102, 241, 0.12);
+  box-shadow: 0 8px 32px 0 rgba(99, 102, 241, 0.04);
+}
+
+.glass-navbar {
+  background: rgba(248, 250, 252, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(30, 41, 59, 0.05);
+}
+
+/* Cards & Portfolio Panels */
+.card-module {
+  background-color: var(--card-bg);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-module:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.1), 0 10px 10px -5px rgba(99, 102, 241, 0.04);
+}
+
+/* Financial & Data figures styling */
+.financial-figure {
+  font-family: var(--text-mono);
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  color: var(--text-main);
+}
+
+/* Animation on load for graphs */
+@keyframes drawGraph {
+  from {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.animate-graph-bar {
+  transform-origin: bottom;
+  animation: drawGraph 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes drawStroke {
+  from {
+    stroke-dashoffset: 1000;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-graph-stroke {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: drawStroke 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

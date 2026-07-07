@@ -49,6 +49,179 @@ const storeSettingsSchema = new mongoose.Schema(
       enum: ['Retail', 'Wholesale', 'Manufacturing'],
       default: 'Retail',
     },
+    
+    // Printer Type
+    printerType: {
+      type: String,
+      enum: ['Regular', 'Thermal'],
+      default: 'Regular'
+    },
+
+    // Regular Printer configuration
+    regularLayoutTheme: {
+      type: String,
+      default: 'Standard'
+    },
+    regularThemeColor: {
+      type: String,
+      default: '#2563eb'
+    },
+    printRepeatHeader: {
+      type: Boolean,
+      default: false
+    },
+    
+    // Print Company Info / Header toggles & overrides
+    printCompanyName: {
+      type: Boolean,
+      default: true
+    },
+    customCompanyName: {
+      type: String,
+      default: ''
+    },
+    printCompanyLogo: {
+      type: Boolean,
+      default: true
+    },
+    customLogoUrl: {
+      type: String,
+      default: ''
+    },
+    printAddress: {
+      type: Boolean,
+      default: true
+    },
+    customAddress: {
+      type: String,
+      default: ''
+    },
+    printEmail: {
+      type: Boolean,
+      default: true
+    },
+    customEmail: {
+      type: String,
+      default: ''
+    },
+    printPhone: {
+      type: Boolean,
+      default: true
+    },
+    customPhone: {
+      type: String,
+      default: ''
+    },
+    printGSTIN: {
+      type: Boolean,
+      default: true
+    },
+    customGSTIN: {
+      type: String,
+      default: ''
+    },
+
+    // Paper size, layout sizes
+    paperSize: {
+      type: String,
+      enum: ['A4', 'A5', 'Letter'],
+      default: 'A4'
+    },
+    orientation: {
+      type: String,
+      enum: ['Portrait', 'Landscape'],
+      default: 'Portrait'
+    },
+    companyNameTextSize: {
+      type: String,
+      enum: ['Small', 'Medium', 'Large'],
+      default: 'Large'
+    },
+    invoiceTextSize: {
+      type: String,
+      enum: ['Small', 'Medium', 'Large'],
+      default: 'Large'
+    },
+
+    // Totals & Taxes checkboxes
+    printTotalQty: {
+      type: Boolean,
+      default: true
+    },
+    amountWithDecimal: {
+      type: Boolean,
+      default: true
+    },
+    printReceivedAmount: {
+      type: Boolean,
+      default: true
+    },
+    printBalanceAmount: {
+      type: Boolean,
+      default: false
+    },
+    printCurrentBalance: {
+      type: Boolean,
+      default: false
+    },
+    printTaxDetails: {
+      type: Boolean,
+      default: true
+    },
+    printYouSaved: {
+      type: Boolean,
+      default: false
+    },
+    printAmountWithGrouping: {
+      type: Boolean,
+      default: true
+    },
+    amountInWordsFormat: {
+      type: String,
+      enum: ['Indian', 'International'],
+      default: 'Indian'
+    },
+
+    // Footer options
+    printDescription: {
+      type: Boolean,
+      default: true
+    },
+
+    // Thermal Printer configuration
+    thermalPrintingType: {
+      type: String,
+      enum: ['Text Printing', 'Graphics Printing'],
+      default: 'Text Printing'
+    },
+    thermalUseTextStylingBold: {
+      type: Boolean,
+      default: true
+    },
+    thermalAutoCut: {
+      type: Boolean,
+      default: true
+    },
+    thermalOpenCashDrawer: {
+      type: Boolean,
+      default: true
+    },
+    thermalExtraLines: {
+      type: Number,
+      default: 0
+    },
+    thermalCopies: {
+      type: Number,
+      default: 1
+    },
+    thermalPrintCompanyName: {
+      type: Boolean,
+      default: true
+    },
+    thermalCompanyName: {
+      type: String,
+      default: ''
+    }
   },
   {
     timestamps: true,
