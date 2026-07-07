@@ -20,6 +20,7 @@ import CreateInvoice from './pages/CreateInvoice';
 import TallySync from './pages/TallySync';
 import Reports from './pages/Reports';
 import DemandForecast from './pages/DemandForecast';
+import StockManagement from './pages/StockManagement';
 
 function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();
@@ -45,11 +46,10 @@ function AppRoutes() {
           isAuthenticated ? (
             <Navigate to="/dashboard" replace />
           ) : (
-            <div className="min-h-screen relative flex items-center justify-center px-4 overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900">
-              {/* Animated gradient orbs */}
-              <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-teal-500/10 blur-3xl pointer-events-none animate-pulse-subtle"></div>
-              <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-amber-500/10 blur-3xl pointer-events-none animate-pulse-subtle" style={{ animationDelay: '1s' }}></div>
-              <div className="absolute top-1/2 right-1/3 w-72 h-72 rounded-full bg-teal-500/5 blur-3xl pointer-events-none animate-pulse-subtle" style={{ animationDelay: '2s' }}></div>
+            <div className="min-h-screen relative flex items-center justify-center px-4 overflow-hidden bg-gradient-to-br from-slate-100 via-white to-indigo-50">
+              {/* Soft background orbs */}
+              <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-indigo-200/30 blur-3xl pointer-events-none"></div>
+              <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-slate-200/40 blur-3xl pointer-events-none"></div>
               <Login onToggleMode={() => navigate('/register')} />
             </div>
           )
@@ -62,11 +62,10 @@ function AppRoutes() {
           isAuthenticated ? (
             <Navigate to="/dashboard" replace />
           ) : (
-            <div className="min-h-screen relative flex items-center justify-center px-4 overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900">
-              {/* Animated gradient orbs */}
-              <div className="absolute top-1/3 right-1/3 w-96 h-96 rounded-full bg-amber-500/10 blur-3xl pointer-events-none animate-pulse-subtle"></div>
-              <div className="absolute bottom-1/3 left-1/4 w-96 h-96 rounded-full bg-teal-500/10 blur-3xl pointer-events-none animate-pulse-subtle" style={{ animationDelay: '1s' }}></div>
-              <div className="absolute top-1/2 right-1/2 w-72 h-72 rounded-full bg-amber-500/5 blur-3xl pointer-events-none animate-pulse-subtle" style={{ animationDelay: '2s' }}></div>
+            <div className="min-h-screen relative flex items-center justify-center px-4 overflow-hidden bg-gradient-to-br from-slate-100 via-white to-indigo-50">
+              {/* Soft background orbs */}
+              <div className="absolute top-1/3 right-1/3 w-96 h-96 rounded-full bg-indigo-200/30 blur-3xl pointer-events-none"></div>
+              <div className="absolute bottom-1/3 left-1/4 w-96 h-96 rounded-full bg-slate-200/40 blur-3xl pointer-events-none"></div>
               <Register onToggleMode={() => navigate('/login')} />
             </div>
           )
@@ -80,6 +79,7 @@ function AppRoutes() {
           <Route path="/invoices/create" element={<CreateInvoice />} />
           <Route path="/invoices/:id" element={<InvoiceDetail />} />
           <Route path="/customers" element={<CustomerLedger />} />
+          <Route path="/stock" element={<StockManagement />} />
           <Route path="/tally" element={<TallySync />} />
           <Route path="/forecast" element={<DemandForecast />} />
           <Route path="/unauthorized" element={<Unauthorized />} />

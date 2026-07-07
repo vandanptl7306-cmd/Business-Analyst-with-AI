@@ -149,8 +149,8 @@ export default function Dashboard() {
       {/* Stats Grid: fluid layout using card-module */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: 'Total Revenue', value: kpis ? `$${kpis.totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : `$${invoices.reduce((acc, i) => acc + i.grandTotal, 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, icon: DollarSign, change: 'Live Revenue', bgGradient: 'bg-indigo-50 text-indigo-600' },
-          { label: 'Net Profit', value: kpis ? `$${kpis.totalProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : `$${invoices.reduce((acc, i) => acc + (i.netProfit || 0), 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, icon: TrendingUp, change: 'Live Profit', bgGradient: 'bg-emerald-50 text-emerald-600' },
+          { label: 'Total Revenue', value: kpis ? `₹${kpis.totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : `₹${invoices.reduce((acc, i) => acc + i.grandTotal, 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, icon: DollarSign, change: 'Live Revenue', bgGradient: 'bg-indigo-50 text-indigo-600' },
+          { label: 'Net Profit', value: kpis ? `₹${kpis.totalProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : `₹${invoices.reduce((acc, i) => acc + (i.netProfit || 0), 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, icon: TrendingUp, change: 'Live Profit', bgGradient: 'bg-emerald-50 text-emerald-600' },
           { label: 'Customer Repeat Rate', value: kpis ? `${kpis.repeatCustomerRate}%` : '35.0%', icon: Users, change: 'Retention', bgGradient: 'bg-purple-50 text-purple-600' },
           { label: 'Total Accounts', value: kpis ? kpis.customersAcquired.toString() : '8', icon: UserCheck, change: 'Acquired', bgGradient: 'bg-amber-50 text-amber-600' },
         ].map((stat, i) => (
@@ -279,7 +279,7 @@ export default function Dashboard() {
                       <div className="font-semibold text-slate-800">{inv.buyerName}</div>
                       <div className="text-[9px] text-slate-450 font-mono mt-0.5">{inv.buyerGSTIN}</div>
                     </td>
-                    <td className="px-4 py-3.5 text-right font-bold text-slate-800 font-mono">${inv.grandTotal.toFixed(2)}</td>
+                    <td className="px-4 py-3.5 text-right font-bold text-slate-800 font-mono">₹{inv.grandTotal.toFixed(2)}</td>
                     <td className="px-4 py-3.5 text-center">
                       <InvoiceStatusBadge status={inv.status} />
                     </td>

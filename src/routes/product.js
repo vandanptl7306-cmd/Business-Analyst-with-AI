@@ -2,15 +2,28 @@
 
 const express = require('express');
 const router = express.Router();
-const { createProduct, getProducts } = require('../controllers/productController');
+const {
+  createProduct,
+  getProducts,
+  getLowStockProducts,
+  updateProduct,
+  deleteProduct,
+  deductStock,
+} = require('../controllers/productController');
 const { validateProductProfile } = require('../middleware/profileValidation');
 const { protect } = require('../middleware/auth');
 
-// Apply protection to all catalog endpoints
+// Apply JWT protection to all product routes
 router.use(protect);
 
-router.post('/', validateProductProfile, createProduct);
+// Stock catalog CRUD
 router.get('/', getProducts);
+router.post('/', validateProductProfile, createProduct);
+router.get('/low-stock', getLowStockProducts);
+router.put('/:id', updateProduct);
+router.delete('/:id', deleteProduct);
+
+// Stock adjustment
+router.post('/:id/deduct', deductStock);
 
 module.exports = router;
-// 

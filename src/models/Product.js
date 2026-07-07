@@ -75,6 +75,31 @@ const productSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+
+    // --- STOCK / INVENTORY FIELDS ---
+    // quantity: current in-hand stock count
+    quantity: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    // expiryDate: optional, relevant for perishable goods / pharma / FMCG
+    expiryDate: {
+      type: Date,
+      default: null,
+    },
+    // lowStockThreshold: alert fires when quantity drops below this value
+    lowStockThreshold: {
+      type: Number,
+      default: 5,
+      min: 0,
+    },
+    // unit: measurement unit for display (e.g. "kg", "pcs", "litre")
+    unit: {
+      type: String,
+      trim: true,
+      default: 'pcs',
+    },
   },
   {
     timestamps: true,

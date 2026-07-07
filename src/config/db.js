@@ -29,9 +29,40 @@ const setupMockDB = () => {
       { _id: new mongoose.Types.ObjectId(), name: 'Gamma Industries', phoneNumber: '+919555666777', outstandingBalance: 0 }
     ],
     products: [
-      { _id: new mongoose.Types.ObjectId(), name: 'Organic Rice', sku: 'RIC-ORG-01', mrp: 85, sellingPrice: 80, averageCostPrice: 60 },
-      { _id: new mongoose.Types.ObjectId(), name: 'Premium Olive Oil', sku: 'OIL-PRE-02', mrp: 270, sellingPrice: 250, averageCostPrice: 180 },
-      { _id: new mongoose.Types.ObjectId(), name: 'Organic Tea', sku: 'TEA-ORG-03', mrp: 50, sellingPrice: 45, averageCostPrice: 30 }
+      {
+        _id: new mongoose.Types.ObjectId(), name: 'Organic Rice', sku: 'RIC-ORG-01',
+        mrp: 85, sellingPrice: 80, averageCostPrice: 60, taxRate: 5, isTaxInclusive: true,
+        quantity: 120, lowStockThreshold: 20, unit: 'kg',
+        expiryDate: null, createdAt: new Date(), updatedAt: new Date()
+      },
+      {
+        _id: new mongoose.Types.ObjectId(), name: 'Premium Olive Oil', sku: 'OIL-PRE-02',
+        mrp: 270, sellingPrice: 250, averageCostPrice: 180, taxRate: 12, isTaxInclusive: true,
+        quantity: 8, lowStockThreshold: 10, unit: 'litre',
+        expiryDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // expires in 15 days
+        createdAt: new Date(), updatedAt: new Date()
+      },
+      {
+        _id: new mongoose.Types.ObjectId(), name: 'Organic Tea', sku: 'TEA-ORG-03',
+        mrp: 50, sellingPrice: 45, averageCostPrice: 30, taxRate: 5, isTaxInclusive: true,
+        quantity: 3, lowStockThreshold: 15, unit: 'pcs',
+        expiryDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // expires in 60 days
+        createdAt: new Date(), updatedAt: new Date()
+      },
+      {
+        _id: new mongoose.Types.ObjectId(), name: 'Whole Wheat Flour', sku: 'FLR-WW-04',
+        mrp: 45, sellingPrice: 40, averageCostPrice: 28, taxRate: 0, isTaxInclusive: true,
+        quantity: 55, lowStockThreshold: 10, unit: 'kg',
+        expiryDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+        createdAt: new Date(), updatedAt: new Date()
+      },
+      {
+        _id: new mongoose.Types.ObjectId(), name: 'Cold Press Coconut Oil', sku: 'OIL-COC-05',
+        mrp: 180, sellingPrice: 165, averageCostPrice: 110, taxRate: 12, isTaxInclusive: true,
+        quantity: 0, lowStockThreshold: 5, unit: 'litre',
+        expiryDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
+        createdAt: new Date(), updatedAt: new Date()
+      },
     ],
     storesettings: [
       {
@@ -197,6 +228,10 @@ const setupMockDB = () => {
               mrp: 85,
               sellingPrice: 80,
               averageCostPrice: 60,
+              quantity: 100,
+              lowStockThreshold: 20,
+              unit: 'kg',
+              expiryDate: null,
               createdAt: new Date(),
               updatedAt: new Date()
             };
