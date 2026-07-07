@@ -407,10 +407,12 @@ export default function SettingsPage() {
                     <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wide">Layout Format</h3>
                     <div className="grid grid-cols-2 gap-4">
                       {[
-                        { id: 'Standard', name: 'GST Theme Standard' },
-                        { id: 'Theme5', name: 'GST Theme 5' },
-                        { id: 'Theme6', name: 'GST Theme 6' },
-                        { id: 'Elite', name: 'French Elite Standard' }
+                        { id: 'Standard', name: 'Standard Theme' },
+                        { id: 'TaxInvoice', name: 'GST Tax Invoice' },
+                        { id: 'Minimalist', name: 'Minimalist Layout' },
+                        { id: 'Commercial', name: 'Commercial Layout' },
+                        { id: 'Modern', name: 'Modern Layout' },
+                        { id: 'Proforma', name: 'Proforma Purple Layout' }
                       ].map((lay) => (
                         <div
                           key={lay.id}

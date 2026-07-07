@@ -37,7 +37,7 @@ const storeSettingsSchema = new mongoose.Schema(
     },
     defaultInvoiceTemplate: {
       type: String,
-      enum: ['Standard', 'Modern', 'Thermal', 'TaxInvoice', 'Minimalist', 'Commercial'],
+      enum: ['Standard', 'Modern', 'Thermal', 'TaxInvoice', 'Minimalist', 'Commercial', 'Proforma'],
       default: 'Standard',
     },
     invoiceThemeColor: {

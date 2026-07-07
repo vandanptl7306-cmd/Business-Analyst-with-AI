@@ -861,6 +861,378 @@ const getInvoiceHTML = (invoice, store, template) => {
     `;
   }
 
+  // 5. --- PROFORMA PURPLE LAYOUT TEMPLATE (User Design) ---
+  if (template === 'Proforma') {
+    // Generate Padded Rows for Proforma
+    const paddedItems = [...invoice.items];
+    while (paddedItems.length < 5) {
+      paddedItems.push({
+        description: '',
+        hsnCode: '',
+        quantity: '',
+        price: '',
+        totalAmount: 0
+      });
+    }
+
+    const itemRowsPadded = paddedItems.map((item, idx) => {
+      const isPlaceholder = !item.description;
+      const desc = isPlaceholder ? '' : item.description;
+      const subDesc = isPlaceholder ? '' : `<div style="font-size: 9px; color: #64748b; margin-top: 2px;">HSN: ${item.hsnCode || 'N/A'}</div>`;
+      const rate = isPlaceholder ? '' : `${formatAmount(item.isTaxInclusive ? item.mrp : item.price)}`;
+      const qty = isPlaceholder ? '' : item.quantity;
+      const amount = isPlaceholder ? '0' : `${formatAmount(item.totalAmount)}`;
+      return `
+        <tr>
+          <td class="index-col">${idx + 1}</td>
+          <td>
+            <strong>${desc}</strong>
+            ${subDesc}
+          </td>
+          <td style="text-align: right; font-family: monospace;">${rate}</td>
+          <td style="text-align: center;">${qty}</td>
+          <td style="text-align: right; font-family: monospace;">${amount}</td>
+        </tr>
+      `;
+    }).join('');
+
+    return `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Proforma Invoice #${invoice.invoiceNumber}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+        <style>
+          @page { size: ${store.paperSize || 'A4'} ${store.orientation || 'portrait'}; margin: 10mm; }
+          body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff;
+            color: #334155;
+            padding: 0;
+            margin: 0;
+            line-height: 1.4;
+            font-size: 11px;
+          }
+          .proforma-container {
+            max-width: 800px;
+            margin: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            padding-bottom: 20px;
+          }
+          .top-banner {
+            background-color: ${themeColor};
+            color: #ffffff;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+          }
+          .top-banner .banner-logo {
+            position: absolute;
+            left: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            max-height: 60px;
+          }
+          .top-banner h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+          }
+          .top-banner p {
+            margin: 4px 0 0 0;
+            font-size: 10px;
+            opacity: 0.9;
+          }
+          .section-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px 24px 0 24px;
+          }
+          .sub-banner {
+            background-color: ${themeColor};
+            color: #ffffff;
+            padding: 6px 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 10px;
+            border-radius: 2px;
+            margin-bottom: 10px;
+          }
+          .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+          }
+          .info-table td {
+            padding: 4px 0;
+            vertical-align: top;
+            font-size: 11px;
+          }
+          .info-table td.label {
+            font-weight: 700;
+            color: #0f172a;
+            width: 120px;
+          }
+          .items-table {
+            width: calc(100% - 48px);
+            margin: 20px 24px;
+            border-collapse: collapse;
+          }
+          .items-table th {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 10px;
+            padding: 10px 12px;
+            border-bottom: 2px solid #cbd5e1;
+          }
+          .items-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 11px;
+            vertical-align: middle;
+          }
+          .items-table td.index-col {
+            background-color: ${themeColor}0d;
+            font-weight: 700;
+            text-align: center;
+            width: 30px;
+            border-right: 1px solid #cbd5e1;
+            color: ${themeColor};
+          }
+          .bottom-section {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 30px;
+            padding: 0 24px;
+            margin-top: 15px;
+          }
+          .checkbox-block {
+            display: flex;
+            align-items: flex-start;
+            margin: 12px 0;
+            font-size: 10px;
+            color: #64748b;
+          }
+          .checkbox-block input {
+            margin-right: 6px;
+            margin-top: 2px;
+          }
+          .signature-block {
+            margin-top: 15px;
+          }
+          .signature-block td {
+            padding: 4px 0;
+          }
+          .totals-box {
+            width: 100%;
+          }
+          .totals-box table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          .totals-box td {
+            padding: 6px 8px;
+            font-size: 11px;
+          }
+          .totals-box tr.highlight {
+            background-color: ${themeColor}15;
+            font-weight: 700;
+            color: ${themeColor};
+            border-top: 1.5px solid ${themeColor};
+          }
+          .totals-box tr.highlight td {
+            font-size: 13px;
+            padding: 8px;
+          }
+          .notes-block {
+            padding: 0 24px;
+            font-size: 10px;
+            color: #64748b;
+            margin-top: 20px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="proforma-container">
+          <div class="top-banner">
+            <div class="banner-logo">
+              ${logoHTML ? logoHTML : `<svg width="45" height="45" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>`}
+            </div>
+            <h1>Proforma Invoice</h1>
+            <p>${store.customAddress || store.address}</p>
+            <p>
+              ${store.printPhone !== false ? `Ph: ${store.customPhone || store.phoneNumber}` : ''} 
+              ${store.printEmail !== false ? ` • Email: ${store.customEmail || store.email}` : ''}
+              ${store.printGSTIN !== false ? ` • GSTIN: ${store.customGSTIN || store.gstin}` : ''}
+            </p>
+          </div>
+
+          <div class="section-grid">
+            <div>
+              <div class="sub-banner">Bill To</div>
+              <table class="info-table">
+                <tr>
+                  <td class="label">Name</td>
+                  <td>${invoice.buyerName}</td>
+                </tr>
+                <tr>
+                  <td class="label">Email</td>
+                  <td>${invoice.buyerEmail || 'customer@example.com'}</td>
+                </tr>
+                <tr>
+                  <td class="label">Phone Number</td>
+                  <td>${invoice.buyerPhone || 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td class="label">Address</td>
+                  <td>${invoice.buyerBillingAddress}</td>
+                </tr>
+              </table>
+            </div>
+            <div>
+              <div class="sub-banner">Ship To</div>
+              <table class="info-table">
+                <tr>
+                  <td class="label">Name</td>
+                  <td>${invoice.buyerName}</td>
+                </tr>
+                <tr>
+                  <td class="label">Email</td>
+                  <td>${invoice.buyerEmail || 'customer@example.com'}</td>
+                </tr>
+                <tr>
+                  <td class="label">Phone Number</td>
+                  <td>${invoice.buyerPhone || 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td class="label">Address</td>
+                  <td>${invoice.buyerBillingAddress}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <div class="section-grid" style="margin-top: 10px;">
+            <div>
+              <div class="sub-banner">Shipping Details</div>
+              <table class="info-table">
+                <tr>
+                  <td class="label">Est. Ship Date</td>
+                  <td>${new Date(invoice.invoiceDate).toLocaleDateString()}</td>
+                </tr>
+                <tr>
+                  <td class="label">Est. Weight (kg)</td>
+                  <td>100</td>
+                </tr>
+                <tr>
+                  <td class="label">Transportation</td>
+                  <td>Land</td>
+                </tr>
+                <tr>
+                  <td class="label">Carrier</td>
+                  <td>LBC Delivery</td>
+                </tr>
+              </table>
+            </div>
+            <div>
+              <div class="sub-banner">Invoice Details</div>
+              <table class="info-table">
+                <tr>
+                  <td class="label">Invoice #</td>
+                  <td>${invoice.invoiceNumber}</td>
+                </tr>
+                <tr>
+                  <td class="label">Invoice Date</td>
+                  <td>${new Date(invoice.invoiceDate).toLocaleDateString()}</td>
+                </tr>
+                <tr>
+                  <td class="label">Due Date</td>
+                  <td>${new Date(new Date(invoice.invoiceDate).getTime() + 15*24*60*60*1000).toLocaleDateString()}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th style="width: 5%; text-align: center;">#</th>
+                <th style="width: 55%; text-align: left;">Description</th>
+                <th style="width: 15%; text-align: right;">Price (${currencySymbol})</th>
+                <th style="width: 10%; text-align: center;">Quantity</th>
+                <th style="width: 15%; text-align: right;">Amount (${currencySymbol})</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemRowsPadded}
+            </tbody>
+          </table>
+
+          <div class="bottom-section">
+            <div>
+              <table class="info-table">
+                <tr>
+                  <td class="label">Payment Method</td>
+                  <td>${invoice.paymentMode || 'Check'}</td>
+                </tr>
+              </table>
+              
+              <div class="checkbox-block">
+                <input type="checkbox" checked onclick="return false;" />
+                <span>I acknowledge that the information above is accurate and true.</span>
+              </div>
+
+              <table class="info-table signature-block">
+                <tr>
+                  <td class="label">Shipper Name</td>
+                  <td>Jamie Thomas</td>
+                </tr>
+                <tr>
+                  <td class="label">Shipper Signature</td>
+                  <td style="font-style: italic; color: #64748b; font-family: 'Georgia', serif;">Jamie Thomas</td>
+                </tr>
+              </table>
+            </div>
+            
+            <div class="totals-box">
+              <table>
+                <tr>
+                  <td>Subtotal:</td>
+                  <td style="text-align: right; font-family: monospace;">${currencySymbol}${formatAmount(invoice.subTotal)}</td>
+                </tr>
+                <tr>
+                  <td>Tax (${currencySymbol}):</td>
+                  <td style="text-align: right; font-family: monospace;">${currencySymbol}${formatAmount(invoice.taxTotal)}</td>
+                </tr>
+                <tr>
+                  <td>Shipping (${currencySymbol}):</td>
+                  <td style="text-align: right; font-family: monospace;">${currencySymbol}${formatAmount(0)}</td>
+                </tr>
+                <tr class="highlight">
+                  <td>Total Amount:</td>
+                  <td style="text-align: right; font-family: monospace;">${currencySymbol}${formatAmount(invoice.grandTotal)}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <div class="notes-block">
+            <strong>Notes:</strong> This invoice is in ${isIndianFormat ? 'INR' : 'USD'}. Total payment due is 30 days.
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
   // 4. --- Standard / Modern / Thermal layouts fallback ---
   let customStyle = '';
 

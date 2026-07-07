@@ -167,6 +167,7 @@ export default function InvoiceDetail() {
                 <option value="TaxInvoice">GST Tax Invoice</option>
                 <option value="Minimalist">Minimal Corporate</option>
                 <option value="Commercial">Commercial Invoice</option>
+                <option value="Proforma">Proforma Purple Layout</option>
               </select>
             </div>
 
