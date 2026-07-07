@@ -899,121 +899,432 @@ export default function SettingsPage() {
             </div>
 
             {/* Regular PDF preview sheet */}
-            {activeTab !== 'Thermal' ? (
-              <div 
-                className="border border-slate-200/80 bg-white rounded-xl shadow-xl p-5 mx-auto max-w-[340px] text-[9px] text-slate-600 space-y-4 select-none relative overflow-hidden transition-all duration-300"
-                style={{ 
-                  fontFamily: 'Inter, sans-serif',
-                  borderColor: regularThemeColor + '20',
-                  boxShadow: `0 20px 25px -5px ${regularThemeColor}05`
-                }}
-              >
-                {/* Header branding band */}
-                <div className="flex justify-between items-start border-b border-slate-150 pb-3">
-                  <div className="space-y-1">
-                    {printCompanyName && (
-                      <div 
-                        className="font-bold text-slate-800 tracking-tight"
-                        style={{ 
-                          fontSize: companyNameTextSize === 'Large' ? '12px' : companyNameTextSize === 'Medium' ? '10px' : '8px',
-                          color: regularThemeColor 
-                        }}
-                      >
-                        {customCompanyName || storeDefaults.shopName}
+            {activeTab !== 'Thermal' ? (() => {
+              const currencySymbol = amountInWordsFormat === 'Indian' ? '₹' : '$';
+              
+              // 1. MINIMALIST PREVIEW
+              if (regularLayoutTheme === 'Minimalist') {
+                return (
+                  <div 
+                    className="border-t-[8px] border-b-[8px] border-slate-200 bg-white rounded-xl shadow-xl p-5 mx-auto max-w-[340px] text-[8px] text-slate-600 space-y-3 relative overflow-hidden transition-all duration-300"
+                    style={{ 
+                      fontFamily: 'Inter, sans-serif',
+                      borderTopColor: regularThemeColor,
+                      borderBottomColor: regularThemeColor,
+                    }}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-0.5 text-left">
+                        <div className="font-extrabold text-[9.5px] text-slate-900">{customCompanyName || storeDefaults.shopName}</div>
+                        <div className="text-[6.5px] text-slate-400">{customAddress || storeDefaults.address}</div>
                       </div>
-                    )}
-                    {printAddress && <div className="text-[7.5px] text-slate-400">{customAddress || storeDefaults.address}</div>}
-                    <div className="flex space-x-2 text-[7px] text-slate-450">
-                      {printPhone && <span>Ph: {customPhone || storeDefaults.phoneNumber}</span>}
-                      {printEmail && <span>Mail: {customEmail || storeDefaults.email}</span>}
+                      {printCompanyLogo && (customLogoUrl || storeDefaults.logoUrl) && (
+                        <img src={customLogoUrl || storeDefaults.logoUrl} className="h-6 w-6 object-contain" alt="Logo" />
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-2 text-[6.5px] text-left">
+                      <div>
+                        <span className="font-extrabold text-slate-800 block">BILL TO</span>
+                        <span>Acme Customer</span>
+                      </div>
+                      <div>
+                        <span className="font-extrabold text-slate-800 block">SHIP TO</span>
+                        <span>Acme Customer</span>
+                      </div>
+                      <div>
+                        <span className="font-extrabold text-slate-800 block">DETAILS</span>
+                        <span>#INV-2026-001</span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center py-1.5 px-2 bg-slate-50 border-b-2 border-slate-900">
+                      <span className="font-bold text-[9px] text-slate-800">Invoice Total</span>
+                      <span className="font-bold text-[10px]" style={{ color: regularThemeColor }}>{currencySymbol}{formatPreviewAmount(1121)}</span>
+                    </div>
+
+                    <table className="w-full text-left text-[6.5px] border-collapse">
+                      <thead>
+                        <tr className="border-b-2 border-slate-900 font-bold text-slate-900">
+                          <th className="pb-1 text-center">QTY</th>
+                          <th className="pb-1">DESCRIPTION</th>
+                          <th className="pb-1 text-right">RATE</th>
+                          <th className="pb-1 text-right">AMOUNT</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-b border-slate-100">
+                          <td className="py-1 text-center">5</td>
+                          <td className="py-1">LED Bulb 9W</td>
+                          <td className="py-1 text-right">{formatPreviewAmount(150)}</td>
+                          <td className="py-1 text-right">{formatPreviewAmount(750)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+
+                    <div className="flex justify-end pt-1">
+                      <table className="w-24 text-[6.5px]">
+                        <tbody>
+                          <tr>
+                            <td>Subtotal:</td>
+                            <td className="text-right font-mono">{formatPreviewAmount(950)}</td>
+                          </tr>
+                          <tr className="font-bold border-t border-slate-200">
+                            <td>Total:</td>
+                            <td className="text-right font-mono">{formatPreviewAmount(1121)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    
+                    <div className="pt-2 text-[6.5px] text-left text-slate-450 border-t border-dotted border-slate-150">
+                      <span className="font-bold text-slate-600 block mb-0.5">TERMS & CONDITIONS:</span> 
+                      Citibank NY Route: #021000021
                     </div>
                   </div>
-                  {printCompanyLogo && (customLogoUrl || storeDefaults.logoUrl) && (
-                    <img 
-                      src={customLogoUrl || storeDefaults.logoUrl} 
-                      alt="Logo" 
-                      className="h-8 w-8 object-contain rounded border border-slate-100 p-0.5"
-                    />
-                  )}
-                </div>
+                );
+              }
 
-                {/* Theme indicators */}
-                <div className="flex justify-between text-[7px] text-slate-400 border-b border-dotted border-slate-150 pb-2">
-                  <div>Invoice: <span className="font-mono font-bold text-slate-700">#INV-2026-001</span></div>
-                  <div>Theme: <span className="font-bold uppercase" style={{ color: regularThemeColor }}>{regularLayoutTheme}</span></div>
-                </div>
+              // 2. COMMERCIAL PREVIEW
+              if (regularLayoutTheme === 'Commercial') {
+                return (
+                  <div 
+                    className="border border-slate-200 bg-white rounded-xl shadow-xl p-5 mx-auto max-w-[340px] text-[8px] text-slate-650 space-y-3 relative overflow-hidden transition-all duration-300"
+                    style={{ fontFamily: 'Inter, sans-serif' }}
+                  >
+                    <div className="flex justify-between items-start border-b border-slate-100 pb-2">
+                      <div className="text-left">
+                        <div className="font-extrabold text-[9px] text-slate-900">{customCompanyName || storeDefaults.shopName}</div>
+                        <div className="text-[6.5px] text-slate-400">PO Ref: #PO-99201</div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] font-extrabold tracking-wider block" style={{ color: regularThemeColor }}>COMMERCIAL</span>
+                        <span className="text-[7px]">Ref: #INV-26-27-010</span>
+                      </div>
+                    </div>
 
-                {/* Table */}
-                <table className="w-full text-left text-[7px] border-collapse">
-                  <thead>
-                    <tr 
-                      className="text-white uppercase font-bold"
-                      style={{ backgroundColor: regularThemeColor }}
-                    >
-                      <th className="p-1 rounded-l">Item Description</th>
-                      {printTotalQty && <th className="p-1 text-center">Qty</th>}
-                      <th className="p-1 text-right rounded-r">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b border-slate-100">
-                      <td className="p-1 text-slate-700">LED Bulb 9W (HSN 9983)</td>
-                      {printTotalQty && <td className="p-1 text-center">5</td>}
-                      <td className="p-1 text-right font-bold text-slate-800">{formatPreviewAmount(750)}</td>
-                    </tr>
-                    <tr className="border-b border-slate-100">
-                      <td className="p-1 text-slate-700">Flexi-Pipe Conduit</td>
-                      {printTotalQty && <td className="p-1 text-center">2</td>}
-                      <td className="p-1 text-right font-bold text-slate-800">{formatPreviewAmount(200)}</td>
-                    </tr>
-                  </tbody>
-                </table>
+                    <div className="grid grid-cols-2 gap-4 text-[7px] bg-slate-50 p-2 rounded-lg border border-slate-100 text-left">
+                      <div>
+                        <span className="text-slate-400 block font-bold">PREPARED DATE</span>
+                        <span className="text-slate-800 font-extrabold">{new Date().toLocaleDateString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block font-bold">DUE DATE</span>
+                        <span className="text-slate-800 font-extrabold">Net 30 Days</span>
+                      </div>
+                    </div>
 
-                {/* Totals */}
-                <div className="flex justify-end pt-1">
-                  <table className="w-28 text-[7px]">
-                    <tbody>
-                      <tr className="text-slate-400">
-                        <td>Subtotal:</td>
-                        <td className="text-right font-mono text-slate-650">{formatPreviewAmount(950)}</td>
-                      </tr>
-                      {printTaxDetails && (
-                        <tr className="text-slate-450 border-b border-slate-100 pb-1">
-                          <td>CGST + SGST (18%):</td>
-                          <td className="text-right font-mono">{formatPreviewAmount(171)}</td>
+                    <table className="w-full text-left text-[6.5px] border-collapse">
+                      <thead>
+                        <tr className="bg-slate-200 text-slate-800 uppercase font-bold">
+                          <th className="p-1">Description</th>
+                          <th className="p-1 text-center">Qty</th>
+                          <th className="p-1 text-right">Price</th>
                         </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="bg-slate-50 border-b border-slate-100">
+                          <td className="p-1 font-bold">LED Bulb 9W</td>
+                          <td className="p-1 text-center">5</td>
+                          <td className="p-1 text-right">{formatPreviewAmount(750)}</td>
+                        </tr>
+                        <tr className="bg-white border-b border-slate-100">
+                          <td className="p-1 font-bold">Flexi-Pipe Conduit</td>
+                          <td className="p-1 text-center">2</td>
+                          <td className="p-1 text-right">{formatPreviewAmount(200)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-left">
+                      <div className="text-[6px] text-slate-400">
+                        <span className="font-bold text-slate-500 block">Notes:</span>
+                        Remit payments to business address.
+                      </div>
+                      <div className="flex justify-end">
+                        <table className="w-full text-[7px]">
+                          <tbody>
+                            <tr className="bg-slate-50 font-bold border border-slate-200">
+                              <td className="p-1">Grand Total:</td>
+                              <td className="p-1 text-right font-mono" style={{ color: regularThemeColor }}>{formatPreviewAmount(1121)}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-dotted border-slate-250 pt-3 flex justify-between text-[6px]">
+                      <div>Prepared By: ____________</div>
+                      <div>Approved By: ____________</div>
+                    </div>
+                  </div>
+                );
+              }
+
+              // 3. MODERN PREVIEW
+              if (regularLayoutTheme === 'Modern') {
+                return (
+                  <div 
+                    className="bg-white rounded-xl shadow-xl p-5 mx-auto max-w-[340px] text-[8px] text-slate-650 space-y-3 relative overflow-hidden transition-all duration-300"
+                    style={{ 
+                      fontFamily: 'Inter, sans-serif',
+                      borderTop: `5px solid ${regularThemeColor}`
+                    }}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="text-left">
+                        <span className="text-[12px] font-extrabold text-slate-900 block tracking-tight">INVOICE</span>
+                        <span className="text-[7px] text-slate-400">#INV-2026-001</span>
+                      </div>
+                      <div className="flex items-center space-x-1.5">
+                        <div className="w-5 h-5 rounded-full border flex items-center justify-center bg-indigo-50" style={{ borderColor: regularThemeColor }}>
+                          <div className="w-2.5 h-2.5 rotate-45 border-2" style={{ borderColor: regularThemeColor }}></div>
+                        </div>
+                        <span className="font-bold text-[9px] text-slate-800 tracking-tight">{customCompanyName || storeDefaults.shopName}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 border-t border-b border-slate-100 py-2.5 text-[6.5px] text-left">
+                      <div>
+                        <span className="text-slate-400 font-bold block">FROM</span>
+                        <span className="text-slate-700 font-extrabold block">{customCompanyName || storeDefaults.shopName}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-bold block">FOR</span>
+                        <span className="text-slate-700 font-extrabold block">Acme Customer</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-bold block">DETAILS</span>
+                        <span className="text-slate-700 block">Date: {new Date().toLocaleDateString()}</span>
+                      </div>
+                    </div>
+
+                    <table className="w-full text-left text-[6.5px] border-collapse">
+                      <thead>
+                        <tr className="text-white font-extrabold" style={{ backgroundColor: regularThemeColor }}>
+                          <th className="p-1 rounded-l">Description</th>
+                          <th className="p-1 text-center">Qty</th>
+                          <th className="p-1 text-right rounded-r">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-b border-slate-100">
+                          <td className="p-1.5 text-slate-700">LED Bulb 9W</td>
+                          <td className="p-1.5 text-center">5</td>
+                          <td className="p-1.5 text-right font-extrabold text-slate-900">{formatPreviewAmount(750)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+
+                    <div className="flex justify-end pt-1">
+                      <div className="w-24 border-t-2 border-double border-slate-450 pt-1 text-right">
+                        <span className="text-[6px] text-slate-400 block uppercase">Total Amount</span>
+                        <span className="text-[11px] font-extrabold font-mono" style={{ color: regularThemeColor }}>{currencySymbol}{formatPreviewAmount(1121)}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              // 4. PROFORMA PREVIEW
+              if (regularLayoutTheme === 'Proforma') {
+                return (
+                  <div 
+                    className="border border-slate-200/80 bg-white rounded-xl shadow-xl mx-auto max-w-[340px] text-[8px] text-slate-650 select-none relative overflow-hidden transition-all duration-300"
+                    style={{ fontFamily: 'Inter, sans-serif' }}
+                  >
+                    <div className="p-4 text-center text-white relative" style={{ backgroundColor: regularThemeColor }}>
+                      <span className="text-[11px] font-extrabold uppercase tracking-widest block">Proforma Invoice</span>
+                      <span className="text-[6.5px] opacity-90 block mt-1">{customCompanyName || storeDefaults.shopName}</span>
+                    </div>
+
+                    <div className="p-4 space-y-3">
+                      <div className="grid grid-cols-2 gap-2 text-[6.5px] text-left">
+                        <div>
+                          <div className="px-1.5 py-0.5 text-white font-extrabold uppercase text-[6px] rounded-sm mb-1 text-center" style={{ backgroundColor: regularThemeColor }}>Bill To</div>
+                          <div className="text-slate-800 font-extrabold">Acme Customer</div>
+                          <div className="text-slate-400">customer@example.com</div>
+                        </div>
+                        <div>
+                          <div className="px-1.5 py-0.5 text-white font-extrabold uppercase text-[6px] rounded-sm mb-1 text-center" style={{ backgroundColor: regularThemeColor }}>Invoice Details</div>
+                          <div>Invoice #: <span className="font-mono text-slate-800 font-bold">#INV-2026-001</span></div>
+                          <div>Date: <span className="font-mono text-slate-800 font-bold">{new Date().toLocaleDateString()}</span></div>
+                        </div>
+                      </div>
+
+                      <table className="w-full text-left text-[6px] border-collapse">
+                        <thead>
+                          <tr className="bg-slate-100 text-slate-800 font-bold">
+                            <th className="p-1 text-center w-6" style={{ borderRight: '1px solid #cbd5e1' }}>#</th>
+                            <th className="p-1">Description</th>
+                            <th className="p-1 text-right">Price</th>
+                            <th className="p-1 text-center">Qty</th>
+                            <th className="p-1 text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr className="border-b border-slate-100">
+                            <td className="p-1 text-center font-bold" style={{ backgroundColor: regularThemeColor + '10', borderRight: '1px solid #cbd5e1', color: regularThemeColor }}>1</td>
+                            <td className="p-1 text-slate-700 font-bold">LED Bulb 9W</td>
+                            <td className="p-1 text-right font-mono">{formatPreviewAmount(150)}</td>
+                            <td className="p-1 text-center">5</td>
+                            <td className="p-1 text-right font-mono font-bold text-slate-800">{formatPreviewAmount(750)}</td>
+                          </tr>
+                          <tr className="border-b border-slate-100">
+                            <td className="p-1 text-center font-bold" style={{ backgroundColor: regularThemeColor + '10', borderRight: '1px solid #cbd5e1', color: regularThemeColor }}>2</td>
+                            <td className="p-1 text-slate-700 font-bold">Flexi-Pipe Conduit</td>
+                            <td className="p-1 text-right font-mono">{formatPreviewAmount(100)}</td>
+                            <td className="p-1 text-center">2</td>
+                            <td className="p-1 text-right font-mono font-bold text-slate-800">{formatPreviewAmount(200)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      <div className="grid grid-cols-12 gap-3 pt-2 text-left">
+                        <div className="col-span-7 text-[5.5px]">
+                          <div className="flex items-center space-x-1 mb-1 text-slate-400">
+                            <input type="checkbox" checked readOnly className="scale-75 accent-indigo-600" />
+                            <span>Acknowledged & Accurate</span>
+                          </div>
+                          <div className="text-slate-400">Shipper: <span className="font-bold text-slate-650">Jamie Thomas</span></div>
+                        </div>
+                        <div className="col-span-5">
+                          <table className="w-full text-[6.5px]">
+                            <tbody>
+                              <tr>
+                                <td>Subtotal:</td>
+                                <td className="text-right font-mono">{formatPreviewAmount(950)}</td>
+                              </tr>
+                              <tr className="font-bold border-t text-[7.5px]" style={{ color: regularThemeColor, backgroundColor: regularThemeColor + '10' }}>
+                                <td className="p-0.5">Total:</td>
+                                <td className="p-0.5 text-right font-mono">{formatPreviewAmount(1121)}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              // 5. STANDARD / TAX INVOICE PREVIEW (Fallback)
+              return (
+                <div 
+                  className="border border-slate-200/80 bg-white rounded-xl shadow-xl p-5 mx-auto max-w-[340px] text-[9px] text-slate-600 space-y-4 select-none relative overflow-hidden transition-all duration-300"
+                  style={{ 
+                    fontFamily: 'Inter, sans-serif',
+                    borderColor: regularThemeColor + '20',
+                    boxShadow: `0 20px 25px -5px ${regularThemeColor}05`
+                  }}
+                >
+                  {/* Header branding band */}
+                  <div className="flex justify-between items-start border-b border-slate-150 pb-3">
+                    <div className="space-y-1 text-left">
+                      {printCompanyName && (
+                        <div 
+                          className="font-bold text-slate-800 tracking-tight"
+                          style={{ 
+                            fontSize: companyNameTextSize === 'Large' ? '12px' : companyNameTextSize === 'Medium' ? '10px' : '8px',
+                            color: regularThemeColor 
+                          }}
+                        >
+                          {customCompanyName || storeDefaults.shopName}
+                        </div>
                       )}
-                      <tr className="font-bold text-[8.5px] border-t border-slate-200">
-                        <td style={{ color: regularThemeColor }}>Total Due:</td>
-                        <td className="text-right font-mono" style={{ color: regularThemeColor }}>
-                          {formatPreviewAmount(1121)}
-                        </td>
+                      {printAddress && <div className="text-[7.5px] text-slate-450">{customAddress || storeDefaults.address}</div>}
+                      <div className="flex space-x-2 text-[7px] text-slate-450">
+                        {printPhone && <span>Ph: {customPhone || storeDefaults.phoneNumber}</span>}
+                        {printEmail && <span>Mail: {customEmail || storeDefaults.email}</span>}
+                      </div>
+                    </div>
+                    {printCompanyLogo && (customLogoUrl || storeDefaults.logoUrl) && (
+                      <img 
+                        src={customLogoUrl || storeDefaults.logoUrl} 
+                        alt="Logo" 
+                        className="h-8 w-8 object-contain rounded border border-slate-100 p-0.5"
+                      />
+                    )}
+                  </div>
+
+                  {/* Theme indicators */}
+                  <div className="flex justify-between text-[7px] text-slate-450 border-b border-dotted border-slate-150 pb-2 text-left">
+                    <div>Invoice: <span className="font-mono font-bold text-slate-700">#INV-2026-001</span></div>
+                    <div>Theme: <span className="font-bold uppercase" style={{ color: regularThemeColor }}>{regularLayoutTheme}</span></div>
+                  </div>
+
+                  {/* Table */}
+                  <table className="w-full text-left text-[7px] border-collapse">
+                    <thead>
+                      <tr 
+                        className="text-white uppercase font-bold"
+                        style={{ backgroundColor: regularThemeColor }}
+                      >
+                        <th className="p-1 rounded-l">Item Description</th>
+                        {printTotalQty && <th className="p-1 text-center">Qty</th>}
+                        <th className="p-1 text-right rounded-r">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-slate-100">
+                        <td className="p-1 text-slate-700">LED Bulb 9W (HSN 9983)</td>
+                        {printTotalQty && <td className="p-1 text-center">5</td>}
+                        <td className="p-1 text-right font-bold text-slate-800">{formatPreviewAmount(750)}</td>
+                      </tr>
+                      <tr className="border-b border-slate-100">
+                        <td className="p-1 text-slate-700">Flexi-Pipe Conduit</td>
+                        {printTotalQty && <td className="p-1 text-center">2</td>}
+                        <td className="p-1 text-right font-bold text-slate-800">{formatPreviewAmount(200)}</td>
                       </tr>
                     </tbody>
                   </table>
-                </div>
 
-                {/* Words */}
-                <div className="pt-2 text-[7px] text-slate-400 border-t border-dotted border-slate-150">
-                  <span className="font-bold text-slate-500">Amount in Words: </span>
-                  {amountInWordsFormat === 'Indian' 
-                    ? 'One Thousand One Hundred Twenty One Rupees Only' 
-                    : 'One Thousand One Hundred Twenty One Dollars Only'}
-                </div>
-
-                {/* Savings */}
-                {printYouSaved && (
-                  <div className="p-1 bg-emerald-50 text-[6.5px] text-emerald-800 rounded font-semibold text-center border border-emerald-100">
-                    🎉 You Saved {formatPreviewAmount(75.50)} on this purchase!
+                  {/* Totals */}
+                  <div className="flex justify-end pt-1">
+                    <table className="w-28 text-[7px]">
+                      <tbody>
+                        <tr className="text-slate-400">
+                          <td>Subtotal:</td>
+                          <td className="text-right font-mono text-slate-650">{formatPreviewAmount(950)}</td>
+                        </tr>
+                        {printTaxDetails && (
+                          <tr className="text-slate-450 border-b border-slate-100 pb-1">
+                            <td>CGST + SGST (18%):</td>
+                            <td className="text-right font-mono">{formatPreviewAmount(171)}</td>
+                          </tr>
+                        )}
+                        <tr className="font-bold text-[8.5px] border-t border-slate-200">
+                          <td style={{ color: regularThemeColor }}>Total Due:</td>
+                          <td className="text-right font-mono" style={{ color: regularThemeColor }}>
+                            {formatPreviewAmount(1121)}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
-                )}
 
-                {/* Decimals & grouping label */}
-                <div className="absolute bottom-1 right-2 text-[5.5px] text-slate-350 select-none">
-                  Format: {amountInWordsFormat} ({printAmountWithGrouping ? 'Grouped' : 'Plain'})
+                  {/* Words */}
+                  <div className="pt-2 text-[7px] text-left text-slate-400 border-t border-dotted border-slate-150">
+                    <span className="font-bold text-slate-500">Amount in Words: </span>
+                    {amountInWordsFormat === 'Indian' 
+                      ? 'One Thousand One Hundred Twenty One Rupees Only' 
+                      : 'One Thousand One Hundred Twenty One Dollars Only'}
+                  </div>
+
+                  {/* Savings */}
+                  {printYouSaved && (
+                    <div className="p-1 bg-emerald-50 text-[6.5px] text-emerald-800 rounded font-semibold text-center border border-emerald-100">
+                      🎉 You Saved {formatPreviewAmount(75.50)} on this purchase!
+                    </div>
+                  )}
+                  {/* Decimals & grouping label */}
+                  <div className="absolute bottom-1 right-2 text-[5.5px] text-slate-350 select-none">
+                    Format: {amountInWordsFormat} ({printAmountWithGrouping ? 'Grouped' : 'Plain'})
+                  </div>
                 </div>
-              </div>
-            ) : (
+              );
+            })()
+            : (
               /* Thermal preview sheet */
               <div className="border border-dashed border-slate-300 bg-white rounded-xl shadow-xl p-4 mx-auto max-w-[260px] text-[8px] text-slate-600 space-y-3 relative select-none">
                 
