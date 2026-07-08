@@ -182,6 +182,46 @@ const storeSettingsSchema = new mongoose.Schema(
       default: 'Indian'
     },
 
+    // Layout-specific extra fields
+    companyTagline: {
+      type: String,
+      default: ''
+    },
+    poReference: {
+      type: String,
+      default: ''
+    },
+    invoiceNotes: {
+      type: String,
+      default: ''
+    },
+
+    // Bank Details
+    printBankDetails: {
+      type: Boolean,
+      default: false
+    },
+    bankAccountHolderName: {
+      type: String,
+      default: ''
+    },
+    bankName: {
+      type: String,
+      default: ''
+    },
+    bankAccountNumber: {
+      type: String,
+      default: ''
+    },
+    bankIfscCode: {
+      type: String,
+      default: ''
+    },
+    bankBranchName: {
+      type: String,
+      default: ''
+    },
+
     // Footer options
     printDescription: {
       type: Boolean,

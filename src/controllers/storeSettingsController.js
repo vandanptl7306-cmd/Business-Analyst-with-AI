@@ -55,7 +55,10 @@ const updateStoreSettings = async (req, res) => {
       'printAmountWithGrouping', 'amountInWordsFormat', 'printDescription',
       'thermalPrintingType', 'thermalUseTextStylingBold', 'thermalAutoCut',
       'thermalOpenCashDrawer', 'thermalExtraLines', 'thermalCopies',
-      'thermalPrintCompanyName', 'thermalCompanyName'
+      'thermalPrintCompanyName', 'thermalCompanyName',
+      'printBankDetails', 'bankAccountHolderName', 'bankName',
+      'bankAccountNumber', 'bankIfscCode', 'bankBranchName',
+      'companyTagline', 'poReference', 'invoiceNotes'
     ];
 
     fields.forEach((field) => {
