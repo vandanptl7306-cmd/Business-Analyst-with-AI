@@ -8,7 +8,7 @@ import { getStoreSettings } from '../services/settings';
 import { getProductsList, deductStock } from '../services/product';
 import {
   ArrowLeft, Plus, Trash2, FileText, CheckCircle, ShieldAlert,
-  Loader2, Calculator, Barcode, Package, Search, X, AlertTriangle,
+  Loader2, Calculator, Barcode, Package, Search, X, AlertTriangle, Users,
 } from 'lucide-react';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -83,8 +83,10 @@ export default function CreateInvoice() {
 
   // ── stock picker: add from inventory ─────────────────────────────────────
   const filteredStockProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(stockSearch.toLowerCase()) ||
-    p.sku.toLowerCase().includes(stockSearch.toLowerCase())
+    p.quantity > 0 && (
+      p.name.toLowerCase().includes(stockSearch.toLowerCase()) ||
+      p.sku.toLowerCase().includes(stockSearch.toLowerCase())
+    )
   );
 
   const handlePickFromStock = (product) => {
@@ -291,9 +293,20 @@ export default function CreateInvoice() {
 
         {/* Party Details */}
         <div className="card-module space-y-5">
-          <div>
-            <h3 className="text-lg font-bold text-slate-800">Customer (Party) Details</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Select a registered customer or enter details manually</p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-bold text-slate-800">Customer (Party) Details</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Select a registered customer or enter details manually</p>
+            </div>
+            <Link 
+              to="/customers" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="inline-flex items-center justify-center space-x-1.5 text-xs font-bold text-indigo-650 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-4 py-2 rounded-xl transition-all w-fit"
+            >
+              <Users className="h-4.5 w-4.5" />
+              <span>Manage Customers</span>
+            </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div>

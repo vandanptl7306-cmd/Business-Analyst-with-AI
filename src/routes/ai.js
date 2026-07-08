@@ -91,4 +91,21 @@ router.get('/inventory/reorder-warnings', protect, async (req, res) => {
   }
 });
 
+/**
+ * @desc    Serve the generated dashboard image
+ * @route   GET /api/ai/dashboard-image
+ * @access  Public
+ */
+router.get('/dashboard-image', (req, res) => {
+  const path = require('path');
+  const fs = require('fs');
+  const imagePath = path.join(__dirname, '../../financial_dashboard.png');
+  if (fs.existsSync(imagePath)) {
+    res.setHeader('Content-Type', 'image/png');
+    fs.createReadStream(imagePath).pipe(res);
+  } else {
+    res.status(404).json({ success: false, error: 'Dashboard image not found' });
+  }
+});
+
 module.exports = router;

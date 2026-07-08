@@ -1536,8 +1536,8 @@ const printInvoice = async (req, res) => {
 
     // Merge settings configurations from current store schema to the merging state
     const storeSnapshotMerged = {
-      ...(invoice.storeSnapshot ? invoice.storeSnapshot.toObject() : {}),
-      ...(store ? store.toObject() : {}),
+      ...(invoice.storeSnapshot ? (typeof invoice.storeSnapshot.toObject === 'function' ? invoice.storeSnapshot.toObject() : invoice.storeSnapshot) : {}),
+      ...(store ? (typeof store.toObject === 'function' ? store.toObject() : store) : {}),
       invoiceThemeColor: store ? (store.regularThemeColor || store.invoiceThemeColor) : '#2563eb'
     };
 

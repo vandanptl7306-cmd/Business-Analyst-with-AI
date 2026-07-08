@@ -24,7 +24,8 @@ export default function DemandForecast() {
     const fetchCatalog = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/products', {
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+        const res = await axios.get(`${apiBase}/products`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.data.success) {

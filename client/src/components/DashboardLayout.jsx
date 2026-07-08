@@ -59,11 +59,6 @@ export default function DashboardLayout() {
             <span>Dashboard</span>
           </Link>
 
-          <Link to="/customers" className={navItemClass('/customers')}>
-            <Users className={`h-4 w-4 ${isActive('/customers') ? 'text-indigo-400' : 'text-slate-500'}`} />
-            <span>Customers</span>
-          </Link>
-
           <Link to="/stock" className={navItemClass('/stock')}>
             <Package className={`h-4 w-4 ${isActive('/stock') ? 'text-indigo-400' : 'text-slate-500'}`} />
             <span>Stock</span>

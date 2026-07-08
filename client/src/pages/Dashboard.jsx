@@ -32,7 +32,6 @@ export default function Dashboard() {
   const [invoices, setInvoices] = useState([]);
   const [upcomingNumber, setUpcomingNumber] = useState('');
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [kpis, setKpis] = useState(null);
   const [trendData, setTrendData] = useState([]);
@@ -86,50 +85,6 @@ export default function Dashboard() {
   const handleLogout = () => {
     logout();
     navigate('/login');
-  };
-
-  const handleCreateDemoInvoice = async () => {
-    setCreating(true);
-    setError('');
-    
-    // Standard mock GST invoice matching format requirements
-    const demoInvoice = {
-      sellerName: 'IntellectBill AI Ltd',
-      sellerGSTIN: '27AAAAA1111A1Z1',
-      sellerPIN: '400001',
-      buyerName: 'Global Enterprise Corp',
-      buyerGSTIN: '27AAAAA2222B1Z3', // Valid format matching Indian GSTIN
-      buyerBillingAddress: 'B-302, Cyber Tower, Bandra East, Mumbai, Maharashtra',
-      buyerPIN: '400051',
-      items: [
-        {
-          description: 'AI Cloud Platform Subscription',
-          hsnCode: '998311', // IT support/Software services HSN
-          quantity: 1,
-          price: 2500.0,
-          gstRate: 18,
-        },
-        {
-          description: 'Database Operations Support',
-          hsnCode: '998313',
-          quantity: 3,
-          price: 450.0,
-          gstRate: 18,
-        },
-      ],
-    };
-
-    try {
-      const response = await createInvoice(demoInvoice);
-      if (response.success) {
-        setInvoices([response.invoice, ...invoices]);
-        fetchUpcomingNumber(); // Fetch next sequential upcoming number
-      }
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create demo invoice.');
-    } finally {
-      setCreating(false);
-    }
   };
 
   return (
@@ -186,7 +141,38 @@ export default function Dashboard() {
 
       {/* Profit Insights Section (Admin only) */}
       {user?.role === 'Admin' && (
-        <ProfitChart invoices={invoices} />
+        <div className="space-y-6">
+          <ProfitChart invoices={invoices} />
+          
+          <div className="card-module space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <BarChart2 className="h-5 w-5 text-indigo-650" />
+                <h3 className="text-lg font-bold text-slate-800">AI Business Intelligence Graphs</h3>
+              </div>
+              <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-150 px-2.5 py-1 rounded-lg font-mono font-semibold">
+                Python Matplotlib Engine
+              </span>
+            </div>
+            
+            <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-900 p-2">
+              <img 
+                src={`${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}/api/ai/dashboard-image`}
+                alt="AI Financial Dashboard" 
+                className="w-full h-auto rounded-lg shadow-sm"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            </div>
+            
+            <div className="flex justify-between items-center pt-2 border-t border-slate-100 text-xs">
+              <div className="text-[10px] text-slate-400 font-semibold leading-relaxed">
+                * Dynamic trend plots computed directly from invoice analytics by the Python ML service.
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Invoices List Section */}
@@ -215,24 +201,6 @@ export default function Dashboard() {
               <Plus className="h-3.5 w-3.5" />
               <span>Create Custom Bill</span>
             </Link>
-
-            <button
-              onClick={handleCreateDemoInvoice}
-              disabled={creating}
-              className="flex items-center justify-center space-x-2 text-xs font-bold bg-indigo-650 hover:bg-indigo-600 text-white px-4 py-2.5 rounded-xl transition-all disabled:opacity-50"
-            >
-              {creating ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  <span>Creating Invoice...</span>
-                </>
-              ) : (
-                <>
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>Create Demo GST Invoice</span>
-                </>
-              )}
-            </button>
           </div>
         </div>
 
@@ -250,12 +218,6 @@ export default function Dashboard() {
           <div className="py-16 text-center border-2 border-dashed border-slate-200 rounded-2xl space-y-3 bg-slate-50/50">
             <FileText className="h-10 w-10 text-slate-400 mx-auto" />
             <p className="text-slate-400 text-xs font-medium">No billing records found in database.</p>
-            <button
-              onClick={handleCreateDemoInvoice}
-              className="text-xs font-bold text-indigo-600 hover:text-indigo-500"
-            >
-              Create your first demo GST invoice
-            </button>
           </div>
         ) : (
           <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">

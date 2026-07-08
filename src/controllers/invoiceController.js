@@ -236,6 +236,19 @@ const createInvoice = async (req, res) => {
       amountPaid: initialPaid,
       outstandingAmount: outstanding,
       status: status || defaultStatus,
+      eInvoiceStatus: 'Generated',
+      eInvoiceGeneratedAt: new Date(),
+      irn: require('crypto').createHash('sha256').update(sellerGSTIN + '-' + invoiceNumber + '-' + new Date()).digest('hex'),
+      qrCodeData: `GSTIN:${sellerGSTIN}*BUYER:${buyerGSTIN}*DOC:${invoiceNumber}*AMT:${grandTotal}`,
+      eWayBillNo: Math.floor(100000000000 + Math.random() * 900000000000).toString(),
+      eWayBillStatus: 'Generated',
+      eWayBillGeneratedAt: new Date(),
+      transporterId: buyerGSTIN,
+      transporterName: 'Express Logistic Services Ltd',
+      transportMode: 'Road',
+      vehicleNo: 'MH12AA1234',
+      vehicleType: 'Regular',
+      distance: 120,
     });
 
     res.status(201).json({ success: true, invoice });
