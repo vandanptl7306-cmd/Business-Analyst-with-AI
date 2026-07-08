@@ -37,6 +37,17 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Profile fields
+    phoneNumber: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    companyName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
   },
   {
     timestamps: true,
