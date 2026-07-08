@@ -1521,27 +1521,27 @@ const printInvoice = async (req, res) => {
         gstin: store.gstin,
         logoUrl: store.logoUrl,
       };
-      // Save snapshot for history
-      await invoice.save();
+      // Save snapshot for history (non-blocking — print continues even if save fails)
+      try { await invoice.save(); } catch (_) {}
     }
 
     // Default template: if printer type is Thermal and no override, set to Thermal
     const selectedTemplate = templateQuery || invoice.templateType || store.defaultInvoiceTemplate || (store.printerType === 'Thermal' ? 'Thermal' : 'Standard');
 
-    // Update template preference on the invoice record
+    // Update template preference on the invoice record (non-blocking)
     if (templateQuery && invoice.templateType !== templateQuery) {
       invoice.templateType = templateQuery;
-      await invoice.save();
+      try { await invoice.save(); } catch (_) {}
     }
 
-    // Merge settings configurations from current store schema to the merging state
-    const storeSnapshotMerged = {
-      ...(invoice.storeSnapshot ? (typeof invoice.storeSnapshot.toObject === 'function' ? invoice.storeSnapshot.toObject() : invoice.storeSnapshot) : {}),
-      ...(store ? (typeof store.toObject === 'function' ? store.toObject() : store) : {}),
-      invoiceThemeColor: store ? (store.regularThemeColor || store.invoiceThemeColor) : '#2563eb'
-    };
+    // Always use the LIVE store settings for the print output so it reflects
+    // whatever the user last saved in Settings. The storeSnapshot is only kept
+    // for historical audit purposes.
+    const storeData = typeof store.toObject === 'function' ? store.toObject() : { ...store };
+    // Ensure theme color falls back correctly
+    storeData.invoiceThemeColor = storeData.regularThemeColor || storeData.invoiceThemeColor || '#2563eb';
 
-    const htmlContent = getInvoiceHTML(invoice, storeSnapshotMerged, selectedTemplate);
+    const htmlContent = getInvoiceHTML(invoice, storeData, selectedTemplate);
     res.setHeader('Content-Type', 'text/html');
     res.status(200).send(htmlContent);
   } catch (error) {

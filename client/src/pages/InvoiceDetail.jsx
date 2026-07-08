@@ -189,7 +189,7 @@ export default function InvoiceDetail() {
               type="button"
               onClick={() => {
                 const token = localStorage.getItem('token');
-                const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+                const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
                 window.open(`${apiBase}/invoices/${invoice._id}/print?template=${selectedTemplate}&token=${token}`, '_blank');
               }}
               className="flex items-center justify-center space-x-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-[0.98]"

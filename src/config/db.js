@@ -74,7 +74,57 @@ const setupMockDB = () => {
         email: 'billing@intellectbill.ai',
         gstin: '27AAAAA1111A1Z1',
         logoUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150',
-        defaultInvoiceTemplate: 'Standard'
+        defaultInvoiceTemplate: 'Standard',
+        invoiceThemeColor: '#2563eb',
+        printerType: 'Regular',
+        regularLayoutTheme: 'Standard',
+        regularThemeColor: '#2563eb',
+        printRepeatHeader: false,
+        printCompanyName: true,
+        customCompanyName: '',
+        printCompanyLogo: true,
+        customLogoUrl: '',
+        printAddress: true,
+        customAddress: '',
+        printEmail: true,
+        customEmail: '',
+        printPhone: true,
+        customPhone: '',
+        printGSTIN: true,
+        customGSTIN: '',
+        paperSize: 'A4',
+        orientation: 'Portrait',
+        companyNameTextSize: 'Large',
+        invoiceTextSize: 'Large',
+        printTotalQty: true,
+        amountWithDecimal: true,
+        printReceivedAmount: true,
+        printBalanceAmount: false,
+        printCurrentBalance: false,
+        printTaxDetails: true,
+        printYouSaved: false,
+        printAmountWithGrouping: true,
+        amountInWordsFormat: 'Indian',
+        printDescription: true,
+        companyTagline: '',
+        poReference: '',
+        invoiceNotes: '',
+        printBankDetails: false,
+        bankAccountHolderName: '',
+        bankName: '',
+        bankAccountNumber: '',
+        bankIfscCode: '',
+        bankBranchName: '',
+        thermalPrintingType: 'Text Printing',
+        thermalUseTextStylingBold: true,
+        thermalAutoCut: true,
+        thermalOpenCashDrawer: true,
+        thermalExtraLines: 0,
+        thermalCopies: 1,
+        thermalPrintCompanyName: true,
+        thermalCompanyName: '',
+        createdAt: new Date(),
+        updatedAt: new Date()
       }
     ],
     paymenttransactions: [],
@@ -266,6 +316,7 @@ const setupMockDB = () => {
     if (op === 'findOneAndUpdate' || op === 'updateOne') {
       let items = findItems();
       let foundObj = items[0];
+      let wasInserted = false;
       
       if (!foundObj) {
         if (options.upsert) {
@@ -276,6 +327,7 @@ const setupMockDB = () => {
             updatedAt: new Date()
           };
           collection.push(foundObj);
+          wasInserted = true;
         } else {
           return null;
         }
@@ -292,7 +344,12 @@ const setupMockDB = () => {
           foundObj[k] = update.$set[k];
         }
       }
-      if (!update.$set && !update.$inc) {
+      if (update.$setOnInsert && wasInserted) {
+        for (let k of Object.keys(update.$setOnInsert)) {
+          foundObj[k] = update.$setOnInsert[k];
+        }
+      }
+      if (!update.$set && !update.$inc && !update.$setOnInsert) {
         for (let k of Object.keys(update)) {
           if (!k.startsWith('$')) {
             foundObj[k] = update[k];

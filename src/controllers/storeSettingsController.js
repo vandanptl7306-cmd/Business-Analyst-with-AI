@@ -9,19 +9,22 @@ const StoreSettings = require('../models/StoreSettings');
  */
 const getStoreSettings = async (req, res) => {
   try {
-    let settings = await StoreSettings.findOne({});
-    if (!settings) {
-      // Create default settings if none exist
-      settings = await StoreSettings.create({
-        shopName: 'IntellectBill AI Operations',
-        address: '101, Business Enclave, Cyber City, Sector 45, Gurgaon, Haryana',
-        phoneNumber: '+919876543210',
-        email: 'billing@intellectbill.ai',
-        gstin: '27AAAAA1111A1Z1',
-        logoUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150', // placeholder premium abstract logo
-        defaultInvoiceTemplate: 'Standard'
-      });
-    }
+    // findOneAndUpdate with upsert ensures a document always exists and works
+    // correctly with both MongoDB and the mock in-memory DB
+    let settings = await StoreSettings.findOneAndUpdate(
+      {},
+      { $setOnInsert: {
+          shopName: 'IntellectBill AI Operations',
+          address: '101, Business Enclave, Cyber City, Sector 45, Gurgaon, Haryana',
+          phoneNumber: '+919876543210',
+          email: 'billing@intellectbill.ai',
+          gstin: '27AAAAA1111A1Z1',
+          logoUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150',
+          defaultInvoiceTemplate: 'Standard'
+        }
+      },
+      { new: true, upsert: true }
+    );
     res.status(200).json({ success: true, settings });
   } catch (error) {
     console.error('Fetch settings error:', error.message);
@@ -36,11 +39,6 @@ const getStoreSettings = async (req, res) => {
  */
 const updateStoreSettings = async (req, res) => {
   try {
-    let settings = await StoreSettings.findOne({});
-    if (!settings) {
-      settings = new StoreSettings({});
-    }
-
     const fields = [
       'shopName', 'address', 'phoneNumber', 'email', 'gstin', 'logoUrl',
       'defaultInvoiceTemplate', 'invoiceThemeColor', 'businessType',
@@ -61,13 +59,20 @@ const updateStoreSettings = async (req, res) => {
       'companyTagline', 'poReference', 'invoiceNotes'
     ];
 
+    // Build $set patch from request body
+    const patch = {};
     fields.forEach((field) => {
       if (req.body[field] !== undefined) {
-        settings[field] = req.body[field];
+        patch[field] = req.body[field];
       }
     });
 
-    await settings.save();
+    // findOneAndUpdate with upsert — works correctly with both real MongoDB and mock DB
+    const settings = await StoreSettings.findOneAndUpdate(
+      {},
+      { $set: patch },
+      { new: true, upsert: true }
+    );
 
     res.status(200).json({ success: true, settings });
   } catch (error) {
@@ -90,13 +95,11 @@ const updateBusinessProfile = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Please specify a valid business profile type' });
     }
 
-    let settings = await StoreSettings.findOne({});
-    if (!settings) {
-      settings = new StoreSettings({});
-    }
-
-    settings.businessType = businessType;
-    await settings.save();
+    const settings = await StoreSettings.findOneAndUpdate(
+      {},
+      { $set: { businessType } },
+      { new: true, upsert: true }
+    );
 
     res.status(200).json({ success: true, settings });
   } catch (error) {
