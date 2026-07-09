@@ -281,7 +281,7 @@ export default function InvoiceDetail() {
                           <td className="px-4 py-3 font-medium text-slate-800">{item.description}</td>
                           <td className="px-4 py-3 text-center font-mono text-xs">{item.hsnCode}</td>
                           <td className="px-4 py-3 text-center">{item.quantity}</td>
-                          <td className="px-4 py-3 text-right">${item.price.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-right">₹{item.price.toFixed(2)}</td>
                           <td className="px-4 py-3 text-center">
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-slate-800 text-slate-700">
                               <Percent className="h-2.5 w-2.5 mr-0.5" />
@@ -289,7 +289,7 @@ export default function InvoiceDetail() {
                             </span>
                           </td>
                           <td className="px-4 py-3 text-right font-medium text-slate-800">
-                            ${(item.quantity * item.price).toFixed(2)}
+                            ₹{(item.quantity * item.price).toFixed(2)}
                           </td>
                         </tr>
                       ))}
@@ -303,7 +303,7 @@ export default function InvoiceDetail() {
                 <div className="w-full max-w-xs space-y-2.5 text-sm">
                   <div className="flex justify-between text-slate-500">
                     <span>Subtotal</span>
-                    <span>${invoice.subTotal.toFixed(2)}</span>
+                    <span>₹{invoice.subTotal.toFixed(2)}</span>
                   </div>
                   
                   {/* Tax splits */}
@@ -311,38 +311,32 @@ export default function InvoiceDetail() {
                     {invoice.items.some(i => i.cgst > 0) && (
                       <div className="flex justify-between text-xs text-slate-500">
                         <span>CGST Split</span>
-                        <span>
-                          ${invoice.items.reduce((acc, i) => acc + i.cgst, 0).toFixed(2)}
-                        </span>
+                        <span>₹{invoice.items.reduce((acc, i) => acc + i.cgst, 0).toFixed(2)}</span>
                       </div>
                     )}
                     {invoice.items.some(i => i.sgst > 0) && (
                       <div className="flex justify-between text-xs text-slate-500">
                         <span>SGST Split</span>
-                        <span>
-                          ${invoice.items.reduce((acc, i) => acc + i.sgst, 0).toFixed(2)}
-                        </span>
+                        <span>₹{invoice.items.reduce((acc, i) => acc + i.sgst, 0).toFixed(2)}</span>
                       </div>
                     )}
                     {invoice.items.some(i => i.igst > 0) && (
                       <div className="flex justify-between text-xs text-slate-500">
                         <span>IGST Split</span>
-                        <span>
-                          ${invoice.items.reduce((acc, i) => acc + i.igst, 0).toFixed(2)}
-                        </span>
+                        <span>₹{invoice.items.reduce((acc, i) => acc + i.igst, 0).toFixed(2)}</span>
                       </div>
                     )}
                   </div>
 
                   <div className="flex justify-between text-slate-500">
                     <span>GST Tax Total</span>
-                    <span>${invoice.taxTotal.toFixed(2)}</span>
+                    <span>₹{invoice.taxTotal.toFixed(2)}</span>
                   </div>
 
                   <div className="flex justify-between text-base font-bold text-slate-800 pt-2 border-t border-slate-200">
                     <span>Grand Total</span>
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-                      ${invoice.grandTotal.toFixed(2)}
+                      ₹{invoice.grandTotal.toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -358,7 +352,7 @@ export default function InvoiceDetail() {
                   <h3 className="text-lg font-bold text-slate-800">Transaction Payments Ledger</h3>
                 </div>
                 <div className="text-xs bg-slate-50 px-3 py-1.5 rounded-lg text-slate-500 font-mono">
-                  Paid: ${invoice.amountPaid ? invoice.amountPaid.toFixed(2) : '0.00'} | Outstanding: ${invoice.outstandingAmount !== undefined ? invoice.outstandingAmount.toFixed(2) : invoice.grandTotal.toFixed(2)}
+                  Paid: ₹{invoice.amountPaid ? invoice.amountPaid.toFixed(2) : '0.00'} | Outstanding: ₹{invoice.outstandingAmount !== undefined ? invoice.outstandingAmount.toFixed(2) : invoice.grandTotal.toFixed(2)}
                 </div>
               </div>
 
@@ -386,7 +380,7 @@ export default function InvoiceDetail() {
                         )}
                       </div>
                       <div className="text-right space-y-1">
-                        <div className="font-mono font-bold text-emerald-700">+${tx.amountReceived.toFixed(2)}</div>
+                        <div className="font-mono font-bold text-emerald-700">+₹{tx.amountReceived.toFixed(2)}</div>
                         <div className="text-[9px] text-slate-500">{new Date(tx.receivedAt).toLocaleString()}</div>
                       </div>
                     </div>
@@ -462,24 +456,24 @@ export default function InvoiceDetail() {
                 </div>
 
                 <div className="space-y-3.5 pt-1 text-sm">
-                  <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
                     <span className="text-xs text-slate-600">COGS (Cost price)</span>
                     <span className="font-mono font-bold text-slate-700">
-                      ${invoice.totalCost ? invoice.totalCost.toFixed(2) : '0.00'}
+                      ₹{invoice.totalCost ? invoice.totalCost.toFixed(2) : '0.00'}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
                     <span className="text-xs text-slate-600">Net Revenue</span>
                     <span className="font-mono font-bold text-slate-700">
-                      ${invoice.totalRevenue ? invoice.totalRevenue.toFixed(2) : '0.00'}
+                      ₹{invoice.totalRevenue ? invoice.totalRevenue.toFixed(2) : '0.00'}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center bg-emerald-50 p-3 rounded-xl border border-emerald-100">
                     <span className="text-xs text-emerald-700 font-semibold">Net Profit</span>
                     <span className="font-mono font-extrabold text-emerald-700 text-base">
-                      ${invoice.netProfit ? invoice.netProfit.toFixed(2) : '0.00'}
+                      ₹{invoice.netProfit ? invoice.netProfit.toFixed(2) : '0.00'}
                     </span>
                   </div>
 

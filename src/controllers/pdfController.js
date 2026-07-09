@@ -250,9 +250,13 @@ const getInvoiceHTML = (invoice, store, template) => {
           .hsn-table th { background: #f3f4f6; }
           .hsn-table tr:last-child td { border-bottom: none; }
           .hsn-table th:last-child, .hsn-table td:last-child { border-right: none; }
+          .amount-words { padding: 6px 8px; font-size: 11px; font-weight: bold; border-top: 1px solid #000000; border-bottom: 1px solid #000000; }
           .declaration-section { display: grid; grid-template-columns: 1.5fr 1fr; border-top: 1.5px solid #000000; }
           .decl-left { border-right: 1.5px solid #000000; padding: 8px; font-size: 10px; }
           .signature-right { padding: 8px; text-align: right; display: flex; flex-direction: column; justify-content: space-between; height: 80px; }
+          .hsn-table { width: 100%; border-collapse: collapse; margin-top: 0; }
+          .hsn-table th { background: #f3f4f6; color: #374151; font-size: 9px; font-weight: bold; text-align: center; padding: 5px 6px; border: 1px solid #000; }
+          .hsn-table td { font-size: 10px; text-align: center; padding: 5px 6px; border: 1px solid #000; }
         </style>
       </head>
       <body onload="window.print()">
@@ -1440,8 +1444,8 @@ const getInvoiceHTML = (invoice, store, template) => {
     </head>
     <body onload="window.print()">
       <div class="invoice-container">
-        
-        {/* Header Block */}
+
+        <!-- Header Block -->
         <div class="header-accent">
           <div>
             ${logoHTML}
@@ -1456,7 +1460,7 @@ const getInvoiceHTML = (invoice, store, template) => {
           </div>
         </div>
 
-        {/* Addresses */}
+        <!-- Addresses -->
         <div class="bill-info">
           <div class="info-card">
             <h4 style="margin: 0 0 8px 0; text-transform: uppercase; font-size: 11px; color: #64748b;">From</h4>
@@ -1466,7 +1470,6 @@ const getInvoiceHTML = (invoice, store, template) => {
             ${phoneHTML}
             ${emailHTML}
           </div>
-          
           <div class="info-card">
             <h4 style="margin: 0 0 8px 0; text-transform: uppercase; font-size: 11px; color: #64748b;">Bill To</h4>
             <p style="margin: 0; font-weight: 600; font-size: 13px;">${invoice.buyerName}</p>
@@ -1476,7 +1479,7 @@ const getInvoiceHTML = (invoice, store, template) => {
           </div>
         </div>
 
-        {/* Line Items */}
+        <!-- Line Items -->
         <table>
           <thead>
             <tr>
@@ -1492,7 +1495,7 @@ const getInvoiceHTML = (invoice, store, template) => {
           </tbody>
         </table>
 
-        {/* Totals Summary */}
+        <!-- Totals Summary -->
         <div class="totals-section">
           <table class="totals-table">
             ${getTotalsTableRowsHTML()}
