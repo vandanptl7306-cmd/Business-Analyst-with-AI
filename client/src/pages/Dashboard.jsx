@@ -82,6 +82,44 @@ export default function Dashboard() {
     fetchAnalytics();
   }, []);
 
+  const chartData = (() => {
+    if (trendData?.length) {
+      return trendData.map((item) => {
+        const dateValue = item.date || item.day || item.label || item.timestamp;
+        let formattedDate = dateValue;
+        if (dateValue && typeof dateValue === 'string') {
+          const parsed = new Date(dateValue);
+          if (!Number.isNaN(parsed.getTime())) {
+            formattedDate = parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+          }
+        }
+        return {
+          date: formattedDate || 'N/A',
+          revenue: Number(item.revenue ?? item.totalRevenue ?? item.total_amount ?? 0),
+          profit: Number(item.profit ?? item.netProfit ?? 0),
+        };
+      });
+    }
+
+    const last7Days = Array.from({ length: 7 }).map((_, index) => {
+      const date = new Date();
+      date.setDate(date.getDate() - index);
+      return date;
+    }).reverse();
+
+    return last7Days.map((date) => {
+      const formatted = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      const matching = invoices.filter((inv) => new Date(inv.createdAt).toLocaleDateString() === date.toLocaleDateString());
+      return {
+        date: formatted,
+        revenue: Number(matching.reduce((sum, inv) => sum + (inv.totalRevenue ?? inv.grandTotal ?? 0), 0).toFixed(2)),
+        profit: Number(matching.reduce((sum, inv) => sum + (inv.netProfit ?? 0), 0).toFixed(2)),
+      };
+    });
+  })();
+
+  const maxChartValue = Math.max(...chartData.map((item) => Math.max(item.revenue, item.profit, 100)));
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -155,15 +193,39 @@ export default function Dashboard() {
               </span>
             </div>
             
-            <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-900 p-2">
-              <img 
-                src={`${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}/api/ai/dashboard-image`}
-                alt="AI Financial Dashboard" 
-                className="w-full h-auto rounded-lg shadow-sm"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
+            <div className="border border-slate-200 rounded-xl overflow-hidden bg-white p-4">
+              <div className="grid grid-cols-1 gap-3">
+                <div className="flex items-center justify-between text-xs text-slate-500 uppercase tracking-[0.3em] font-semibold">
+                  <span>AI Financial Dashboard</span>
+                  <span>{chartData.length} days</span>
+                </div>
+                <div className="h-72 relative rounded-2xl bg-slate-950/95 p-4 text-slate-200">
+                  <div className="absolute inset-x-0 top-0 flex justify-between px-3 pt-2 text-[10px] text-slate-500">
+                    <span>${Math.round(maxChartValue * 0.75)}</span>
+                    <span>${Math.round(maxChartValue * 0.5)}</span>
+                    <span>${Math.round(maxChartValue * 0.25)}</span>
+                  </div>
+                  <div className="absolute inset-x-0 top-12 border-t border-slate-800"></div>
+                  <div className="absolute inset-x-0 top-28 border-t border-slate-800"></div>
+                  <div className="absolute inset-x-0 top-44 border-t border-slate-800"></div>
+                  <div className="absolute inset-x-0 top-60 border-t border-slate-800"></div>
+                  <div className="relative h-full flex items-end gap-3 px-3 pb-2">
+                    {chartData.map((item, idx) => {
+                      const revenueHeight = Math.max((item.revenue / maxChartValue) * 100, 8);
+                      const profitHeight = Math.max((item.profit / maxChartValue) * 100, 4);
+                      return (
+                        <div key={idx} className="flex-1 flex flex-col items-center gap-2">
+                          <div className="flex-1 flex flex-col justify-end w-full gap-1">
+                            <div style={{ height: `${revenueHeight}%` }} className="w-full rounded-full bg-slate-700" />
+                            <div style={{ height: `${profitHeight}%` }} className="w-full rounded-full bg-gradient-to-t from-indigo-500 to-indigo-400 shadow-lg shadow-indigo-500/30" />
+                          </div>
+                          <div className="text-[10px] text-slate-400 font-mono text-center pt-2">{item.date}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             </div>
             
             <div className="flex justify-between items-center pt-2 border-t border-slate-100 text-xs">
