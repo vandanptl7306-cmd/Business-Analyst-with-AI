@@ -19,7 +19,9 @@ const setupMockDB = () => {
         email: 'admin@example.com',
         password: '$2a$10$lL9WYyb4pN4751xlnlSmDuQYGTdI1iVrTwAOIb2omo1zLtDE10VzO',
         role: 'Admin',
-        isEmailVerified: true
+        isEmailVerified: true,
+        phoneNumber: '',
+        companyName: 'IntellectBill AI Store',
       }
     ],
     invoices: [],

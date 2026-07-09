@@ -181,8 +181,90 @@ const googleLogin = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Update user profile (name, companyName, phoneNumber)
+ * @route   PUT /api/auth/profile
+ * @access  Private
+ */
+const updateProfile = async (req, res) => {
+  try {
+    const { name, companyName, phoneNumber } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, error: 'Name is required' });
+    }
+
+    // Validate phone number format if provided
+    if (phoneNumber && phoneNumber.trim()) {
+      const phoneRegex = /^\+?[1-9]\d{6,14}$/;
+      if (!phoneRegex.test(phoneNumber.replace(/\s/g, ''))) {
+        return res.status(400).json({ success: false, error: 'Please enter a valid phone number (e.g. +919876543210)' });
+      }
+    }
+
+    const user = await User.findOne({ _id: req.user._id });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    user.name = name.trim();
+    user.companyName = (companyName || '').trim();
+    user.phoneNumber = (phoneNumber || '').trim();
+    await user.save();
+
+    res.status(200).json({ success: true, user });
+  } catch (error) {
+    console.error('Update profile error:', error.message);
+    res.status(500).json({ success: false, error: 'Server error updating profile' });
+  }
+};
+
+/**
+ * @desc    Change user password
+ * @route   PUT /api/auth/password
+ * @access  Private
+ */
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, error: 'Please provide current and new password' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, error: 'New password must be at least 6 characters' });
+    }
+
+    const user = await User.findOne({ _id: req.user._id });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    // Google-only users have no password
+    if (!user.password) {
+      return res.status(400).json({ success: false, error: 'This account uses Google sign-in and has no password to change' });
+    }
+
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, error: 'Current password is incorrect' });
+    }
+
+    user.password = newPassword; // pre-save hook will hash it
+    await user.save();
+
+    res.status(200).json({ success: true, message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Change password error:', error.message);
+    res.status(500).json({ success: false, error: 'Server error changing password' });
+  }
+};
+
 module.exports = {
   register,
   login,
   googleLogin,
+  updateProfile,
+  changePassword,
 };

@@ -1,7 +1,7 @@
 // client/src/context/AuthContext.jsx
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getCurrentUser, loginUser, registerUser, loginWithGoogle, logoutUser } from '../services/auth';
+import { getCurrentUser, loginUser, registerUser, loginWithGoogle, logoutUser, updateUserProfile, changeUserPassword } from '../services/auth';
 
 const AuthContext = createContext(null);
 
@@ -94,6 +94,18 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
   };
 
+  const handleUpdateUser = async (profileData) => {
+    const response = await updateUserProfile(profileData);
+    if (response.success) {
+      setUser(response.user);
+    }
+    return response;
+  };
+
+  const handleChangePassword = async (passwordData) => {
+    return await changeUserPassword(passwordData);
+  };
+
   const value = {
     user,
     token,
@@ -102,6 +114,8 @@ export const AuthProvider = ({ children }) => {
     register: handleRegister,
     googleLogin: handleGoogleLogin,
     logout: handleLogout,
+    updateUser: handleUpdateUser,
+    changePassword: handleChangePassword,
     isAuthenticated: !!token && !!user,
   };
 

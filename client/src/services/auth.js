@@ -15,10 +15,7 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
-/**
- * Register user
- * @param {Object} data - { name, email, password }
- */
+/** Register user */
 export const registerUser = async (data) => {
   const response = await API.post('/auth/register', data);
   if (response.data.success && response.data.token) {
@@ -27,10 +24,7 @@ export const registerUser = async (data) => {
   return response.data;
 };
 
-/**
- * Login user via standard email/password
- * @param {Object} data - { email, password }
- */
+/** Login user via standard email/password */
 export const loginUser = async (data) => {
   const response = await API.post('/auth/login', data);
   if (response.data.success && response.data.token) {
@@ -39,10 +33,7 @@ export const loginUser = async (data) => {
   return response.data;
 };
 
-/**
- * Authenticate/register user via Google OAuth credential
- * @param {string} idToken - Google credential ID token
- */
+/** Authenticate/register user via Google OAuth credential */
 export const loginWithGoogle = async (idToken) => {
   const response = await API.post('/auth/google', { idToken });
   if (response.data.success && response.data.token) {
@@ -51,17 +42,31 @@ export const loginWithGoogle = async (idToken) => {
   return response.data;
 };
 
-/**
- * Fetch current authenticated user's profile
- */
+/** Fetch current authenticated user's profile */
 export const getCurrentUser = async () => {
   const response = await API.get('/auth/me');
   return response.data;
 };
 
 /**
- * Log out user (clear credentials)
+ * Update user profile (name, companyName, phoneNumber)
+ * @param {Object} data - { name, companyName, phoneNumber }
  */
+export const updateUserProfile = async (data) => {
+  const response = await API.put('/auth/profile', data);
+  return response.data;
+};
+
+/**
+ * Change user password
+ * @param {Object} data - { currentPassword, newPassword }
+ */
+export const changeUserPassword = async (data) => {
+  const response = await API.put('/auth/password', data);
+  return response.data;
+};
+
+/** Log out user (clear credentials) */
 export const logoutUser = () => {
   localStorage.removeItem('token');
 };

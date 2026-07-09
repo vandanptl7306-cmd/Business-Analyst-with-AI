@@ -13,6 +13,7 @@ import {
   Sparkles,
   Sliders,
   Package,
+  UserCircle,
 } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -93,15 +94,21 @@ export default function DashboardLayout() {
 
         {/* User profile & Logout footer */}
         <div className="p-4 border-t border-slate-800 bg-slate-950/40 space-y-3">
-          <div className="flex items-center space-x-3 px-2">
-            <div className="h-8 w-8 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center justify-center font-bold text-xs uppercase">
-              {user?.name?.substring(0,2)}
+          <Link to="/profile" className="flex items-center space-x-3 px-2 group hover:opacity-80 transition-opacity">
+            <div className="h-8 w-8 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center justify-center font-bold text-xs uppercase flex-shrink-0">
+              {user?.name?.substring(0, 2)}
             </div>
-            <div className="truncate">
+            <div className="truncate flex-1 min-w-0">
               <div className="text-xs font-semibold text-slate-200 truncate">{user?.name}</div>
-              <div className="text-[10px] text-slate-550 font-mono capitalize">{user?.role}</div>
+              <div className="text-[10px] text-slate-500 font-mono capitalize flex items-center gap-1">
+                <span>{user?.role}</span>
+                {!user?.phoneNumber && (
+                  <span className="text-amber-500 font-bold">· Add mobile</span>
+                )}
+              </div>
             </div>
-          </div>
+            <UserCircle className="h-3.5 w-3.5 text-slate-600 group-hover:text-indigo-400 flex-shrink-0 transition-colors" />
+          </Link>
 
           <button
             onClick={handleLogout}

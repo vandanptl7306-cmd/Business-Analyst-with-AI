@@ -2,7 +2,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { register, login, googleLogin } = require('../controllers/auth');
+const { register, login, googleLogin, updateProfile, changePassword } = require('../controllers/auth');
 const { protect } = require('../middleware/auth');
 
 // Public routes
@@ -10,12 +10,12 @@ router.post('/register', register);
 router.post('/login', login);
 router.post('/google', googleLogin);
 
-// Example protected route to fetch current user's profile
+// Protected routes
 router.get('/me', protect, (req, res) => {
-  res.status(200).json({
-    success: true,
-    user: req.user,
-  });
+  res.status(200).json({ success: true, user: req.user });
 });
+
+router.put('/profile', protect, updateProfile);
+router.put('/password', protect, changePassword);
 
 module.exports = router;

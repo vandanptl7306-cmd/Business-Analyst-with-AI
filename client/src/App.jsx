@@ -21,6 +21,7 @@ import TallySync from './pages/TallySync';
 import Reports from './pages/Reports';
 import DemandForecast from './pages/DemandForecast';
 import StockManagement from './pages/StockManagement';
+import Profile from './pages/Profile';
 
 function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();
@@ -82,6 +83,7 @@ function AppRoutes() {
           <Route path="/stock" element={<StockManagement />} />
           <Route path="/tally" element={<TallySync />} />
           <Route path="/forecast" element={<DemandForecast />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
 
           {/* Protected + Admin Routes */}
