@@ -5,6 +5,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getInvoiceById, updateInvoiceStatus, sendInvoiceWhatsApp } from '../services/invoice';
 import { getInvoicePayments } from '../services/payment';
+import { getStoreSettings } from '../services/settings';
 import InvoiceComplianceForm from '../components/InvoiceComplianceForm';
 import InvoiceStatusBadge from '../components/InvoiceStatusBadge';
 import CheckoutModal from '../components/CheckoutModal';
@@ -26,10 +27,18 @@ export default function InvoiceDetail() {
   useEffect(() => {
     const fetchInvoice = async () => {
       try {
-        const data = await getInvoiceById(id);
+        const [data, settingsData] = await Promise.all([
+          getInvoiceById(id),
+          getStoreSettings()
+        ]);
         if (data.success) {
           setInvoice(data.invoice);
-          setSelectedTemplate(data.invoice.templateType || 'Standard');
+          let defaultTemp = 'Standard';
+          if (settingsData.success && settingsData.settings) {
+            const s = settingsData.settings;
+            defaultTemp = s.printerType === 'Thermal' ? 'Thermal' : (s.regularLayoutTheme || 'Standard');
+          }
+          setSelectedTemplate(data.invoice.templateType || defaultTemp);
         }
       } catch (err) {
         setError(err.response?.data?.error || 'Failed to retrieve invoice details.');

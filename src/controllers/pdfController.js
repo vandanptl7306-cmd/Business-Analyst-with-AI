@@ -114,6 +114,28 @@ const getInvoiceHTML = (invoice, store, template) => {
        </div>`
     : '';
 
+  const companyTaglineHTML = store.companyTagline
+    ? `<div style="font-size: 11px; font-style: italic; color: #64748b; margin-bottom: 6px; font-weight: normal;">${store.companyTagline}</div>`
+    : '';
+
+  const bankDetailsHTML = (store.printBankDetails === true && store.bankName)
+    ? `<div style="margin-top: 15px; font-size: 11px; border: 1.5px solid #cbd5e1; padding: 12px; border-radius: 8px; background-color: #f8fafc; text-align: left; max-width: 320px; line-height: 1.5; font-weight: normal; color: #334155;">
+        <strong style="display:block; margin-bottom: 6px; color: ${themeColor}; font-size: 12px; font-weight: bold;">Bank Transfer Details</strong>
+        <div style="margin-bottom: 2px;">Account Holder: <strong>${store.bankAccountHolderName || ''}</strong></div>
+        <div style="margin-bottom: 2px;">Bank Name: <strong>${store.bankName}</strong></div>
+        <div style="margin-bottom: 2px;">Account Number: <strong>${store.bankAccountNumber || ''}</strong></div>
+        <div style="margin-bottom: 2px;">IFSC Code: <strong>${store.bankIfscCode || ''}</strong></div>
+        ${store.bankBranchName ? `<div style="margin-bottom: 2px;">Branch: <strong>${store.bankBranchName}</strong></div>` : ''}
+       </div>`
+    : '';
+
+  const notesHTML = store.invoiceNotes 
+    ? `<div style="margin-top: 15px; font-size: 11px; border-top: 1px solid #e2e8f0; padding-top: 10px; text-align: left; font-weight: normal; line-height: 1.5;">
+        <strong style="color: #1e293b;">Notes / Terms:</strong>
+        <p style="margin: 4px 0 0 0; color: #475569; white-space: pre-line;">${store.invoiceNotes}</p>
+       </div>`
+    : '';
+
   // Helper to compile totals rows
   const getTotalsTableRowsHTML = () => {
     let rows = `
@@ -212,7 +234,7 @@ const getInvoiceHTML = (invoice, store, template) => {
           @page { size: ${store.paperSize || 'A4'} ${store.orientation || 'portrait'}; margin: 10mm; }
           body { font-family: 'Arial', sans-serif; font-size: 11px; line-height: 1.4; color: #000000; padding: 20px; background-color: #ffffff; }
           .tax-invoice-container { max-width: 800px; margin: auto; border: 1.5px solid #000000; }
-          .title-banner { text-align: center; border-bottom: 1.5px solid #000000; padding: 8px; font-weight: bold; font-size: ${invoiceTitleSize}; letter-spacing: 1px; text-transform: uppercase; }
+          .title-banner { text-align: center; border-bottom: 1.5px solid #000000; padding: 8px; font-weight: bold; font-size: ${invoiceTitleSize}; letter-spacing: 1px; text-transform: uppercase; color: ${themeColor}; }
           .grid-header { display: grid; grid-template-columns: 1.2fr 1fr; border-bottom: 1px solid #000000; }
           .header-left { border-right: 1.5px solid #000000; padding: 8px; }
           .header-right { display: grid; grid-template-columns: 1fr 1fr; }
@@ -222,14 +244,9 @@ const getInvoiceHTML = (invoice, store, template) => {
           .buyer-box { border-bottom: 1.5px solid #000000; padding: 8px; }
           .items-table { width: 100%; border-collapse: collapse; }
           .items-table th, .items-table td { border-right: 1px solid #000000; border-bottom: 1px solid #000000; padding: 6px; font-size: 11px; }
-          .items-table th { background: #f3f4f6; text-transform: uppercase; font-weight: bold; text-align: left; }
-          .items-table td { height: 40px; vertical-align: top; }
-          .items-table tr:last-child td { border-bottom: none; }
-          .items-table th:last-child, .items-table td:last-child { border-right: none; }
-          .totals-row td { font-weight: bold; height: auto; vertical-align: middle; border-top: 1.5px solid #000000; }
-          .amount-words { padding: 8px; border-bottom: 1.5px solid #000000; font-weight: bold; }
-          .hsn-table { width: 100%; border-collapse: collapse; }
-          .hsn-table th, .hsn-table td { border-right: 1px solid #000000; border-bottom: 1px solid #000000; padding: 5px; font-size: 10px; text-align: center; }
+          .items-table th { background: ${themeColor}; color: #ffffff; border-right: 1px solid #ffffff; border-bottom: 1.5px solid ${themeColor}; text-transform: uppercase; font-weight: bold; text-align: left; }
+          .hsn-table th { background: ${themeColor}; color: #ffffff; border-right: 1px solid #ffffff; }
+          .hsn-table td { border-right: 1px solid #000000; border-bottom: 1px solid #000000; padding: 5px; font-size: 10px; text-align: center; }
           .hsn-table th { background: #f3f4f6; }
           .hsn-table tr:last-child td { border-bottom: none; }
           .hsn-table th:last-child, .hsn-table td:last-child { border-right: none; }
@@ -246,6 +263,7 @@ const getInvoiceHTML = (invoice, store, template) => {
             <div class="header-left">
               ${logoHTML}
               ${companyNameHTML}
+              ${companyTaglineHTML}
               ${addressHTML}
               ${gstinHTML}
               ${emailHTML}
@@ -438,6 +456,8 @@ const getInvoiceHTML = (invoice, store, template) => {
             <div class="decl-left">
               <strong>Declaration:</strong><br/>
               We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.
+              ${notesHTML}
+              ${bankDetailsHTML}
             </div>
             <div class="signature-right">
               <small style="color: #444;">for <strong>${store.customCompanyName || store.shopName}</strong></small>
@@ -506,6 +526,7 @@ const getInvoiceHTML = (invoice, store, template) => {
           <div class="header-section">
             <div class="company-details">
               <div class="company-name">${store.customCompanyName || store.shopName}</div>
+              ${companyTaglineHTML}
               <div>${store.customAddress || store.address}</div>
               ${store.printPhone !== false ? `<div>Phone: ${store.customPhone || store.phoneNumber}</div>` : ''}
               ${store.printEmail !== false ? `<div>Email: ${store.customEmail || store.email}</div>` : ''}
@@ -578,6 +599,8 @@ const getInvoiceHTML = (invoice, store, template) => {
             <div class="terms-title">TERMS & CONDITIONS</div>
             <p>Payment is due within 15 days of invoice date.</p>
             <p>Thank you for choosing ${store.customCompanyName || store.shopName}! We appreciate your business.</p>
+            ${notesHTML}
+            ${bankDetailsHTML}
           </div>
         </div>
       </body>
@@ -613,16 +636,16 @@ const getInvoiceHTML = (invoice, store, template) => {
           .date-val { font-size: 12px; font-weight: 600; }
           
           .commercial-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-          .commercial-table th { background-color: #4b5563; color: #ffffff; padding: 8px 12px; font-size: 10px; text-transform: uppercase; font-weight: bold; text-align: left; border: 1px solid #4b5563; }
+          .commercial-table th { background-color: ${themeColor}; color: #ffffff; padding: 8px 12px; font-size: 10px; text-transform: uppercase; font-weight: bold; text-align: left; border: 1px solid ${themeColor}; }
           .commercial-table td { padding: 12px; border: 1px solid #e2e8f0; font-size: 11px; }
           .commercial-table tr:nth-child(even) { background-color: #f8fafc; }
           
           .totals-flex { display: grid; grid-template-columns: 1.5fr 1fr; gap: 40px; margin-top: 20px; font-size: 11px; }
-          .notes-side { background-color: #f1f5f9; padding: 15px; border-radius: 8px; height: fit-content; }
+          .notes-side { background-color: #f1f5f9; padding: 15px; border-radius: 8px; height: fit-content; border-left: 4px solid ${themeColor}; }
           .notes-title { font-weight: bold; margin-bottom: 6px; }
           .totals-side { display: flex; flex-direction: column; gap: 2px; }
           .total-row { display: flex; justify-content: space-between; padding: 8px 12px; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; }
-          .total-row.highlight { background-color: #cbd5e1; font-weight: bold; }
+          .total-row.highlight { background-color: ${themeColor}15; font-weight: bold; border-left: 4px solid ${themeColor}; }
           
           .agreement-section { margin-top: 60px; border-top: 1px solid #cbd5e1; padding-top: 25px; }
           .agreement-title { font-size: 11px; font-weight: bold; text-transform: uppercase; margin-bottom: 30px; }
@@ -634,6 +657,7 @@ const getInvoiceHTML = (invoice, store, template) => {
         <div class="header-block">
           <div class="company-info">
             <div class="company-name">${store.customCompanyName || store.shopName}</div>
+            ${companyTaglineHTML}
             <div>${store.customAddress || store.address}</div>
             ${store.printPhone !== false ? `<div>Phone: ${store.customPhone || store.phoneNumber}</div>` : ''}
             ${store.printEmail !== false ? `<div>Email: ${store.customEmail || store.email}</div>` : ''}
@@ -693,7 +717,8 @@ const getInvoiceHTML = (invoice, store, template) => {
         <div class="totals-flex">
           <div class="notes-side">
             <div class="notes-title">Notes:</div>
-            <p style="margin: 0; color: #475569;">Payment upon delivery.</p>
+            <p style="margin: 0; color: #475569; white-space: pre-line;">${store.invoiceNotes || 'Payment upon delivery.'}</p>
+            ${bankDetailsHTML}
           </div>
           <div class="totals-side">
             <div class="total-row">
@@ -847,7 +872,8 @@ const getInvoiceHTML = (invoice, store, template) => {
           <div class="bottom-flex">
             <div class="notes-block">
               <strong>Notes:</strong>
-              <p style="margin: 4px 0 0 0;">Thank you for your business! Please remit payment according to terms.</p>
+              <p style="margin: 4px 0 0 0; white-space: pre-line;">${store.invoiceNotes || 'Thank you for your business! Please remit payment according to terms.'}</p>
+              ${bankDetailsHTML}
             </div>
             <div class="totals-block">
               <table class="totals-table">
@@ -1225,7 +1251,8 @@ const getInvoiceHTML = (invoice, store, template) => {
           </div>
 
           <div class="notes-block">
-            <strong>Notes:</strong> This invoice is in ${isIndianFormat ? 'INR' : 'USD'}. Total payment due is 30 days.
+            <strong>Notes:</strong> ${store.invoiceNotes || `This invoice is in ${isIndianFormat ? 'INR' : 'USD'}. Total payment due is 30 days.`}
+            ${bankDetailsHTML}
           </div>
         </div>
       </body>
@@ -1419,6 +1446,7 @@ const getInvoiceHTML = (invoice, store, template) => {
           <div>
             ${logoHTML}
             ${companyNameHTML}
+            ${companyTaglineHTML}
             ${gstinHTML}
           </div>
           <div style="text-align: right;">
@@ -1433,6 +1461,7 @@ const getInvoiceHTML = (invoice, store, template) => {
           <div class="info-card">
             <h4 style="margin: 0 0 8px 0; text-transform: uppercase; font-size: 11px; color: #64748b;">From</h4>
             ${companyNameHTML}
+            ${companyTaglineHTML}
             ${addressHTML}
             ${phoneHTML}
             ${emailHTML}
@@ -1469,6 +1498,9 @@ const getInvoiceHTML = (invoice, store, template) => {
             ${getTotalsTableRowsHTML()}
           </table>
         </div>
+
+        ${bankDetailsHTML}
+        ${notesHTML}
 
         <div style="margin-top: 20px;">
           <span style="font-size: 11px; font-weight: bold; color: #64748b; display: block; text-transform: uppercase;">Amount in Words</span>
@@ -1525,8 +1557,10 @@ const printInvoice = async (req, res) => {
       try { await invoice.save(); } catch (_) {}
     }
 
-    // Default template: if printer type is Thermal and no override, set to Thermal
-    const selectedTemplate = templateQuery || invoice.templateType || store.defaultInvoiceTemplate || (store.printerType === 'Thermal' ? 'Thermal' : 'Standard');
+    // Default template: if printer type is Thermal and no override, set to Thermal.
+    // Otherwise, default to regularLayoutTheme.
+    const defaultTemplate = store.printerType === 'Thermal' ? 'Thermal' : (store.regularLayoutTheme || store.defaultInvoiceTemplate || 'Standard');
+    const selectedTemplate = templateQuery || invoice.templateType || defaultTemplate;
 
     // Update template preference on the invoice record (non-blocking)
     if (templateQuery && invoice.templateType !== templateQuery) {

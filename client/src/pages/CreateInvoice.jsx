@@ -249,7 +249,7 @@ export default function CreateInvoice() {
 
       {/* Page header banner */}
       <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-40 h-40 bg-indigo-50/5 rounded-full blur-2xl"></div>
+        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-40 h-40 bg-indigo-50/5 rounded-full blur-2xl pointer-events-none"></div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center space-x-3">
             <Link to="/dashboard"

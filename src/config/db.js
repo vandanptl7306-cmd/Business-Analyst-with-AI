@@ -185,6 +185,8 @@ const setupMockDB = () => {
   }
 
   const getCollectionKey = (modelName) => {
+    if (modelName === 'StoreSettings') return 'storesettings';
+    if (modelName === 'Party') return 'parties';
     return modelName.toLowerCase() + 's';
   };
 

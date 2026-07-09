@@ -313,7 +313,7 @@ export default function SettingsPage() {
       
       {/* Header Block */}
       <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-40 h-40 bg-indigo-50/5 rounded-full blur-2xl"></div>
+        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-40 h-40 bg-indigo-50/5 rounded-full blur-2xl pointer-events-none"></div>
         <h1 className="text-2xl font-extrabold tracking-tight text-slate-800">Workspace Settings</h1>
         <p className="text-xs text-slate-500 mt-1">Configure your business profile archetype, receipt layout variables, paper orientations, colors, and taxes</p>
       </div>
