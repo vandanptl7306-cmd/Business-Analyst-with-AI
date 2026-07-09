@@ -16,10 +16,10 @@ const { protect } = require('../middleware/auth');
 // Apply JWT protection to all product routes
 router.use(protect);
 
-// Stock catalog CRUD
+// Stock catalog CRUD - define specific routes BEFORE parameterized routes
+router.get('/low-stock', getLowStockProducts);
 router.get('/', getProducts);
 router.post('/', validateProductProfile, createProduct);
-router.get('/low-stock', getLowStockProducts);
 router.put('/:id', updateProduct);
 router.delete('/:id', deleteProduct);
 

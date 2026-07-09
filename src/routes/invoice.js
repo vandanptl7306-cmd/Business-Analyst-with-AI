@@ -9,9 +9,10 @@ const { protect, admin } = require('../middleware/auth');
 // Apply protection to all invoice routes
 router.use(protect);
 
+// Define specific routes BEFORE parameterized routes
+router.get('/next-number', getUpcomingInvoiceNumber);
 router.post('/', createInvoice);
 router.get('/', getInvoices);
-router.get('/next-number', getUpcomingInvoiceNumber);
 router.get('/analytics/profit', admin, getProfitAnalytics);
 router.get('/:id', getInvoice);
 router.get('/:id/print', printInvoice);
