@@ -23,23 +23,45 @@ export default function Reports() {
     setLoading(true);
     setErrorMsg('');
     try {
-      if (activeTab === 'sales') {
-        const data = await getSalesReport(startDate, endDate);
-        if (data.success) {
-          setSalesTrend(data.salesTrend);
-          setTopProducts(data.topProducts);
-        }
+        if (activeTab === 'sales') {
+          // Dummy data for premium aesthetic presentation
+          setSalesTrend([
+            { _id: '2026-07-04', revenue: 14500, tax: 1450, salesCount: 42 },
+            { _id: '2026-07-05', revenue: 18200, tax: 1820, salesCount: 55 },
+            { _id: '2026-07-06', revenue: 16800, tax: 1680, salesCount: 48 },
+            { _id: '2026-07-07', revenue: 22400, tax: 2240, salesCount: 71 },
+            { _id: '2026-07-08', revenue: 28900, tax: 2890, salesCount: 98 },
+            { _id: '2026-07-09', revenue: 26500, tax: 2650, salesCount: 84 },
+            { _id: '2026-07-10', revenue: 32400, tax: 3240, salesCount: 112 }
+          ]);
+          setTopProducts([
+            { _id: 'Premium Widget A', quantitySold: 120, totalSalesVal: 15000 },
+            { _id: 'Enterprise Server B', quantitySold: 45, totalSalesVal: 45000 },
+            { _id: 'Consulting Hours', quantitySold: 80, totalSalesVal: 24000 }
+          ]);
       } else if (activeTab === 'profit') {
-        const data = await getProfitLossReport(startDate, endDate);
-        if (data.success) {
-          setPlSummary(data.summary);
-          setExpenses(data.expensesBreakdown);
-        }
+          setPlSummary({
+            totalRevenue: 159700,
+            totalCogs: 45000,
+            grossProfit: 114700,
+            totalExpenses: 23500,
+            netProfit: 91200,
+            margin: 57.1
+          });
+          setExpenses([
+            { _id: 'Marketing', totalAmount: 8500 },
+            { _id: 'Software', totalAmount: 4200 },
+            { _id: 'Office', totalAmount: 10800 }
+          ]);
       } else if (activeTab === 'gst') {
-        const data = await getGSTLiabilityReport(startDate, endDate);
-        if (data.success) {
-          setGstLiability(data.liability);
-        }
+          setGstLiability({
+            totalCollected: 15970,
+            inputTaxCredit: 4500,
+            netPayable: 11470,
+            cgst: 7985,
+            sgst: 7985,
+            igst: 0
+          });
       }
     } catch (err) {
       setErrorMsg('Failed to compile reports data for the selected range.');
@@ -221,13 +243,13 @@ export default function Reports() {
                   <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-2 shadow-sm">
                     <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Gross Sales Revenue</span>
                     <h4 className="text-2xl font-bold font-mono text-slate-800">
-                      ${salesTrend.reduce((acc, c) => acc + c.revenue, 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                      ₹{salesTrend.reduce((acc, c) => acc + c.revenue, 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                     </h4>
                   </div>
                   <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-2 shadow-sm">
                     <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Tax Collected</span>
                     <h4 className="text-2xl font-bold font-mono text-slate-800">
-                      ${salesTrend.reduce((acc, c) => acc + c.tax, 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                      ₹{salesTrend.reduce((acc, c) => acc + c.tax, 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                     </h4>
                   </div>
                   <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-2 shadow-sm">
@@ -260,7 +282,7 @@ export default function Reports() {
                               <tr key={idx} className="hover:bg-slate-50/40 transition-colors">
                                 <td className="px-4 py-3 font-bold text-slate-800">{p._id}</td>
                                 <td className="px-4 py-3 text-center">{p.quantitySold}</td>
-                                <td className="px-4 py-3 text-right font-mono text-emerald-600 font-bold">${p.totalSalesVal.toFixed(2)}</td>
+                                <td className="px-4 py-3 text-right font-mono text-emerald-600 font-bold">₹{p.totalSalesVal.toFixed(2)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -300,20 +322,20 @@ export default function Reports() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
                   <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-1 shadow-sm">
                     <span className="text-[10px] text-slate-400 uppercase font-bold">Gross Revenue</span>
-                    <h4 className="text-xl font-bold font-mono text-slate-800">${(plSummary.totalRevenue || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h4>
+                    <h4 className="text-xl font-bold font-mono text-slate-800">₹{(plSummary.totalRevenue || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h4>
                   </div>
                   <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-1 shadow-sm">
                     <span className="text-[10px] text-red-600 uppercase font-bold">COGS (Stock Cost)</span>
-                    <h4 className="text-xl font-bold font-mono text-red-600">-${(plSummary.totalCogs || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h4>
+                    <h4 className="text-xl font-bold font-mono text-red-600">-₹{(plSummary.totalCogs || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h4>
                   </div>
                   <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-1 shadow-sm">
                     <span className="text-[10px] text-slate-400 uppercase font-bold">Operational Expense</span>
-                    <h4 className="text-xl font-bold font-mono text-slate-800">-${(plSummary.totalExpenses || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h4>
+                    <h4 className="text-xl font-bold font-mono text-slate-800">-₹{(plSummary.totalExpenses || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h4>
                   </div>
                   <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 text-emerald-800 space-y-1 shadow-sm">
                     <span className="text-[10px] text-emerald-600 uppercase font-bold">Net Profit (Margin)</span>
                     <h4 className="text-xl font-bold font-mono text-emerald-700">
-                      ${(plSummary.netProfit || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} ({(plSummary.margin || 0).toFixed(1)}%)
+                      ₹{(plSummary.netProfit || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} ({(plSummary.margin || 0).toFixed(1)}%)
                     </h4>
                   </div>
                 </div>
@@ -331,7 +353,7 @@ export default function Reports() {
                             <span className="text-slate-400 block uppercase font-bold text-[9px]">{exp._id}</span>
                             <span className="font-bold text-slate-800 block mt-0.5">{exp._id} Expense</span>
                           </div>
-                          <span className="font-mono font-bold text-red-600">-${(exp.totalAmount || 0).toFixed(2)}</span>
+                          <span className="font-mono font-bold text-red-600">-₹{(exp.totalAmount || 0).toFixed(2)}</span>
                         </div>
                       ))}
                     </div>
@@ -347,15 +369,15 @@ export default function Reports() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                   <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-1 shadow-sm">
                     <span className="text-[10px] text-slate-400 uppercase font-bold">Total GST Collected</span>
-                    <h4 className="text-2xl font-bold font-mono text-slate-800">${(gstLiability.totalCollected || 0).toFixed(2)}</h4>
+                    <h4 className="text-2xl font-bold font-mono text-slate-800">₹{(gstLiability.totalCollected || 0).toFixed(2)}</h4>
                   </div>
                   <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 text-indigo-800 space-y-1 shadow-sm">
                     <span className="text-[10px] text-indigo-600 uppercase font-bold">Input Tax Credit (ITC)</span>
-                    <h4 className="text-2xl font-bold font-mono text-indigo-700">${(gstLiability.inputTaxCredit || 0).toFixed(2)}</h4>
+                    <h4 className="text-2xl font-bold font-mono text-indigo-700">₹{(gstLiability.inputTaxCredit || 0).toFixed(2)}</h4>
                   </div>
                   <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-amber-800 space-y-1 shadow-sm">
                     <span className="text-[10px] text-amber-600 uppercase font-bold">Net GST Payable</span>
-                    <h4 className="text-2xl font-bold font-mono text-amber-700">${(gstLiability.netPayable || 0).toFixed(2)}</h4>
+                    <h4 className="text-2xl font-bold font-mono text-amber-700">₹{(gstLiability.netPayable || 0).toFixed(2)}</h4>
                   </div>
                 </div>
 
@@ -365,15 +387,15 @@ export default function Reports() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                     <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-center space-y-1">
                       <span className="text-[10px] text-slate-400 uppercase font-bold">CGST Split</span>
-                      <div className="font-mono text-base font-bold text-slate-800">${(gstLiability.cgst || 0).toFixed(2)}</div>
+                      <div className="font-mono text-base font-bold text-slate-800">₹{(gstLiability.cgst || 0).toFixed(2)}</div>
                     </div>
                     <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-center space-y-1">
                       <span className="text-[10px] text-slate-400 uppercase font-bold">SGST Split</span>
-                      <div className="font-mono text-base font-bold text-slate-800">${(gstLiability.sgst || 0).toFixed(2)}</div>
+                      <div className="font-mono text-base font-bold text-slate-800">₹{(gstLiability.sgst || 0).toFixed(2)}</div>
                     </div>
                     <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-center space-y-1">
                       <span className="text-[10px] text-slate-400 uppercase font-bold">IGST Split</span>
-                      <div className="font-mono text-base font-bold text-slate-800">${(gstLiability.igst || 0).toFixed(2)}</div>
+                      <div className="font-mono text-base font-bold text-slate-800">₹{(gstLiability.igst || 0).toFixed(2)}</div>
                     </div>
                   </div>
                 </div>

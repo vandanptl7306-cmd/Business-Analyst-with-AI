@@ -60,13 +60,15 @@ export default function DemandForecast() {
     setTotalPredicted(0);
 
     try {
-      const data = await getProductDemandForecast(selectedProduct, days);
-      if (data.success) {
-        setForecastList(data.forecast);
-        setModelType(data.model);
-        const sum = data.forecast.reduce((acc, curr) => acc + (curr.predicted_quantity || 0), 0);
-        setTotalPredicted(Math.round(sum));
-      }
+      // Use dummy data for aesthetic demonstration
+      const dummyForecast = Array.from({ length: days }).map((_, i) => ({
+        date: `2026-07-${(i + 1).toString().padStart(2, '0')}`,
+        predicted_quantity: Math.floor(Math.random() * 50) + 20 + (i * 2) // Upward trending dummy data
+      }));
+      setForecastList(dummyForecast);
+      setModelType('RandomForestRegressor (Aesthetic Mock)');
+      const sum = dummyForecast.reduce((acc, curr) => acc + (curr.predicted_quantity || 0), 0);
+      setTotalPredicted(Math.round(sum));
     } catch (err) {
       setApiError(err.response?.data?.error || 'Failed to communicate with forecasting microservice.');
     } finally {

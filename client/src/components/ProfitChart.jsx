@@ -6,24 +6,16 @@ import { BarChart3, TrendingUp, DollarSign } from 'lucide-react';
 export default function ProfitChart({ invoices }) {
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
-  // Group and sort last 7 days of invoices
-  const last7Days = Array.from({ length: 7 }).map((_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    return d.toLocaleDateString();
-  }).reverse();
-
-  // Aggregate profit by day
-  const dailyData = last7Days.map((day) => {
-    const matching = invoices.filter((inv) => new Date(inv.createdAt).toLocaleDateString() === day);
-    const profit = matching.reduce((acc, curr) => acc + (curr.netProfit || 0), 0);
-    const revenue = matching.reduce((acc, curr) => acc + (curr.totalRevenue || 0), 0);
-    return {
-      date: day.split('/')[0] + '/' + day.split('/')[1], // standard short DD/MM
-      profit: Number(profit.toFixed(2)),
-      revenue: Number(revenue.toFixed(2)),
-    };
-  });
+  // Use Dummy premium data for ProfitChart
+  const dailyData = [
+    { date: 'Jul 04', profit: 4200, revenue: 14500 },
+    { date: 'Jul 05', profit: 5400, revenue: 18200 },
+    { date: 'Jul 06', profit: 4800, revenue: 16800 },
+    { date: 'Jul 07', profit: 7100, revenue: 22400 },
+    { date: 'Jul 08', profit: 9800, revenue: 28900 },
+    { date: 'Jul 09', profit: 8400, revenue: 26500 },
+    { date: 'Jul 10', profit: 11200, revenue: 32400 },
+  ];
 
   const maxVal = Math.max(...dailyData.map((d) => Math.max(d.profit, 100)));
 
@@ -46,13 +38,13 @@ export default function ProfitChart({ invoices }) {
         
         {/* Y Axis Guides */}
         <div className="absolute left-0 right-0 top-8 border-b border-slate-100 text-[9px] text-slate-400 font-mono text-right pr-1">
-          ${(maxVal * 0.75).toFixed(0)}
+          ₹{(maxVal * 0.75).toFixed(0)}
         </div>
         <div className="absolute left-0 right-0 top-24 border-b border-slate-100 text-[9px] text-slate-400 font-mono text-right pr-1">
-          ${(maxVal * 0.5).toFixed(0)}
+          ₹{(maxVal * 0.5).toFixed(0)}
         </div>
         <div className="absolute left-0 right-0 top-40 border-b border-slate-100 text-[9px] text-slate-400 font-mono text-right pr-1">
-          ${(maxVal * 0.25).toFixed(0)}
+          ₹{(maxVal * 0.25).toFixed(0)}
         </div>
 
         {dailyData.map((data, index) => {
@@ -73,11 +65,11 @@ export default function ProfitChart({ invoices }) {
                   <div className="font-bold text-white">{data.date}</div>
                   <div className="flex justify-between">
                     <span>Revenue:</span>
-                    <span className="font-bold font-mono">${data.revenue}</span>
+                    <span className="font-bold font-mono">₹{data.revenue}</span>
                   </div>
                   <div className="flex justify-between text-indigo-300">
                     <span>Profit:</span>
-                    <span className="font-bold font-mono">${data.profit}</span>
+                    <span className="font-bold font-mono">₹{data.profit}</span>
                   </div>
                 </div>
               )}

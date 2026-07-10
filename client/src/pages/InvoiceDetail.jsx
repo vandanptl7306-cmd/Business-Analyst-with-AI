@@ -199,7 +199,20 @@ export default function InvoiceDetail() {
               onClick={() => {
                 const token = localStorage.getItem('token');
                 const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-                window.open(`${apiBase}/invoices/${invoice._id}/print?template=${selectedTemplate}&token=${token}`, '_blank');
+                const printUrl = `${apiBase}/invoices/${invoice._id}/print?template=${selectedTemplate}&token=${token}`;
+                
+                // Create a hidden iframe to print without reloading or opening a new tab
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = printUrl;
+                document.body.appendChild(iframe);
+                
+                // Wait for iframe to load, then print
+                iframe.onload = () => {
+                  iframe.contentWindow.print();
+                  // Optional: remove iframe after a short delay to clean up DOM
+                  setTimeout(() => document.body.removeChild(iframe), 10000);
+                };
               }}
               className="flex items-center justify-center space-x-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-[0.98]"
             >

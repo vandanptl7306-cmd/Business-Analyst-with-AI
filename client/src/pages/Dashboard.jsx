@@ -101,21 +101,17 @@ export default function Dashboard() {
       });
     }
 
-    const last7Days = Array.from({ length: 7 }).map((_, index) => {
-      const date = new Date();
-      date.setDate(date.getDate() - index);
-      return date;
-    }).reverse();
-
-    return last7Days.map((date) => {
-      const formatted = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-      const matching = invoices.filter((inv) => new Date(inv.createdAt).toLocaleDateString() === date.toLocaleDateString());
-      return {
-        date: formatted,
-        revenue: Number(matching.reduce((sum, inv) => sum + (inv.totalRevenue ?? inv.grandTotal ?? 0), 0).toFixed(2)),
-        profit: Number(matching.reduce((sum, inv) => sum + (inv.netProfit ?? 0), 0).toFixed(2)),
-      };
-    });
+    // Dummy premium aesthetic data
+    const dummyTrend = [
+      { date: 'Jul 04', revenue: 14500, profit: 4200 },
+      { date: 'Jul 05', revenue: 18200, profit: 5400 },
+      { date: 'Jul 06', revenue: 16800, profit: 4800 },
+      { date: 'Jul 07', revenue: 22400, profit: 7100 },
+      { date: 'Jul 08', revenue: 28900, profit: 9800 },
+      { date: 'Jul 09', revenue: 26500, profit: 8400 },
+      { date: 'Jul 10', revenue: 32400, profit: 11200 },
+    ];
+    return dummyTrend;
   })();
 
   const maxChartValue = Math.max(...chartData.map((item) => Math.max(item.revenue, item.profit, 100)));
@@ -201,9 +197,9 @@ export default function Dashboard() {
                 </div>
                 <div className="h-72 relative rounded-2xl bg-slate-950/95 p-4 text-slate-200">
                   <div className="absolute inset-x-0 top-0 flex justify-between px-3 pt-2 text-[10px] text-slate-500">
-                    <span>${Math.round(maxChartValue * 0.75)}</span>
-                    <span>${Math.round(maxChartValue * 0.5)}</span>
-                    <span>${Math.round(maxChartValue * 0.25)}</span>
+                    <span>₹{Math.round(maxChartValue * 0.75)}</span>
+                    <span>₹{Math.round(maxChartValue * 0.5)}</span>
+                    <span>₹{Math.round(maxChartValue * 0.25)}</span>
                   </div>
                   <div className="absolute inset-x-0 top-12 border-t border-slate-800"></div>
                   <div className="absolute inset-x-0 top-28 border-t border-slate-800"></div>

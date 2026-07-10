@@ -1019,7 +1019,7 @@ export default function SettingsPage() {
 
             {/* Regular PDF preview sheet */}
             {activeTab !== 'Thermal' ? (() => {
-              const currencySymbol = amountInWordsFormat === 'Indian' ? '₹' : '$';
+              const currencySymbol = '₹';
               
               // 1. MINIMALIST PREVIEW
               if (regularLayoutTheme === 'Minimalist') {
