@@ -19,7 +19,7 @@ def is_port_open(port: int) -> bool:
 
 def start_service(name, command, cwd, port, url):
     if is_port_open(port):
-        print(f"[{name}] already running at {url}")
+        
         return None
 
     print(f"[{name}] starting -> {url}")
@@ -41,7 +41,7 @@ def check_ml_service():
 
     result = subprocess.run([python_exe, "-c", "import uvicorn"], capture_output=True, text=True)
     if result.returncode != 0:
-        print("[ML-SERVICE] skipped: uvicorn is not installed yet.")
+       
         return None
 
     return python_exe
@@ -63,9 +63,6 @@ def main():
     signal.signal(signal.SIGINT, shutdown_handler)
     signal.signal(signal.SIGTERM, shutdown_handler)
 
-    print("=" * 70)
-    print("STARTING BUSINESS ANALYST SERVICES")
-    print("=" * 70)
 
     ml_python = check_ml_service()
     if ml_python:
@@ -77,10 +74,6 @@ def main():
     print("\nOpen these links in your browser:")
     print("- Frontend: http://localhost:3000")
     print("- Backend:  http://localhost:5000")
-    if ml_python:
-        print("- ML API:   http://localhost:8000")
-    print("\nPress Ctrl+C to stop all services.")
-
     try:
         while True:
             time.sleep(2)

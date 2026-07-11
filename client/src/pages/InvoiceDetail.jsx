@@ -38,7 +38,7 @@ export default function InvoiceDetail() {
             const s = settingsData.settings;
             defaultTemp = s.printerType === 'Thermal' ? 'Thermal' : (s.regularLayoutTheme || 'Standard');
           }
-          setSelectedTemplate(data.invoice.templateType || defaultTemp);
+          setSelectedTemplate(defaultTemp);
         }
       } catch (err) {
         setError(err.response?.data?.error || 'Failed to retrieve invoice details.');
@@ -196,23 +196,53 @@ export default function InvoiceDetail() {
             </div>
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 const token = localStorage.getItem('token');
-                const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+                const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
                 const printUrl = `${apiBase}/invoices/${invoice._id}/print?template=${selectedTemplate}&token=${token}`;
                 
-                // Create a hidden iframe to print without reloading or opening a new tab
-                const iframe = document.createElement('iframe');
-                iframe.style.display = 'none';
-                iframe.src = printUrl;
-                document.body.appendChild(iframe);
-                
-                // Wait for iframe to load, then print
-                iframe.onload = () => {
-                  iframe.contentWindow.print();
-                  // Optional: remove iframe after a short delay to clean up DOM
-                  setTimeout(() => document.body.removeChild(iframe), 10000);
-                };
+                try {
+                  const response = await fetch(printUrl);
+                  if (!response.ok) {
+                    throw new Error('Failed to fetch print template');
+                  }
+                  const html = await response.text();
+                  
+                  // Create a Blob containing the HTML content
+                  const blob = new Blob([html], { type: 'text/html' });
+                  const blobUrl = URL.createObjectURL(blob);
+                  
+                  // Create a same-origin visually hidden iframe
+                  const iframe = document.createElement('iframe');
+                  iframe.style.position = 'fixed';
+                  iframe.style.width = '0';
+                  iframe.style.height = '0';
+                  iframe.style.border = 'none';
+                  iframe.style.opacity = '0';
+                  iframe.src = blobUrl;
+                  document.body.appendChild(iframe);
+                  
+                  // Wait for the iframe to load, focus, and print
+                  iframe.onload = () => {
+                    try {
+                      iframe.contentWindow.focus();
+                      iframe.contentWindow.print();
+                    } catch (e) {
+                      console.error('Print trigger error:', e);
+                    }
+                    
+                    // Revoke the blob URL to release memory and clean up DOM
+                    URL.revokeObjectURL(blobUrl);
+                    setTimeout(() => {
+                      if (document.body.contains(iframe)) {
+                        document.body.removeChild(iframe);
+                      }
+                    }, 5000);
+                  };
+                } catch (err) {
+                  console.error('Print Invoice error:', err);
+                  alert('Failed to load invoice print content. Please try again.');
+                }
               }}
               className="flex items-center justify-center space-x-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-[0.98]"
             >

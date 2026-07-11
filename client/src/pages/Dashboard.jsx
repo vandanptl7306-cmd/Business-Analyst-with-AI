@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { getInvoicesList, createInvoice, getUpcomingInvoiceNumber } from '../services/invoice';
-import { getDashboardAnalyticsMetrics } from '../services/analytics';
+import { getDashboardAnalyticsMetrics, getDashboardTrendChart } from '../services/analytics';
 import InvoiceStatusBadge from '../components/InvoiceStatusBadge';
 import ProfitChart from '../components/ProfitChart';
 import {
@@ -36,6 +36,9 @@ export default function Dashboard() {
   const [kpis, setKpis] = useState(null);
   const [trendData, setTrendData] = useState([]);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
+  const [chartImage, setChartImage] = useState('');
+  const [loadingChartImage, setLoadingChartImage] = useState(true);
+  const [selectedGraphMetric, setSelectedGraphMetric] = useState('revenue_profit');
 
   const fetchInvoices = async () => {
     try {
@@ -77,10 +80,31 @@ export default function Dashboard() {
     }
   };
 
+  const fetchChartImage = async (metric) => {
+    try {
+      setLoadingChartImage(true);
+      const chartRes = await getDashboardTrendChart(metric);
+      if (chartRes.success && chartRes.image) {
+        setChartImage(chartRes.image);
+      } else {
+        setChartImage('');
+      }
+    } catch (err) {
+      console.error('Failed to load Matplotlib trend chart:', err.message);
+      setChartImage('');
+    } finally {
+      setLoadingChartImage(false);
+    }
+  };
+
   useEffect(() => {
     fetchInvoices();
     fetchAnalytics();
   }, []);
+
+  useEffect(() => {
+    fetchChartImage(selectedGraphMetric);
+  }, [selectedGraphMetric]);
 
   const chartData = (() => {
     if (trendData?.length) {
@@ -114,7 +138,18 @@ export default function Dashboard() {
     return dummyTrend;
   })();
 
-  const maxChartValue = Math.max(...chartData.map((item) => Math.max(item.revenue, item.profit, 100)));
+  const maxChartValue = (() => {
+    if (selectedGraphMetric === 'repeat_rate') return 100;
+    if (selectedGraphMetric === 'accounts') return Math.max(...chartData.map((_, idx) => idx + 5), 10);
+    return Math.max(...chartData.map((item) => Math.max(item.revenue, item.profit, 100)));
+  })();
+
+  const getFallbackChartLabel = (val) => {
+    if (selectedGraphMetric === 'repeat_rate') return `${Math.round(val)}%`;
+    if (selectedGraphMetric === 'accounts') return `${Math.round(val)}`;
+    if (val >= 1000) return `₹${(val / 1000).toFixed(0)}k`;
+    return `₹${Math.round(val)}`;
+  };
 
   const handleLogout = () => {
     logout();
@@ -176,51 +211,107 @@ export default function Dashboard() {
       {/* Profit Insights Section (Admin only) */}
       {user?.role === 'Admin' && (
         <div className="space-y-6">
-          <ProfitChart invoices={invoices} />
-          
           <div className="card-module space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between border-b border-slate-100 pb-4 gap-3">
               <div className="flex items-center space-x-2">
-                <BarChart2 className="h-5 w-5 text-indigo-650" />
+                <BarChart2 className="h-5 w-5 text-indigo-600" />
                 <h3 className="text-lg font-bold text-slate-800">AI Business Intelligence Graphs</h3>
               </div>
-              <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-150 px-2.5 py-1 rounded-lg font-mono font-semibold">
-                Python Matplotlib Engine
-              </span>
+              <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-200 text-xs">
+                {[
+                  { id: 'revenue_profit', label: 'Revenue & Profit' },
+                  { id: 'repeat_rate', label: 'Repeat Purchase Rate' },
+                  { id: 'accounts', label: 'Customer Accounts' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setSelectedGraphMetric(tab.id)}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                      selectedGraphMetric === tab.id
+                        ? 'bg-white text-indigo-650 shadow-sm border border-slate-200/50'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
             
             <div className="border border-slate-200 rounded-xl overflow-hidden bg-white p-4">
               <div className="grid grid-cols-1 gap-3">
                 <div className="flex items-center justify-between text-xs text-slate-500 uppercase tracking-[0.3em] font-semibold">
-                  <span>AI Financial Dashboard</span>
+                  <span>
+                    {selectedGraphMetric === 'revenue_profit' && 'Revenue & Profit Trend'}
+                    {selectedGraphMetric === 'repeat_rate' && 'Customer Repeat Rate (%)'}
+                    {selectedGraphMetric === 'accounts' && 'Acquired Customer Accounts'}
+                  </span>
                   <span>{chartData.length} days</span>
                 </div>
-                <div className="h-72 relative rounded-2xl bg-slate-950/95 p-4 text-slate-200">
-                  <div className="absolute inset-x-0 top-0 flex justify-between px-3 pt-2 text-[10px] text-slate-500">
-                    <span>₹{Math.round(maxChartValue * 0.75)}</span>
-                    <span>₹{Math.round(maxChartValue * 0.5)}</span>
-                    <span>₹{Math.round(maxChartValue * 0.25)}</span>
+                
+                {loadingChartImage ? (
+                  <div className="h-72 w-full flex flex-col items-center justify-center bg-[#0b0f19] rounded-2xl border border-slate-800">
+                    <Loader2 className="h-8 w-8 text-indigo-500 animate-spin" />
+                    <span className="text-xs text-slate-400 mt-2">Loading Python Matplotlib Graph...</span>
                   </div>
-                  <div className="absolute inset-x-0 top-12 border-t border-slate-800"></div>
-                  <div className="absolute inset-x-0 top-28 border-t border-slate-800"></div>
-                  <div className="absolute inset-x-0 top-44 border-t border-slate-800"></div>
-                  <div className="absolute inset-x-0 top-60 border-t border-slate-800"></div>
-                  <div className="relative h-full flex items-end gap-3 px-3 pb-2">
-                    {chartData.map((item, idx) => {
-                      const revenueHeight = Math.max((item.revenue / maxChartValue) * 100, 8);
-                      const profitHeight = Math.max((item.profit / maxChartValue) * 100, 4);
-                      return (
-                        <div key={idx} className="flex-1 flex flex-col items-center gap-2">
-                          <div className="flex-1 flex flex-col justify-end w-full gap-1">
-                            <div style={{ height: `${revenueHeight}%` }} className="w-full rounded-full bg-slate-700" />
-                            <div style={{ height: `${profitHeight}%` }} className="w-full rounded-full bg-gradient-to-t from-indigo-500 to-indigo-400 shadow-lg shadow-indigo-500/30" />
+                ) : chartImage ? (
+                  <div className="h-72 w-full flex items-center justify-center bg-[#0b0f19] rounded-2xl overflow-hidden p-2 border border-slate-800">
+                    <img 
+                      src={`data:image/png;base64,${chartImage}`} 
+                      alt="AI Financial Dashboard" 
+                      className="h-full w-full object-contain animate-in fade-in duration-200"
+                    />
+                  </div>
+                ) : (
+                  <div className="h-72 relative rounded-2xl bg-slate-950/95 p-4 text-slate-200">
+                    <div className="absolute inset-x-0 top-0 flex justify-between px-3 pt-2 text-[10px] text-slate-500">
+                      <span>{getFallbackChartLabel(maxChartValue * 0.75)}</span>
+                      <span>{getFallbackChartLabel(maxChartValue * 0.5)}</span>
+                      <span>{getFallbackChartLabel(maxChartValue * 0.25)}</span>
+                    </div>
+                    <div className="absolute inset-x-0 top-12 border-t border-slate-800"></div>
+                    <div className="absolute inset-x-0 top-28 border-t border-slate-800"></div>
+                    <div className="absolute inset-x-0 top-44 border-t border-slate-800"></div>
+                    <div className="absolute inset-x-0 top-60 border-t border-slate-800"></div>
+                    <div className="relative h-full flex items-end gap-3 px-3 pb-8">
+                      {chartData.map((item, idx) => {
+                        let bar1Height = 0;
+                        let bar2Height = 0;
+                        let bar1Color = '';
+                        let bar2Color = '';
+
+                        if (selectedGraphMetric === 'repeat_rate') {
+                          const mockRates = [20, 25, 25, 30, 32, 32, 35.5];
+                          const rateVal = mockRates[idx % mockRates.length];
+                          bar1Height = Math.max((rateVal / maxChartValue) * 75, 4);
+                          bar1Color = 'bg-gradient-to-t from-purple-500 to-purple-400 shadow-lg shadow-purple-500/30';
+                        } else if (selectedGraphMetric === 'accounts') {
+                          const mockAccs = [4, 5, 5, 6, 7, 7, 8];
+                          const accVal = mockAccs[idx % mockAccs.length];
+                          bar1Height = Math.max((accVal / maxChartValue) * 75, 4);
+                          bar1Color = 'bg-gradient-to-t from-amber-500 to-amber-400 shadow-lg shadow-amber-500/30';
+                        } else { // revenue_profit
+                          bar1Height = Math.max((item.revenue / maxChartValue) * 75, 8);
+                          bar1Color = 'bg-slate-700';
+                          bar2Height = Math.max((item.profit / maxChartValue) * 75, 4);
+                          bar2Color = 'bg-gradient-to-t from-indigo-500 to-indigo-400 shadow-lg shadow-indigo-500/30';
+                        }
+
+                        return (
+                          <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full gap-2">
+                            <div className="flex-1 flex flex-row items-end justify-center w-full gap-1">
+                              <div style={{ height: `${bar1Height}%` }} className={`w-2.5 sm:w-3.5 rounded-t ${bar1Color}`} />
+                              {bar2Height > 0 && (
+                                <div style={{ height: `${bar2Height}%` }} className={`w-2.5 sm:w-3.5 rounded-t ${bar2Color}`} />
+                              )}
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-mono text-center">{item.date}</div>
                           </div>
-                          <div className="text-[10px] text-slate-400 font-mono text-center pt-2">{item.date}</div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
             

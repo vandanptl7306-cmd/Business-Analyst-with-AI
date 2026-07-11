@@ -188,7 +188,31 @@ const getDashboardMetrics = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Get Matplotlib trend chart image
+ * @route   GET /api/ml/analytics/trend-chart
+ * @access  Private
+ */
+const getTrendChart = async (req, res) => {
+  try {
+    const { metric } = req.query;
+    try {
+      const response = await axios.get(`${ML_SERVICE_URL}/api/analytics/trend-chart`, {
+        params: { metric }
+      });
+      return res.status(200).json(response.data);
+    } catch (mlErr) {
+      console.warn('ML Microservice offline/unreachable for Matplotlib trend-chart. Falling back to frontend mockup.');
+      return res.status(200).json({ success: false, fallback: true });
+    }
+  } catch (error) {
+    console.error('Proxy trend chart query error:', error.message);
+    res.status(500).json({ success: false, error: 'Server error processing trend chart query' });
+  }
+};
+
 module.exports = {
   getDemandForecast,
   getDashboardMetrics,
+  getTrendChart,
 };

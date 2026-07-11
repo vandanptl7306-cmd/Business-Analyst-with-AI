@@ -24,3 +24,14 @@ export const getDashboardAnalyticsMetrics = async (startDate = '', endDate = '',
   });
   return response.data;
 };
+
+/**
+ * Fetch Matplotlib-rendered business intelligence trend chart (base64 PNG)
+ */
+export const getDashboardTrendChart = async (metric = 'revenue_profit') => {
+  const response = await API.get('/ml/analytics/trend-chart', {
+    params: { metric }
+  });
+  return response.data;
+};
+

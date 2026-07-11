@@ -17,7 +17,8 @@ export default function ProfitChart({ invoices }) {
     { date: 'Jul 10', profit: 11200, revenue: 32400 },
   ];
 
-  const maxVal = Math.max(...dailyData.map((d) => Math.max(d.profit, 100)));
+  const maxProfit = Math.max(...dailyData.map((d) => d.profit), 100);
+  const maxRevenue = Math.max(...dailyData.map((d) => d.revenue), 100);
 
   return (
     <div className="card-module space-y-6">
@@ -36,20 +37,20 @@ export default function ProfitChart({ invoices }) {
       {/* SVG/HTML Bar Chart */}
       <div className="h-64 flex items-end justify-between gap-4 pt-8 pb-4 px-2 relative">
         
-        {/* Y Axis Guides */}
+        {/* Y Axis Guides based on Profit */}
         <div className="absolute left-0 right-0 top-8 border-b border-slate-100 text-[9px] text-slate-400 font-mono text-right pr-1">
-          ₹{(maxVal * 0.75).toFixed(0)}
+          ₹{(maxProfit * 0.75).toFixed(0)}
         </div>
         <div className="absolute left-0 right-0 top-24 border-b border-slate-100 text-[9px] text-slate-400 font-mono text-right pr-1">
-          ₹{(maxVal * 0.5).toFixed(0)}
+          ₹{(maxProfit * 0.5).toFixed(0)}
         </div>
         <div className="absolute left-0 right-0 top-40 border-b border-slate-100 text-[9px] text-slate-400 font-mono text-right pr-1">
-          ₹{(maxVal * 0.25).toFixed(0)}
+          ₹{(maxProfit * 0.25).toFixed(0)}
         </div>
 
         {dailyData.map((data, index) => {
-          const profitPct = (data.profit / maxVal) * 80; // limit height to 80% max
-          const revenuePct = (data.revenue / maxVal) * 80;
+          const profitPct = (data.profit / maxProfit) * 80; // limit height to 80% max
+          const revenuePct = (data.revenue / maxRevenue) * 70; // limit height to 70% max
           const isHovered = hoveredIndex === index;
 
           return (

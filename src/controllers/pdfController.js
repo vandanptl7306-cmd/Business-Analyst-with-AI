@@ -232,7 +232,7 @@ const getInvoiceHTML = (invoice, store, template) => {
         <title>Tax Invoice #${invoice.invoiceNumber}</title>
         <style>
           @page { size: ${store.paperSize || 'A4'} ${store.orientation || 'portrait'}; margin: 10mm; }
-          body { font-family: 'Arial', sans-serif; font-size: 11px; line-height: 1.4; color: #000000; padding: 20px; background-color: #ffffff; }
+          body { font-family: 'Arial', sans-serif; font-size: 11px; line-height: 1.4; color: #000000; padding: 20px; background-color: #ffffff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .tax-invoice-container { max-width: 800px; margin: auto; border: 1.5px solid #000000; }
           .title-banner { text-align: center; border-bottom: 1.5px solid #000000; padding: 8px; font-weight: bold; font-size: ${invoiceTitleSize}; letter-spacing: 1px; text-transform: uppercase; color: ${themeColor}; }
           .grid-header { display: grid; grid-template-columns: 1.2fr 1fr; border-bottom: 1px solid #000000; }
@@ -493,6 +493,8 @@ const getInvoiceHTML = (invoice, store, template) => {
             line-height: 1.4;
             border-top: 16px solid ${themeColor};
             border-bottom: 16px solid ${themeColor};
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
           .invoice-content { padding: 40px 50px; }
           .header-section { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
@@ -623,7 +625,7 @@ const getInvoiceHTML = (invoice, store, template) => {
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;750&display=swap" rel="stylesheet">
         <style>
           @page { size: ${store.paperSize || 'A4'} ${store.orientation || 'portrait'}; margin: 10mm; }
-          body { font-family: 'Inter', sans-serif; background-color: #ffffff; color: #000000; padding: 40px; line-height: 1.4; }
+          body { font-family: 'Inter', sans-serif; background-color: #ffffff; color: #000000; padding: 40px; line-height: 1.4; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .header-block { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
           .company-info { font-size: 11px; line-height: 1.5; }
           .company-name { font-size: 13px; font-weight: bold; margin-bottom: 4px; }
@@ -781,6 +783,8 @@ const getInvoiceHTML = (invoice, store, template) => {
             margin: 0; 
             line-height: 1.4;
             border-top: 6px solid ${themeColor};
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
           .invoice-wrapper { padding: 40px 50px; }
           .top-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 35px; }
@@ -943,6 +947,8 @@ const getInvoiceHTML = (invoice, store, template) => {
             margin: 0;
             line-height: 1.4;
             font-size: 11px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
           .proforma-container {
             max-width: 800px;
@@ -1270,7 +1276,7 @@ const getInvoiceHTML = (invoice, store, template) => {
   if (template === 'Modern') {
     customStyle = `
       @page { size: ${store.paperSize || 'A4'} ${store.orientation || 'portrait'}; margin: 10mm; }
-      body { font-family: 'Inter', sans-serif; background-color: #ffffff; color: #1e293b; padding: 40px; }
+      body { font-family: 'Inter', sans-serif; background-color: #ffffff; color: #1e293b; padding: 40px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .invoice-container { max-width: 800px; margin: auto; }
       .header-accent { background: linear-gradient(135deg, ${themeColor}, ${themeColor}dd); color: #ffffff; padding: 24px; border-radius: 16px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
       .logo { max-height: 55px; border-radius: 8px; }
@@ -1288,7 +1294,7 @@ const getInvoiceHTML = (invoice, store, template) => {
     // Thermal formatting styling overrides
     const boldClass = store.thermalUseTextStylingBold !== false ? 'font-weight: bold;' : '';
     customStyle = `
-      body { font-family: 'monospace'; background-color: #ffffff; color: #000000; padding: 5px; width: 280px; margin: auto; font-size: 11px; ${boldClass} }
+      body { font-family: 'monospace'; background-color: #ffffff; color: #000000; padding: 5px; width: 280px; margin: auto; font-size: 11px; ${boldClass} -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .invoice-container { width: 100%; }
       .header-accent { text-align: center; border-bottom: 1px dashed #000000; padding-bottom: 10px; margin-bottom: 10px; }
       .logo { max-height: 40px; display: block; margin: 0 auto 5px; }
@@ -1305,7 +1311,7 @@ const getInvoiceHTML = (invoice, store, template) => {
     // Standard Template
     customStyle = `
       @page { size: ${store.paperSize || 'A4'} ${store.orientation || 'portrait'}; margin: 10mm; }
-      body { font-family: 'Arial', sans-serif; background-color: #ffffff; color: #333333; padding: 30px; }
+      body { font-family: 'Arial', sans-serif; background-color: #ffffff; color: #333333; padding: 30px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .invoice-container { max-width: 800px; margin: auto; border: 1px solid #e2e8f0; padding: 30px; border-radius: 8px; }
       .header-accent { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid ${themeColor}; padding-bottom: 20px; margin-bottom: 30px; }
       .logo { max-height: 50px; }
@@ -1563,7 +1569,7 @@ const printInvoice = async (req, res) => {
     // Default template: if printer type is Thermal and no override, set to Thermal.
     // Otherwise, default to regularLayoutTheme.
     const defaultTemplate = store.printerType === 'Thermal' ? 'Thermal' : (store.regularLayoutTheme || store.defaultInvoiceTemplate || 'Standard');
-    const selectedTemplate = templateQuery || invoice.templateType || defaultTemplate;
+    const selectedTemplate = templateQuery || defaultTemplate;
 
     // Update template preference on the invoice record (non-blocking)
     if (templateQuery && invoice.templateType !== templateQuery) {
