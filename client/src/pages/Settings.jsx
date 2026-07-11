@@ -5,7 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import {
   Search, CheckCircle, Loader2, X, HelpCircle, Edit2,
   User, Building2, Phone, Mail, Lock, Eye, EyeOff,
-  AlertTriangle, Shield, KeyRound, ChevronLeft, ChevronRight, Menu,
+  AlertTriangle, Shield, KeyRound, ChevronLeft, ChevronRight,
+  Settings as SettingsIcon, Printer, UserCircle, Sliders,
 } from 'lucide-react';
 import PrintSettings from '../components/PrintSettings';
 import EditProfile from '../components/EditProfile';
@@ -292,94 +293,133 @@ export default function SettingsPage() {
       }}
     >
 
-      {/* ── LEFT SIDEBAR ─────────────────────────────────────────────────── */}
+      {/* ── LEFT SIDEBAR (matches DashboardLayout style) ─────────────────── */}
       <aside style={{
-        width: sidebarOpen ? 220 : 52,
-        minWidth: sidebarOpen ? 220 : 52,
-        background: '#1F2333',
+        width: sidebarOpen ? 260 : 56,
+        minWidth: sidebarOpen ? 260 : 56,
+        background: '#0b0f24',
+        borderRight: '1px solid rgba(255,255,255,0.08)',
         display: 'flex',
         flexDirection: 'column',
         height: '100vh',
         position: 'sticky',
         top: 0,
-        transition: 'width 0.22s cubic-bezier(.4,0,.2,1), min-width 0.22s cubic-bezier(.4,0,.2,1)',
+        zIndex: 40,
+        transition: 'width 0.25s cubic-bezier(.4,0,.2,1), min-width 0.25s cubic-bezier(.4,0,.2,1)',
         overflow: 'hidden',
+        flexShrink: 0,
       }}>
-        {/* Sidebar header */}
-        <div style={{ padding: '0 14px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+
+        {/* Brand header — identical to DashboardLayout */}
+        <div style={{ padding: '0 24px', height: 65, display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0, overflow: 'hidden' }}>
+          <div style={{ height: 36, width: 36, background: '#4F46E5', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 13, flexShrink: 0, boxShadow: '0 4px 14px rgba(79,70,229,0.35)' }}>
+            <SettingsIcon style={{ width: 16, height: 16 }} />
+          </div>
           {sidebarOpen && (
-            <span style={{ color: '#fff', fontWeight: 700, fontSize: 16, letterSpacing: 0.2, whiteSpace: 'nowrap' }}>Settings</span>
+            <span style={{ color: '#fff', fontWeight: 700, fontSize: 17, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>Settings</span>
           )}
-          {/* Toggle button */}
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(o => !o)}
-            title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
-            style={{
-              marginLeft: sidebarOpen ? 'auto' : 'auto',
-              background: 'rgba(255,255,255,0.08)',
-              border: 'none',
-              borderRadius: 6,
-              width: 28,
-              height: 28,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: 'rgba(255,255,255,0.75)',
-              flexShrink: 0,
-              transition: 'background 0.15s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.16)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
-          >
-            {sidebarOpen
-              ? <ChevronLeft style={{ width: 15, height: 15 }} />
-              : <ChevronRight style={{ width: 15, height: 15 }} />
-            }
-          </button>
+          {/* Collapse toggle — floats to the far right */}
+          {sidebarOpen && (
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(false)}
+              title="Close sidebar"
+              style={{
+                marginLeft: 'auto',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 8,
+                width: 28,
+                height: 28,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: 'rgba(255,255,255,0.55)',
+                flexShrink: 0,
+                transition: 'background 0.15s, color 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = '#fff'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.55)'; }}
+            >
+              <ChevronLeft style={{ width: 14, height: 14 }} />
+            </button>
+          )}
         </div>
 
-        {/* Nav items */}
-        <nav style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '8px 0' }}>
-          {SIDEBAR_ITEMS.map(item => {
-            const isActive = activeSection === item;
+        {/* When collapsed: show open button centered in header area */}
+        {!sidebarOpen && (
+          <div style={{ padding: '12px 0', display: 'flex', justifyContent: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              title="Open sidebar"
+              style={{
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 8,
+                width: 32,
+                height: 32,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: 'rgba(255,255,255,0.6)',
+                transition: 'background 0.15s, color 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = '#fff'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
+            >
+              <ChevronRight style={{ width: 14, height: 14 }} />
+            </button>
+          </div>
+        )}
+
+        {/* Nav items — same rounded-xl style as DashboardLayout */}
+        <nav style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {!sidebarOpen ? null : (
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(148,163,184,0.8)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '0 8px', marginBottom: 6 }}>Settings</div>
+          )}
+          {[
+            { id: 'GENERAL', label: 'General', icon: <Sliders style={{ width: 16, height: 16, flexShrink: 0 }} /> },
+            { id: 'PRINT',   label: 'Print',   icon: <Printer  style={{ width: 16, height: 16, flexShrink: 0 }} /> },
+            { id: 'PROFILE', label: 'Profile', icon: <UserCircle style={{ width: 16, height: 16, flexShrink: 0 }} /> },
+          ].map(({ id, label, icon }) => {
+            const isActive = activeSection === id;
             return (
               <button
-                key={item}
-                onClick={() => setActiveSection(item)}
-                title={!sidebarOpen ? item : ''}
+                key={id}
+                onClick={() => setActiveSection(id)}
+                title={!sidebarOpen ? label : ''}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: sidebarOpen ? 'flex-start' : 'center',
+                  gap: 12,
                   width: '100%',
-                  padding: sidebarOpen ? '11px 20px' : '11px 0',
-                  background: isActive ? '#fff' : 'transparent',
-                  color: isActive ? '#1F2333' : '#fff',
+                  padding: sidebarOpen ? '10px 12px' : '10px 0',
+                  justifyContent: sidebarOpen ? 'flex-start' : 'center',
+                  borderRadius: 12,
+                  background: isActive ? '#1a1f35' : 'transparent',
+                  border: isActive ? '1px solid rgba(99,102,241,0.25)' : '1px solid transparent',
+                  color: isActive ? '#fff' : 'rgba(148,163,184,0.85)',
                   fontWeight: isActive ? 600 : 500,
-                  fontSize: 12,
-                  letterSpacing: 0.4,
-                  border: 'none',
+                  fontSize: 13,
                   cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'background 0.15s, padding 0.22s',
-                  borderLeft: isActive ? '3px solid #3B82F6' : '3px solid transparent',
-                  boxSizing: 'border-box',
+                  transition: 'background 0.15s, color 0.15s, border-color 0.15s',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
+                  boxSizing: 'border-box',
                 }}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
-                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(15,23,46,0.6)'; e.currentTarget.style.color = '#e2e8f0'; } }}
+                onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(148,163,184,0.85)'; } }}
               >
-                {sidebarOpen ? item : item.charAt(0)}
+                <span style={{ color: isActive ? '#818CF8' : 'rgba(100,116,139,0.9)', display: 'flex', flexShrink: 0 }}>{icon}</span>
+                {sidebarOpen && <span>{label}</span>}
               </button>
-
             );
           })}
         </nav>
       </aside>
-
       {/* â”€â”€ MAIN CONTENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 0 }}>
 
