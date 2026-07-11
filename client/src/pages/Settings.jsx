@@ -1,4 +1,4 @@
-// client/src/pages/Settings.jsx
+﻿// client/src/pages/Settings.jsx
 import React, { useEffect, useState } from 'react';
 import { getStoreSettings, updateStoreSettings, updateStoreProfile } from '../services/settings';
 import { useAuth } from '../context/AuthContext';
@@ -8,6 +8,7 @@ import {
   AlertTriangle, Shield, KeyRound,
 } from 'lucide-react';
 import PrintSettings from '../components/PrintSettings';
+import EditProfile from '../components/EditProfile';
 
 const SIDEBAR_ITEMS = ['GENERAL', 'PRINT', 'PROFILE'];
 
@@ -43,7 +44,7 @@ export default function SettingsPage() {
   const [apiError, setApiError] = useState('');
   const [activeSection, setActiveSection] = useState('GENERAL');
 
-  // ── Profile section state ────────────────────────────────────────────────
+  // â”€â”€ Profile section state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [profileName, setProfileName] = useState('');
   const [profileCompany, setProfileCompany] = useState('');
   const [profilePhone, setProfilePhone] = useState('');
@@ -51,7 +52,7 @@ export default function SettingsPage() {
   const [profileSuccess, setProfileSuccess] = useState('');
   const [profileError, setProfileError] = useState('');
 
-  // ── Password section state ───────────────────────────────────────────────
+  // â”€â”€ Password section state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [currentPwd, setCurrentPwd] = useState('');
   const [newPwd, setNewPwd] = useState('');
   const [confirmPwd, setConfirmPwd] = useState('');
@@ -100,9 +101,9 @@ export default function SettingsPage() {
     }
   };
 
-  // ── General settings state ──────────────────────────────────────────────
+  // â”€â”€ General settings state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [enablePasscode, setEnablePasscode] = useState(false);
-  const [businessCurrency, setBusinessCurrency] = useState('₹');
+  const [businessCurrency, setBusinessCurrency] = useState('â‚¹');
   const [decimalPlaces, setDecimalPlaces] = useState(2);
   const [gstinNumber, setGstinNumber] = useState(true);
   const [stopSaleOnNegativeStock, setStopSaleOnNegativeStock] = useState(false);
@@ -278,7 +279,7 @@ export default function SettingsPage() {
     );
   }
 
-  // ── render ────────────────────────────────────────────────────────────────
+  // â”€â”€ render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   return (
     <div
       className="flex overflow-hidden"
@@ -290,7 +291,7 @@ export default function SettingsPage() {
       }}
     >
 
-      {/* ── LEFT SIDEBAR ─────────────────────────────────────────────────── */}
+      {/* â”€â”€ LEFT SIDEBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <aside style={{ width: 220, minWidth: 220, background: '#1F2333', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0 }}>
         {/* Sidebar header */}
         <div style={{ padding: '0 20px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
@@ -332,7 +333,7 @@ export default function SettingsPage() {
         </nav>
       </aside>
 
-      {/* ── MAIN CONTENT ─────────────────────────────────────────────────── */}
+      {/* â”€â”€ MAIN CONTENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 0 }}>
 
         {/* Top bar */}
@@ -365,7 +366,7 @@ export default function SettingsPage() {
           <div style={{ padding: '28px 32px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 28 }}>
 
-              {/* ── Column 1: Application ── */}
+              {/* â”€â”€ Column 1: Application â”€â”€ */}
               <div>
                 <div style={{ fontWeight: 700, fontSize: 14, color: '#111827', marginBottom: 16 }}>Application</div>
                 <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, padding: '16px 18px' }}>
@@ -376,12 +377,12 @@ export default function SettingsPage() {
                     <span style={{ fontSize: 13, color: '#374151' }}>Business Currency</span>
                     <HelpCircle style={{ width: 13, height: 13, color: '#9CA3AF' }} />
                     <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 14, color: '#111827', fontWeight: 600 }}>₹</span>
+                      <span style={{ fontSize: 14, color: '#111827', fontWeight: 600 }}>â‚¹</span>
                       <select value={businessCurrency} onChange={e => setBusinessCurrency(e.target.value)}
                         style={{ border: 'none', background: 'transparent', fontSize: 13, color: '#6B7280', cursor: 'pointer', outline: 'none' }}>
-                        <option value="₹">INR (₹)</option>
+                        <option value="â‚¹">INR (â‚¹)</option>
                         <option value="$">USD ($)</option>
-                        <option value="€">EUR (€)</option>
+                        <option value="â‚¬">EUR (â‚¬)</option>
                       </select>
                     </div>
                   </div>
@@ -410,7 +411,7 @@ export default function SettingsPage() {
 
               </div>
 
-              {/* ── Column 2: Multi Firm + Stock Transfer ── */}
+              {/* â”€â”€ Column 2: Multi Firm + Stock Transfer â”€â”€ */}
               <div>
                 <div style={{ fontWeight: 700, fontSize: 14, color: '#111827', marginBottom: 16 }}>Multi Firm</div>
                 <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, padding: '16px 18px', minHeight: 120 }}>
@@ -431,7 +432,7 @@ export default function SettingsPage() {
 
               </div>
 
-              {/* ── Column 3: Customize View ── */}
+              {/* â”€â”€ Column 3: Customize View â”€â”€ */}
               <div>
 
                 {/* Customize Your View */}
@@ -477,219 +478,14 @@ export default function SettingsPage() {
 
         {/* PROFILE section */}
         {activeSection === 'PROFILE' && (
-          <div style={{ padding: '28px 32px' }}>
-
-            {/* Profile header card */}
-            <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: '24px 28px', marginBottom: 28, display: 'flex', alignItems: 'center', gap: 18 }}>
-              <div style={{ width: 56, height: 56, borderRadius: 14, background: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 20, flexShrink: 0, boxShadow: '0 4px 14px rgba(79,70,229,0.3)' }}>
-                {user?.name?.substring(0, 2)?.toUpperCase()}
-              </div>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: 18, color: '#111827' }}>{user?.name}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
-                  <span style={{ fontSize: 12, color: '#6B7280' }}>{user?.email}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: '#EEF2FF', color: '#4F46E5', border: '1px solid #C7D2FE' }}>{user?.role}</span>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-
-              {/* Profile Details */}
-              <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10, padding: '20px 24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 14, marginBottom: 16, borderBottom: '1px solid #F3F4F6' }}>
-                  <div style={{ background: '#EEF2FF', borderRadius: 8, padding: 7, color: '#4F46E5', display: 'flex' }}>
-                    <User style={{ width: 15, height: 15 }} />
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: '#111827' }}>Profile Details</div>
-                    <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>Your name, company and contact info</div>
-                  </div>
-                </div>
-
-                {profileSuccess && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: '1px solid #A7F3D0', background: '#ECFDF5', color: '#047857', fontSize: 12, fontWeight: 600, marginBottom: 14 }}>
-                    <CheckCircle style={{ width: 14, height: 14, flexShrink: 0 }} />{profileSuccess}
-                  </div>
-                )}
-                {profileError && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: '1px solid #FECACA', background: '#FEF2F2', color: '#DC2626', fontSize: 12, fontWeight: 600, marginBottom: 14 }}>
-                    <AlertTriangle style={{ width: 14, height: 14, flexShrink: 0 }} />{profileError}
-                  </div>
-                )}
-
-                <form onSubmit={handleProfileSave} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-
-                  {/* Full Name */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-                      Full Name <span style={{ color: '#EF4444' }}>*</span>
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <User style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: '#9CA3AF' }} />
-                      <input
-                        type="text" value={profileName} onChange={e => setProfileName(e.target.value)}
-                        placeholder="Jane Doe"
-                        className={`${inputCls(!profileName.trim())} pl-9`}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Company Name */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-                      Company / Shop Name
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <Building2 style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: '#9CA3AF' }} />
-                      <input
-                        type="text" value={profileCompany} onChange={e => setProfileCompany(e.target.value)}
-                        placeholder="e.g. IntellectBill Pvt. Ltd."
-                        className={`${inputCls(false)} pl-9`}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Mobile */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-                      Mobile Number <span style={{ fontSize: 9, fontWeight: 400, color: '#9CA3AF', textTransform: 'none' }}>(for WhatsApp invoices)</span>
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <Phone style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: '#9CA3AF' }} />
-                      <input
-                        type="tel" value={profilePhone} onChange={e => setProfilePhone(e.target.value)}
-                        placeholder="+919876543210"
-                        className={`${inputCls(false)} pl-9`}
-                        style={{ fontFamily: 'monospace' }}
-                      />
-                    </div>
-                    {!profilePhone.trim() && (
-                      <p style={{ fontSize: 10, color: '#D97706', fontWeight: 500, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <AlertTriangle style={{ width: 11, height: 11 }} />Add mobile to enable WhatsApp sharing
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Email (read-only) */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-                      Email <span style={{ fontWeight: 400, color: '#9CA3AF', textTransform: 'none', fontSize: 9 }}>(cannot be changed)</span>
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <Mail style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: '#C4B5FD' }} />
-                      <input
-                        type="email" value={user?.email || ''} readOnly
-                        style={{ width: '100%', paddingLeft: 36, paddingRight: 16, paddingTop: 10, paddingBottom: 10, borderRadius: 12, background: '#F3F4F6', border: '1px solid #E5E7EB', fontSize: 13, color: '#9CA3AF', cursor: 'not-allowed', boxSizing: 'border-box' }}
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit" disabled={profileSaving}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 700, border: 'none', cursor: profileSaving ? 'not-allowed' : 'pointer', opacity: profileSaving ? 0.7 : 1 }}
-                  >
-                    {profileSaving ? <><Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /><span>Saving...</span></> : <span>Save Profile</span>}
-                  </button>
-                </form>
-              </div>
-
-              {/* Change Password */}
-              <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10, padding: '20px 24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 14, marginBottom: 16, borderBottom: '1px solid #F3F4F6' }}>
-                  <div style={{ background: '#EEF2FF', borderRadius: 8, padding: 7, color: '#4F46E5', display: 'flex' }}>
-                    <KeyRound style={{ width: 15, height: 15 }} />
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: '#111827' }}>Change Password</div>
-                    <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>Update your login password</div>
-                  </div>
-                </div>
-
-                {pwdSuccess && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: '1px solid #A7F3D0', background: '#ECFDF5', color: '#047857', fontSize: 12, fontWeight: 600, marginBottom: 14 }}>
-                    <CheckCircle style={{ width: 14, height: 14, flexShrink: 0 }} />{pwdSuccess}
-                  </div>
-                )}
-                {pwdError && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: '1px solid #FECACA', background: '#FEF2F2', color: '#DC2626', fontSize: 12, fontWeight: 600, marginBottom: 14 }}>
-                    <AlertTriangle style={{ width: 14, height: 14, flexShrink: 0 }} />{pwdError}
-                  </div>
-                )}
-
-                {user?.googleId && !user?.password ? (
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: 16, borderRadius: 10, border: '1px solid #FDE68A', background: '#FFFBEB', color: '#92400E', fontSize: 12 }}>
-                    <Shield style={{ width: 15, height: 15, flexShrink: 0, marginTop: 1 }} />
-                    <p>This account uses <strong>Google Sign-In</strong> and has no local password. Password change is not available.</p>
-                  </div>
-                ) : (
-                  <form onSubmit={handlePasswordSave} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-
-                    {/* Current Password */}
-                    <div>
-                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Current Password</label>
-                      <div style={{ position: 'relative' }}>
-                        <Lock style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: '#9CA3AF' }} />
-                        <input
-                          type={showCurrent ? 'text' : 'password'} value={currentPwd} onChange={e => setCurrentPwd(e.target.value)}
-                          placeholder="••••••••" className={`${inputCls(false)} pl-9 pr-11`}
-                        />
-                        <button type="button" onClick={() => setShowCurrent(!showCurrent)}
-                          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'flex' }}>
-                          {showCurrent ? <EyeOff style={{ width: 15, height: 15 }} /> : <Eye style={{ width: 15, height: 15 }} />}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* New Password */}
-                    <div>
-                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>New Password</label>
-                      <div style={{ position: 'relative' }}>
-                        <Lock style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: '#9CA3AF' }} />
-                        <input
-                          type={showNew ? 'text' : 'password'} value={newPwd} onChange={e => setNewPwd(e.target.value)}
-                          placeholder="Min. 6 characters" className={`${inputCls(newPwd && newPwd.length < 6)} pl-9 pr-11`}
-                        />
-                        <button type="button" onClick={() => setShowNew(!showNew)}
-                          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'flex' }}>
-                          {showNew ? <EyeOff style={{ width: 15, height: 15 }} /> : <Eye style={{ width: 15, height: 15 }} />}
-                        </button>
-                      </div>
-                      {newPwd && newPwd.length < 6 && <p style={{ fontSize: 10, color: '#EF4444', marginTop: 4 }}>Must be at least 6 characters</p>}
-                    </div>
-
-                    {/* Confirm Password */}
-                    <div>
-                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Confirm New Password</label>
-                      <div style={{ position: 'relative' }}>
-                        <Lock style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: '#9CA3AF' }} />
-                        <input
-                          type={showConfirm ? 'text' : 'password'} value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)}
-                          placeholder="••••••••" className={`${inputCls(confirmPwd && confirmPwd !== newPwd)} pl-9 pr-11`}
-                        />
-                        <button type="button" onClick={() => setShowConfirm(!showConfirm)}
-                          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'flex' }}>
-                          {showConfirm ? <EyeOff style={{ width: 15, height: 15 }} /> : <Eye style={{ width: 15, height: 15 }} />}
-                        </button>
-                      </div>
-                      {confirmPwd && confirmPwd !== newPwd && <p style={{ fontSize: 10, color: '#EF4444', marginTop: 4 }}>Passwords do not match</p>}
-                    </div>
-
-                    <button
-                      type="submit" disabled={pwdSaving}
-                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 700, border: 'none', cursor: pwdSaving ? 'not-allowed' : 'pointer', opacity: pwdSaving ? 0.7 : 1 }}
-                    >
-                      {pwdSaving ? <><Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /><span>Updating...</span></> : <span>Change Password</span>}
-                    </button>
-                  </form>
-                )}
-              </div>
-
-            </div>
-          </div>
+          <EditProfile
+            onCancel={() => setActiveSection('GENERAL')}
+            onSaved={() => {}}
+          />
         )}
 
       </div>{/* end main */}
     </div>
   );
 }
+
