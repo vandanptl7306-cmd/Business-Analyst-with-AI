@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Package, Plus, Pencil, Trash2, AlertTriangle, CheckCircle,
   RefreshCw, X, Save, Loader2, Search, ShieldAlert, CalendarClock,
+  Image, ChevronDown, Settings,
 } from 'lucide-react';
 import {
   getProductsList, createProduct, updateProduct, deleteProduct,
@@ -37,8 +38,17 @@ const badgeClass = (color) => {
 
 // ── blank form ────────────────────────────────────────────────────────────────
 const blankForm = () => ({
-  name: '', sku: '', mrp: '', sellingPrice: '', taxRate: 18,
-  quantity: '', unit: 'pcs', lowStockThreshold: 5, expiryDate: '',
+  itemType: 'Product',        // 'Product' | 'Service'
+  name: '', hsn: '', sku: '', unit: '',
+  category: '',
+  // Pricing tab
+  salePrice: '', salePriceTax: 'Without Tax',
+  discountOnSale: '', discountType: 'Percentage',
+  purchasePrice: '', purchasePriceTax: 'Without Tax',
+  taxRate: 'None',
+  // Stock tab
+  mrp: '', sellingPrice: '',
+  quantity: '', lowStockThreshold: 5, expiryDate: '',
 });
 
 // ── component ─────────────────────────────────────────────────────────────────
@@ -49,6 +59,7 @@ export default function StockManagement() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [formTab, setFormTab] = useState('Pricing'); // 'Pricing' | 'Stock'
   const [form, setForm] = useState(blankForm());
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -99,20 +110,31 @@ export default function StockManagement() {
   const openAdd = () => {
     setEditingId(null);
     setForm(blankForm());
+    setFormTab('Pricing');
     setFormError('');
     setShowForm(true);
   };
 
   const openEdit = (p) => {
     setEditingId(p._id);
+    setFormTab('Pricing');
     setForm({
+      itemType: 'Product',
       name: p.name,
+      hsn: p.hsnCode || '',
       sku: p.sku,
-      mrp: p.mrp,
+      unit: p.unit || '',
+      category: p.category || '',
+      salePrice: p.mrp || '',
+      salePriceTax: 'Without Tax',
+      discountOnSale: '',
+      discountType: 'Percentage',
+      purchasePrice: p.averageCostPrice || '',
+      purchasePriceTax: 'Without Tax',
+      taxRate: p.taxRate != null ? String(p.taxRate) : 'None',
+      mrp: p.mrp || '',
       sellingPrice: p.sellingPrice || '',
-      taxRate: p.taxRate || 18,
       quantity: p.quantity,
-      unit: p.unit || 'pcs',
       lowStockThreshold: p.lowStockThreshold ?? 5,
       expiryDate: p.expiryDate ? new Date(p.expiryDate).toISOString().split('T')[0] : '',
     });
@@ -120,22 +142,28 @@ export default function StockManagement() {
     setShowForm(true);
   };
 
-  const closeForm = () => { setShowForm(false); setEditingId(null); };
+  const closeForm = () => { setShowForm(false); setEditingId(null); setFormTab('Pricing'); };
 
-  const handleSave = async (e) => {
+  const handleSave = async (e, saveAndNew = false) => {
     e.preventDefault();
     setFormError('');
-    if (!form.name.trim() || !form.sku.trim() || form.mrp === '') {
-      setFormError('Name, SKU and MRP are required.');
+    if (!form.name.trim()) {
+      setFormError('Item Name is required.');
       return;
     }
     setSaving(true);
     try {
+      const taxNum = form.taxRate === 'None' ? 0 : Number(form.taxRate);
       const payload = {
-        ...form,
-        mrp: Number(form.mrp),
-        sellingPrice: form.sellingPrice !== '' ? Number(form.sellingPrice) : Number(form.mrp),
-        taxRate: Number(form.taxRate),
+        name: form.name.trim(),
+        sku: form.sku.trim() || `SKU-${Date.now()}`,
+        hsnCode: form.hsn.trim(),
+        unit: form.unit || 'pcs',
+        mrp: Number(form.salePrice) || 0,
+        sellingPrice: Number(form.salePrice) || 0,
+        averageCostPrice: Number(form.purchasePrice) || 0,
+        taxRate: taxNum,
+        isTaxInclusive: form.salePriceTax === 'With Tax',
         quantity: Number(form.quantity) || 0,
         lowStockThreshold: Number(form.lowStockThreshold) || 5,
         expiryDate: form.expiryDate || null,
@@ -147,7 +175,13 @@ export default function StockManagement() {
         await createProduct(payload);
         flash('Product added to stock.');
       }
-      closeForm();
+      if (saveAndNew) {
+        setForm(blankForm());
+        setFormTab('Pricing');
+        setEditingId(null);
+      } else {
+        closeForm();
+      }
       load();
     } catch (err) {
       setFormError(err.response?.data?.error || 'Failed to save. Try again.');
@@ -357,122 +391,235 @@ export default function StockManagement() {
 
       {/* ── Add / Edit Modal ─────────────────────────────────────────────────── */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-          <div className="w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4">
+          <div className="w-full max-w-3xl bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col max-h-[92vh]">
 
-            {/* Modal header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <div className="flex items-center space-x-2">
-                <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
-                  <Package className="h-4 w-4" />
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 flex-shrink-0">
+              <div className="flex items-center gap-4">
+                <h2 className="text-base font-bold text-slate-800">{editingId ? 'Edit Item' : 'Add Item'}</h2>
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm font-semibold ${form.itemType === 'Product' ? 'text-slate-800' : 'text-slate-400'}`}>Product</span>
+                  <button type="button"
+                    onClick={() => setForm({ ...form, itemType: form.itemType === 'Product' ? 'Service' : 'Product' })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.itemType === 'Product' ? 'bg-blue-500' : 'bg-slate-300'}`}>
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.itemType === 'Product' ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                  <span className={`text-sm font-semibold ${form.itemType === 'Service' ? 'text-slate-800' : 'text-slate-400'}`}>Service</span>
                 </div>
-                <h2 className="text-base font-bold text-slate-800">
-                  {editingId ? 'Edit Stock Item' : 'Add New Stock'}
-                </h2>
               </div>
-              <button onClick={closeForm} className="text-slate-400 hover:text-slate-600 transition-colors">
-                <X className="h-5 w-5" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button type="button" className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"><Settings className="h-4 w-4" /></button>
+                <button type="button" onClick={closeForm} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"><X className="h-4 w-4" /></button>
+              </div>
             </div>
 
-            <form onSubmit={handleSave} className="px-6 py-5 space-y-4">
+            {/* Top fields — Item Name, HSN, Unit, Image, Category, Item Code */}
+            <div className="px-6 pt-5 pb-4 border-b border-slate-100 flex-shrink-0 bg-slate-50/30">
               {formError && (
-                <div className="p-3 rounded-xl border border-red-100 bg-red-50 text-red-600 text-xs flex items-center space-x-2">
-                  <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-                  <span>{formError}</span>
+                <div className="mb-4 p-3 rounded-xl border border-red-100 bg-red-50 text-red-600 text-xs flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 flex-shrink-0" /><span>{formError}</span>
                 </div>
               )}
-
-              {/* Row 1: Name + SKU */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">Product Name <span className="text-red-500">*</span></label>
-                  <input type="text" required value={form.name}
+              {/* Row 1: Item Name | Item HSN | Select Unit | Add Item Image */}
+              <div className="grid grid-cols-12 gap-3">
+                <div className="col-span-4">
+                  <input type="text" value={form.name}
                     onChange={e => setForm({...form, name: e.target.value})}
-                    placeholder="e.g. Basmati Rice"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-300" />
+                    placeholder="Item Name *"
+                    className="w-full px-3 py-2.5 rounded-lg bg-white border border-slate-300 text-sm text-slate-800 placeholder-slate-400 outline-none focus:ring-2 focus:ring-blue-300 transition-all" />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">SKU <span className="text-red-500">*</span></label>
-                  <input type="text" required value={form.sku}
-                    onChange={e => setForm({...form, sku: e.target.value.toUpperCase()})}
-                    placeholder="e.g. RIC-BAS-01"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 font-mono outline-none focus:ring-2 focus:ring-indigo-300" />
+                <div className="col-span-3">
+                  <div className="relative">
+                    <input type="text" value={form.hsn}
+                      onChange={e => setForm({...form, hsn: e.target.value})}
+                      placeholder="Item HSN"
+                      className="w-full px-3 py-2.5 pr-9 rounded-lg bg-white border border-slate-300 text-sm text-slate-800 placeholder-slate-400 outline-none focus:ring-2 focus:ring-blue-300 transition-all" />
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                  </div>
+                </div>
+                <div className="col-span-2">
+                  <div className="relative">
+                    <select value={form.unit} onChange={e => setForm({...form, unit: e.target.value})}
+                      className="w-full appearance-none px-3 py-2.5 pr-8 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-700 font-semibold outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer">
+                      <option value="">Select Unit</option>
+                      {['pcs','kg','g','litre','ml','box','pack','dozen','metre'].map(u => (
+                        <option key={u} value={u}>{u}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-blue-500 pointer-events-none" />
+                  </div>
+                </div>
+                <div className="col-span-3">
+                  <button type="button"
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white border border-slate-300 text-sm text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-all w-full">
+                    <Image className="h-4 w-4 text-slate-400" />
+                    <span>Add Item Image</span>
+                  </button>
                 </div>
               </div>
+              {/* Row 2: Category | Item Code */}
+              <div className="grid grid-cols-12 gap-3 mt-3">
+                <div className="col-span-4">
+                  <div className="relative">
+                    <select value={form.category} onChange={e => setForm({...form, category: e.target.value})}
+                      className="w-full appearance-none px-3 py-2.5 pr-8 rounded-lg bg-white border border-slate-300 text-sm text-slate-600 outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer">
+                      <option value="">Category</option>
+                      {['Food','Electronics','Clothing','Medicine','FMCG','Other'].map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+                <div className="col-span-5">
+                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white border border-slate-300">
+                    <input type="text" value={form.sku}
+                      onChange={e => setForm({...form, sku: e.target.value.toUpperCase()})}
+                      placeholder="Item Code"
+                      className="flex-1 text-sm text-slate-800 placeholder-slate-400 outline-none bg-transparent font-mono" />
+                    <button type="button"
+                      onClick={() => setForm({...form, sku: `SKU-${Date.now().toString().slice(-6)}`})}
+                      className="text-xs text-blue-500 font-bold hover:text-blue-700 whitespace-nowrap">
+                      Assign Code
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-              {/* Row 2: MRP + Selling Price + GST */}
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">MRP (₹) <span className="text-red-500">*</span></label>
-                  <input type="number" required min="0" step="0.01" value={form.mrp}
-                    onChange={e => setForm({...form, mrp: e.target.value})}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-300" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">Selling Price (₹)</label>
-                  <input type="number" min="0" step="0.01" value={form.sellingPrice}
-                    onChange={e => setForm({...form, sellingPrice: e.target.value})}
-                    placeholder="Same as MRP"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-300" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">GST Rate</label>
-                  <select value={form.taxRate} onChange={e => setForm({...form, taxRate: Number(e.target.value)})}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-300">
-                    {[0, 5, 12, 18, 28].map(r => <option key={r} value={r}>{r}%</option>)}
-                  </select>
-                </div>
+            {/* Tabs: Pricing / Stock */}
+            <div className="px-6 flex-shrink-0 border-b border-slate-200">
+              <div className="flex">
+                {['Pricing', 'Stock'].map(tab => (
+                  <button key={tab} type="button" onClick={() => setFormTab(tab)}
+                    className={`px-5 py-3 text-sm font-semibold border-b-2 -mb-px transition-all ${
+                      formTab === tab ? 'border-red-500 text-red-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+                    }`}>{tab}</button>
+                ))}
               </div>
+            </div>
 
-              {/* Row 3: Quantity + Unit + Low Stock Threshold */}
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">Quantity <span className="text-red-500">*</span></label>
-                  <input type="number" required min="0" value={form.quantity}
-                    onChange={e => setForm({...form, quantity: e.target.value})}
-                    placeholder="0"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-300" />
+            {/* Tab content */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+              {formTab === 'Pricing' && (
+                <div className="space-y-4">
+                  {/* Sale Price */}
+                  <div className="border border-slate-200 rounded-xl p-4 space-y-3 bg-white">
+                    <h4 className="text-sm font-bold text-slate-700">Sale Price</h4>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <input type="number" min="0" step="0.01" value={form.salePrice}
+                        onChange={e => setForm({...form, salePrice: e.target.value})}
+                        placeholder="Sale Price"
+                        className="w-36 px-3 py-2 rounded-lg border border-slate-300 text-sm text-slate-800 placeholder-slate-400 outline-none focus:ring-2 focus:ring-blue-300" />
+                      <div className="relative">
+                        <select value={form.salePriceTax} onChange={e => setForm({...form, salePriceTax: e.target.value})}
+                          className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-slate-300 text-sm text-slate-600 outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer">
+                          <option>Without Tax</option><option>With Tax</option>
+                        </select>
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                      </div>
+                      <input type="number" min="0" step="0.01" value={form.discountOnSale}
+                        onChange={e => setForm({...form, discountOnSale: e.target.value})}
+                        placeholder="Disc. On Sale Pric..."
+                        className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-slate-300 text-sm text-slate-800 placeholder-slate-400 outline-none focus:ring-2 focus:ring-blue-300" />
+                      <div className="relative">
+                        <select value={form.discountType} onChange={e => setForm({...form, discountType: e.target.value})}
+                          className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-slate-300 text-sm text-slate-600 outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer">
+                          <option>Percentage</option><option>Fixed</option>
+                        </select>
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                      </div>
+                    </div>
+                    <button type="button" className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-semibold">
+                      <Plus className="h-3.5 w-3.5" /> Add Wholesale Price
+                    </button>
+                  </div>
+                  {/* Purchase Price + Taxes */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="border border-slate-200 rounded-xl p-4 space-y-3 bg-white">
+                      <h4 className="text-sm font-bold text-slate-700">Purchase Price</h4>
+                      <div className="flex items-center gap-3">
+                        <input type="number" min="0" step="0.01" value={form.purchasePrice}
+                          onChange={e => setForm({...form, purchasePrice: e.target.value})}
+                          placeholder="Purchase Price"
+                          className="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm text-slate-800 placeholder-slate-400 outline-none focus:ring-2 focus:ring-blue-300" />
+                        <div className="relative">
+                          <select value={form.purchasePriceTax} onChange={e => setForm({...form, purchasePriceTax: e.target.value})}
+                            className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-slate-300 text-sm text-slate-600 outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer">
+                            <option>Without Tax</option><option>With Tax</option>
+                          </select>
+                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="border border-slate-200 rounded-xl p-4 space-y-3 bg-white">
+                      <h4 className="text-sm font-bold text-slate-700">Taxes</h4>
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">Tax Rate</label>
+                        <div className="relative">
+                          <select value={form.taxRate} onChange={e => setForm({...form, taxRate: e.target.value})}
+                            className="w-full appearance-none pl-3 pr-8 py-2.5 rounded-lg border border-slate-300 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer">
+                            <option value="None">None</option>
+                            {['0','5','12','18','28'].map(r => <option key={r} value={r}>GST {r}%</option>)}
+                          </select>
+                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">Unit</label>
-                  <select value={form.unit} onChange={e => setForm({...form, unit: e.target.value})}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-300">
-                    {['pcs','kg','g','litre','ml','box','pack','dozen','metre'].map(u => <option key={u} value={u}>{u}</option>)}
-                  </select>
+              )}
+              {formTab === 'Stock' && (
+                <div className="border border-slate-200 rounded-xl p-4 space-y-4 bg-white">
+                  <h4 className="text-sm font-bold text-slate-700">Stock Details</h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1.5">Opening Stock Qty</label>
+                      <input type="number" min="0" value={form.quantity}
+                        onChange={e => setForm({...form, quantity: e.target.value})}
+                        placeholder="0"
+                        className="w-full px-3 py-2.5 rounded-lg border border-slate-300 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-300" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1.5">Min Stock (Alert At)</label>
+                      <input type="number" min="0" value={form.lowStockThreshold}
+                        onChange={e => setForm({...form, lowStockThreshold: e.target.value})}
+                        placeholder="5"
+                        className="w-full px-3 py-2.5 rounded-lg border border-slate-300 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-300" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1.5">MRP (₹)</label>
+                      <input type="number" min="0" step="0.01" value={form.mrp || form.salePrice}
+                        onChange={e => setForm({...form, mrp: e.target.value})}
+                        placeholder="0.00"
+                        className="w-full px-3 py-2.5 rounded-lg border border-slate-300 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-300" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1.5">
+                      Expiry Date <span className="text-slate-400 font-normal">(optional)</span>
+                    </label>
+                    <input type="date" value={form.expiryDate}
+                      onChange={e => setForm({...form, expiryDate: e.target.value})}
+                      className="w-full sm:w-64 px-3 py-2.5 rounded-lg border border-slate-300 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-300" />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">Low Stock Alert At</label>
-                  <input type="number" min="0" value={form.lowStockThreshold}
-                    onChange={e => setForm({...form, lowStockThreshold: e.target.value})}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-300" />
-                </div>
-              </div>
+              )}
+            </div>
 
-              {/* Row 4: Expiry Date */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1.5">
-                  Expiry Date <span className="text-slate-400 font-normal">(optional — leave blank if not applicable)</span>
-                </label>
-                <input type="date" value={form.expiryDate}
-                  onChange={e => setForm({...form, expiryDate: e.target.value})}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-300" />
-              </div>
-
-              {/* Actions */}
-              <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
-                <button type="button" onClick={closeForm}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-500 hover:text-slate-700 text-sm font-semibold transition-all">
-                  Cancel
-                </button>
-                <button type="submit" disabled={saving}
-                  className="flex items-center space-x-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition-all disabled:opacity-50 shadow-sm">
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  <span>{saving ? 'Saving...' : editingId ? 'Update Stock' : 'Add to Stock'}</span>
-                </button>
-              </div>
-            </form>
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50/50 flex-shrink-0 rounded-b-2xl">
+              <button type="button" disabled={saving} onClick={(e) => handleSave(e, true)}
+                className="px-5 py-2.5 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-all disabled:opacity-50">
+                Save & New
+              </button>
+              <button type="button" disabled={saving} onClick={(e) => handleSave(e, false)}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all shadow-sm disabled:opacity-50">
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                <span>Save</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
