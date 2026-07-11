@@ -23,6 +23,7 @@ export default function InvoiceDetail() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [payments, setPayments] = useState([]);
   const [loadingPayments, setLoadingPayments] = useState(true);
+  const [printSrc, setPrintSrc] = useState(null);
 
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -200,22 +201,7 @@ export default function InvoiceDetail() {
                 const token = localStorage.getItem('token');
                 const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
                 const printUrl = `${apiBase}/invoices/${invoice._id}/print?template=${selectedTemplate}&token=${token}`;
-                
-                // Open in a new window and trigger print dialog automatically
-                const printWin = window.open(printUrl, '_blank', 'width=900,height=700,toolbar=0,menubar=0,location=0');
-                if (printWin) {
-                  printWin.addEventListener('load', () => {
-                    try {
-                      printWin.focus();
-                      printWin.print();
-                    } catch (e) {
-                      console.error('Print error:', e);
-                    }
-                  });
-                } else {
-                  // Popup blocked - open normally so user can print manually
-                  window.open(printUrl, '_blank');
-                }
+                setPrintSrc(printUrl);
               }}
               className="flex items-center justify-center space-x-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-[0.98]"
             >
@@ -518,6 +504,71 @@ export default function InvoiceDetail() {
         invoice={invoice}
         onPaymentProcessed={handlePaymentProcessed}
       />
+
+      {/* ── Print Preview Modal Overlay ────────────────── */}
+      {printSrc && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.75)',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'flex-start',
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setPrintSrc(null); }}
+        >
+          {/* Toolbar */}
+          <div style={{
+            width: '100%', maxWidth: '960px',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '10px 16px', background: '#1e293b', borderRadius: '0 0 12px 12px',
+          }}>
+            <span style={{ color: '#94a3b8', fontSize: '13px', fontFamily: 'sans-serif' }}>
+              Invoice Print Preview — {selectedTemplate} Template
+            </span>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => {
+                  const frame = document.getElementById('print-preview-iframe');
+                  if (frame && frame.contentWindow) {
+                    frame.contentWindow.focus();
+                    frame.contentWindow.print();
+                  }
+                }}
+                style={{
+                  background: '#4f46e5', color: '#fff', border: 'none',
+                  padding: '7px 18px', borderRadius: '8px', cursor: 'pointer',
+                  fontSize: '13px', fontFamily: 'sans-serif', fontWeight: '600',
+                }}
+              >
+                🖨 Print
+              </button>
+              <button
+                onClick={() => setPrintSrc(null)}
+                style={{
+                  background: '#475569', color: '#fff', border: 'none',
+                  padding: '7px 14px', borderRadius: '8px', cursor: 'pointer',
+                  fontSize: '13px', fontFamily: 'sans-serif',
+                }}
+              >
+                ✕ Close
+              </button>
+            </div>
+          </div>
+
+          {/* Invoice Preview iframe */}
+          <iframe
+            id="print-preview-iframe"
+            src={printSrc}
+            title="Invoice Print Preview"
+            style={{
+              width: '100%', maxWidth: '960px',
+              height: 'calc(100vh - 60px)',
+              background: '#fff', border: 'none',
+              borderRadius: '0 0 8px 8px',
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
