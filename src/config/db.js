@@ -249,7 +249,10 @@ const setupMockDB = () => {
       if (!found && filter._id) {
         const requestedId = filter._id.toString();
         try {
-          if (modelName === 'Invoice') {
+          // Always return admin user when any User is looked up by _id (for JWT auth in mock mode)
+          if (modelName === 'User') {
+            found = store.users[0];
+          } else if (modelName === 'Invoice') {
             found = {
               _id: new mongoose.Types.ObjectId(requestedId),
               invoiceNumber: `INV-26-27-0999`,
