@@ -3,11 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { getStoreSettings, updateStoreSettings, updateStoreProfile } from '../services/settings';
 import { Search, CheckCircle, Loader2, X, HelpCircle, Edit2 } from 'lucide-react';
 
-const SIDEBAR_ITEMS = [
-  'GENERAL', 'TRANSACTION', 'PRINT', 'TAXES & GST',
-  'TRANSACTION MESSAGE', 'PARTY', 'ITEM',
-  'SERVICE REMINDERS', 'ACCOUNTING', 'MULTI CURRENCY',
-];
+const SIDEBAR_ITEMS = ['GENERAL', 'PRINT'];
 
 // Reusable checkbox row matching the reference image
 function SettingRow({ checked, onChange, label, info }) {
@@ -501,14 +497,7 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Fallback for other sections */}
-        {activeSection !== 'GENERAL' && activeSection !== 'PRINT' && (
-          <div style={{ padding: '60px 32px', textAlign: 'center', color: '#9CA3AF' }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>⚙️</div>
-            <div style={{ fontSize: 15, fontWeight: 600, color: '#374151', marginBottom: 6 }}>{activeSection}</div>
-            <div style={{ fontSize: 13 }}>Settings for this section coming soon.</div>
-          </div>
-        )}
+        {/* No other sections */}
 
       </div>{/* end main */}
     </div>
