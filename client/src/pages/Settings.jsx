@@ -1,11 +1,11 @@
-﻿// client/src/pages/Settings.jsx
+// client/src/pages/Settings.jsx
 import React, { useEffect, useState } from 'react';
 import { getStoreSettings, updateStoreSettings, updateStoreProfile } from '../services/settings';
 import { useAuth } from '../context/AuthContext';
 import {
   Search, CheckCircle, Loader2, X, HelpCircle, Edit2,
   User, Building2, Phone, Mail, Lock, Eye, EyeOff,
-  AlertTriangle, Shield, KeyRound,
+  AlertTriangle, Shield, KeyRound, ChevronLeft, ChevronRight, Menu,
 } from 'lucide-react';
 import PrintSettings from '../components/PrintSettings';
 import EditProfile from '../components/EditProfile';
@@ -43,6 +43,7 @@ export default function SettingsPage() {
   const [successMsg, setSuccessMsg] = useState('');
   const [apiError, setApiError] = useState('');
   const [activeSection, setActiveSection] = useState('GENERAL');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // â”€â”€ Profile section state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [profileName, setProfileName] = useState('');
@@ -279,7 +280,7 @@ export default function SettingsPage() {
     );
   }
 
-  // â”€â”€ render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── render ──────────────────────────────────────────────────────────────────────────
   return (
     <div
       className="flex overflow-hidden"
@@ -291,26 +292,69 @@ export default function SettingsPage() {
       }}
     >
 
-      {/* â”€â”€ LEFT SIDEBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <aside style={{ width: 220, minWidth: 220, background: '#1F2333', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0 }}>
+      {/* ── LEFT SIDEBAR ─────────────────────────────────────────────────── */}
+      <aside style={{
+        width: sidebarOpen ? 220 : 52,
+        minWidth: sidebarOpen ? 220 : 52,
+        background: '#1F2333',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh',
+        position: 'sticky',
+        top: 0,
+        transition: 'width 0.22s cubic-bezier(.4,0,.2,1), min-width 0.22s cubic-bezier(.4,0,.2,1)',
+        overflow: 'hidden',
+      }}>
         {/* Sidebar header */}
-        <div style={{ padding: '0 20px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-          <span style={{ color: '#fff', fontWeight: 700, fontSize: 16, letterSpacing: 0.2 }}>Settings</span>
-          <Search style={{ color: 'rgba(255,255,255,0.5)', width: 16, height: 16, cursor: 'pointer' }} />
+        <div style={{ padding: '0 14px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+          {sidebarOpen && (
+            <span style={{ color: '#fff', fontWeight: 700, fontSize: 16, letterSpacing: 0.2, whiteSpace: 'nowrap' }}>Settings</span>
+          )}
+          {/* Toggle button */}
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(o => !o)}
+            title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+            style={{
+              marginLeft: sidebarOpen ? 'auto' : 'auto',
+              background: 'rgba(255,255,255,0.08)',
+              border: 'none',
+              borderRadius: 6,
+              width: 28,
+              height: 28,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'rgba(255,255,255,0.75)',
+              flexShrink: 0,
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.16)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+          >
+            {sidebarOpen
+              ? <ChevronLeft style={{ width: 15, height: 15 }} />
+              : <ChevronRight style={{ width: 15, height: 15 }} />
+            }
+          </button>
         </div>
+
         {/* Nav items */}
-        <nav style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
+        <nav style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '8px 0' }}>
           {SIDEBAR_ITEMS.map(item => {
             const isActive = activeSection === item;
             return (
               <button
                 key={item}
                 onClick={() => setActiveSection(item)}
+                title={!sidebarOpen ? item : ''}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: sidebarOpen ? 'flex-start' : 'center',
                   width: '100%',
-                  padding: '11px 20px',
+                  padding: sidebarOpen ? '11px 20px' : '11px 0',
                   background: isActive ? '#fff' : 'transparent',
                   color: isActive ? '#1F2333' : '#fff',
                   fontWeight: isActive ? 600 : 500,
@@ -319,15 +363,18 @@ export default function SettingsPage() {
                   border: 'none',
                   cursor: 'pointer',
                   textAlign: 'left',
-                  transition: 'background 0.15s',
+                  transition: 'background 0.15s, padding 0.22s',
                   borderLeft: isActive ? '3px solid #3B82F6' : '3px solid transparent',
                   boxSizing: 'border-box',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
                 }}
                 onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
               >
-                {item}
+                {sidebarOpen ? item : item.charAt(0)}
               </button>
+
             );
           })}
         </nav>
