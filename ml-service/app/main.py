@@ -626,6 +626,7 @@ def get_dashboard_metrics(
 
 @app.get("/api/analytics/trend-chart")
 def get_trend_chart(metric: str = Query("revenue_profit")):
+    print(f"--- ML SERVICE RECEIVED METRIC QUERY PARAM: {metric} ---", flush=True)
     try:
         # Step 1: Data Extraction
         query = {}
@@ -642,7 +643,13 @@ def get_trend_chart(metric: str = Query("revenue_profit")):
             dates = pd.date_range(end=datetime.now(), periods=7, freq="D")
             labels = [d.strftime("%d %b") for d in dates]
             if metric == "repeat_rate":
-                values = [20.0, 25.0, 25.0, 30.0, 32.5, 32.5, 35.5]
+                repeat_rate = 37.5
+                one_time_rate = 62.5
+                pie_sizes = [repeat_rate, one_time_rate]
+                pie_labels = [
+                    f'Repeat: {repeat_rate:.1f}% (3 accounts)', 
+                    f'One-Time: {one_time_rate:.1f}% (5 accounts)'
+                ]
             elif metric == "accounts":
                 values = [4, 5, 5, 6, 7, 7, 8]
             else: # revenue_profit
@@ -668,17 +675,29 @@ def get_trend_chart(metric: str = Query("revenue_profit")):
             labels = [d.strftime("%d %b") for d in dates_7]
             
             if metric == "repeat_rate":
-                values = []
-                for d in dates_7:
-                    sub_df = df[df["date"] <= d]
-                    if sub_df.empty:
-                        values.append(0.0)
-                    else:
-                        unique_buyers = sub_df["buyerName"].nunique()
-                        buyer_counts = sub_df["buyerName"].value_counts()
-                        repeat_buyers = int((buyer_counts > 1).sum())
-                        rate = (repeat_buyers / unique_buyers * 100) if unique_buyers > 0 else 0.0
-                        values.append(round(rate, 2))
+                if not invoices_list:
+                    repeat_buyers = 3
+                    one_time_buyers = 5
+                    unique_buyers = 8
+                else:
+                    unique_buyers = df["buyerName"].nunique()
+                    buyer_counts = df["buyerName"].value_counts()
+                    repeat_buyers = int((buyer_counts > 1).sum())
+                    one_time_buyers = unique_buyers - repeat_buyers
+                
+                if unique_buyers == 0:
+                    repeat_buyers = 3
+                    one_time_buyers = 5
+                    unique_buyers = 8
+
+                repeat_rate = (repeat_buyers / unique_buyers * 100)
+                one_time_rate = 100.0 - repeat_rate
+                
+                pie_sizes = [repeat_rate, one_time_rate]
+                pie_labels = [
+                    f'Repeat: {repeat_rate:.1f}% ({repeat_buyers} accounts)', 
+                    f'One-Time: {one_time_rate:.1f}% ({one_time_buyers} accounts)'
+                ]
             elif metric == "accounts":
                 values = []
                 for d in dates_7:
@@ -718,15 +737,29 @@ def get_trend_chart(metric: str = Query("revenue_profit")):
         from matplotlib.ticker import FuncFormatter
 
         if metric == "repeat_rate":
-            # Smooth line graph for Customer Repeat Rate
-            ax.plot(labels, values, marker='o', color='#c084fc', linewidth=2.5, markersize=6, label='Customer Repeat Rate', zorder=3)
-            ax.fill_between(labels, values, color='#c084fc', alpha=0.12, zorder=2)
+            # Plot Donut/Pie Chart representing repeat customer rate
+            colors = ['#a855f7', '#334155'] # vibrant purple and slate grey
+            wedges, texts, autotexts = ax.pie(
+                pie_sizes, 
+                labels=pie_labels, 
+                colors=colors, 
+                autopct='%1.1f%%', 
+                startangle=90, 
+                pctdistance=0.75,
+                textprops=dict(color='#94a3b8', fontsize=8.5)
+            )
             
-            def format_pct(y, pos):
-                return f"{y:.0f}%"
-            ax.yaxis.set_major_formatter(FuncFormatter(format_pct))
-            ax.tick_params(axis='y', colors='#94a3b8', labelsize=8.5)
-            ax.set_xticklabels(labels, color='#94a3b8', fontsize=8.5)
+            # Draw a circle in the center to make it a donut chart
+            centre_circle = plt.Circle((0,0), 0.55, fc='#0b0f19')
+            ax.add_artist(centre_circle)
+            
+            # Style percent labels inside wedges
+            for autotext in autotexts:
+                autotext.set_color('#ffffff')
+                autotext.set_fontweight('bold')
+                autotext.set_fontsize(9)
+                
+            ax.axis('equal')
             
         elif metric == "accounts":
             # Area/step line graph for Acquired Customer Accounts

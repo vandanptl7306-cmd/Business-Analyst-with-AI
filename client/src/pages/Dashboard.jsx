@@ -263,53 +263,98 @@ export default function Dashboard() {
                     />
                   </div>
                 ) : (
-                  <div className="h-72 relative rounded-2xl bg-slate-950/95 p-4 text-slate-200">
-                    <div className="absolute inset-x-0 top-0 flex justify-between px-3 pt-2 text-[10px] text-slate-500">
-                      <span>{getFallbackChartLabel(maxChartValue * 0.75)}</span>
-                      <span>{getFallbackChartLabel(maxChartValue * 0.5)}</span>
-                      <span>{getFallbackChartLabel(maxChartValue * 0.25)}</span>
-                    </div>
-                    <div className="absolute inset-x-0 top-12 border-t border-slate-800"></div>
-                    <div className="absolute inset-x-0 top-28 border-t border-slate-800"></div>
-                    <div className="absolute inset-x-0 top-44 border-t border-slate-800"></div>
-                    <div className="absolute inset-x-0 top-60 border-t border-slate-800"></div>
-                    <div className="relative h-full flex items-end gap-3 px-3 pb-8">
-                      {chartData.map((item, idx) => {
-                        let bar1Height = 0;
-                        let bar2Height = 0;
-                        let bar1Color = '';
-                        let bar2Color = '';
-
-                        if (selectedGraphMetric === 'repeat_rate') {
-                          const mockRates = [20, 25, 25, 30, 32, 32, 35.5];
-                          const rateVal = mockRates[idx % mockRates.length];
-                          bar1Height = Math.max((rateVal / maxChartValue) * 75, 4);
-                          bar1Color = 'bg-gradient-to-t from-purple-500 to-purple-400 shadow-lg shadow-purple-500/30';
-                        } else if (selectedGraphMetric === 'accounts') {
-                          const mockAccs = [4, 5, 5, 6, 7, 7, 8];
-                          const accVal = mockAccs[idx % mockAccs.length];
-                          bar1Height = Math.max((accVal / maxChartValue) * 75, 4);
-                          bar1Color = 'bg-gradient-to-t from-amber-500 to-amber-400 shadow-lg shadow-amber-500/30';
-                        } else { // revenue_profit
-                          bar1Height = Math.max((item.revenue / maxChartValue) * 75, 8);
-                          bar1Color = 'bg-slate-700';
-                          bar2Height = Math.max((item.profit / maxChartValue) * 75, 4);
-                          bar2Color = 'bg-gradient-to-t from-indigo-500 to-indigo-400 shadow-lg shadow-indigo-500/30';
-                        }
-
+                  <div className="h-72 relative rounded-2xl bg-slate-950/95 p-4 text-slate-200 flex items-center justify-center">
+                    {selectedGraphMetric === 'repeat_rate' ? (
+                      (() => {
+                        const rateVal = kpis ? kpis.repeatCustomerRate : 35.5;
+                        const radius = 45;
+                        const circumference = 2 * Math.PI * radius;
+                        const strokeDashoffset = circumference - (rateVal / 100) * circumference;
                         return (
-                          <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full gap-2">
-                            <div className="flex-1 flex flex-row items-end justify-center w-full gap-1">
-                              <div style={{ height: `${bar1Height}%` }} className={`w-2.5 sm:w-3.5 rounded-t ${bar1Color}`} />
-                              {bar2Height > 0 && (
-                                <div style={{ height: `${bar2Height}%` }} className={`w-2.5 sm:w-3.5 rounded-t ${bar2Color}`} />
-                              )}
+                          <div className="w-full h-full flex flex-col sm:flex-row items-center justify-center gap-8 py-4">
+                            <div className="relative w-36 h-36 flex items-center justify-center">
+                              <svg className="w-32 h-32 transform -rotate-90">
+                                <circle
+                                  cx="64"
+                                  cy="64"
+                                  r={radius}
+                                  className="stroke-slate-800 fill-none"
+                                  strokeWidth="10"
+                                />
+                                <circle
+                                  cx="64"
+                                  cy="64"
+                                  r={radius}
+                                  className="stroke-purple-500 fill-none"
+                                  strokeWidth="10"
+                                  strokeDasharray={circumference}
+                                  strokeDashoffset={strokeDashoffset}
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                              <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
+                                <span className="text-xl font-bold font-mono">{rateVal}%</span>
+                                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Repeat Rate</span>
+                              </div>
                             </div>
-                            <div className="text-[10px] text-slate-400 font-mono text-center">{item.date}</div>
+                            <div className="flex flex-col gap-2 text-slate-300 text-xs">
+                              <div className="flex items-center space-x-2">
+                                <div className="w-3 h-3 rounded bg-purple-500" />
+                                <span>Repeat Customers: <strong>{rateVal}%</strong></span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <div className="w-3 h-3 rounded bg-slate-800" />
+                                <span>One-Time Customers: <strong>{(100 - rateVal).toFixed(1)}%</strong></span>
+                              </div>
+                            </div>
                           </div>
                         );
-                      })}
-                    </div>
+                      })()
+                    ) : (
+                      <>
+                        <div className="absolute inset-x-0 top-0 flex justify-between px-3 pt-2 text-[10px] text-slate-500">
+                          <span>{getFallbackChartLabel(maxChartValue * 0.75)}</span>
+                          <span>{getFallbackChartLabel(maxChartValue * 0.5)}</span>
+                          <span>{getFallbackChartLabel(maxChartValue * 0.25)}</span>
+                        </div>
+                        <div className="absolute inset-x-0 top-12 border-t border-slate-800"></div>
+                        <div className="absolute inset-x-0 top-28 border-t border-slate-800"></div>
+                        <div className="absolute inset-x-0 top-44 border-t border-slate-800"></div>
+                        <div className="absolute inset-x-0 top-60 border-t border-slate-800"></div>
+                        <div className="relative h-full flex items-end gap-3 px-3 pb-8 w-full">
+                          {chartData.map((item, idx) => {
+                            let bar1Height = 0;
+                            let bar2Height = 0;
+                            let bar1Color = '';
+                            let bar2Color = '';
+
+                            if (selectedGraphMetric === 'accounts') {
+                              const mockAccs = [4, 5, 5, 6, 7, 7, 8];
+                              const accVal = mockAccs[idx % mockAccs.length];
+                              bar1Height = Math.max((accVal / maxChartValue) * 75, 4);
+                              bar1Color = 'bg-gradient-to-t from-amber-500 to-amber-400 shadow-lg shadow-amber-500/30';
+                            } else { // revenue_profit
+                              bar1Height = Math.max((item.revenue / maxChartValue) * 75, 8);
+                              bar1Color = 'bg-slate-700';
+                              bar2Height = Math.max((item.profit / maxChartValue) * 75, 4);
+                              bar2Color = 'bg-gradient-to-t from-indigo-500 to-indigo-400 shadow-lg shadow-indigo-500/30';
+                            }
+
+                            return (
+                              <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full gap-2">
+                                <div className="flex-1 flex flex-row items-end justify-center w-full gap-1">
+                                  <div style={{ height: `${bar1Height}%` }} className={`w-2.5 sm:w-3.5 rounded-t ${bar1Color}`} />
+                                  {bar2Height > 0 && (
+                                    <div style={{ height: `${bar2Height}%` }} className={`w-2.5 sm:w-3.5 rounded-t ${bar2Color}`} />
+                                  )}
+                                </div>
+                                <div className="text-[10px] text-slate-400 font-mono text-center">{item.date}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
