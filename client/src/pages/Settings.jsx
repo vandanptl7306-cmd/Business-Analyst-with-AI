@@ -1,9 +1,22 @@
 // client/src/pages/Settings.jsx
 import React, { useEffect, useState } from 'react';
 import { getStoreSettings, updateStoreSettings, updateStoreProfile } from '../services/settings';
-import { Search, CheckCircle, Loader2, X, HelpCircle, Edit2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import {
+  Search, CheckCircle, Loader2, X, HelpCircle, Edit2,
+  User, Building2, Phone, Mail, Lock, Eye, EyeOff,
+  AlertTriangle, Shield, KeyRound,
+} from 'lucide-react';
+import PrintSettings from '../components/PrintSettings';
 
-const SIDEBAR_ITEMS = ['GENERAL', 'PRINT'];
+const SIDEBAR_ITEMS = ['GENERAL', 'PRINT', 'PROFILE'];
+
+const inputCls = (err) =>
+  `w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border text-sm text-slate-800 placeholder-slate-400 outline-none transition-all focus:ring-2 focus:bg-white ${
+    err
+      ? 'border-red-300 focus:ring-red-200'
+      : 'border-slate-200 focus:border-indigo-300 focus:ring-indigo-200'
+  }`;
 
 // Reusable checkbox row matching the reference image
 function SettingRow({ checked, onChange, label, info }) {
@@ -22,11 +35,70 @@ function SettingRow({ checked, onChange, label, info }) {
 }
 
 export default function SettingsPage() {
+  const { user, updateUser, changePassword } = useAuth();
+
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [apiError, setApiError] = useState('');
   const [activeSection, setActiveSection] = useState('GENERAL');
+
+  // ── Profile section state ────────────────────────────────────────────────
+  const [profileName, setProfileName] = useState('');
+  const [profileCompany, setProfileCompany] = useState('');
+  const [profilePhone, setProfilePhone] = useState('');
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSuccess, setProfileSuccess] = useState('');
+  const [profileError, setProfileError] = useState('');
+
+  // ── Password section state ───────────────────────────────────────────────
+  const [currentPwd, setCurrentPwd] = useState('');
+  const [newPwd, setNewPwd] = useState('');
+  const [confirmPwd, setConfirmPwd] = useState('');
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pwdSaving, setPwdSaving] = useState(false);
+  const [pwdSuccess, setPwdSuccess] = useState('');
+  const [pwdError, setPwdError] = useState('');
+
+  const flash = (setMsg, msg, delay = 4000) => {
+    setMsg(msg);
+    setTimeout(() => setMsg(''), delay);
+  };
+
+  const handleProfileSave = async (e) => {
+    e.preventDefault();
+    setProfileError('');
+    if (!profileName.trim()) { setProfileError('Name cannot be empty.'); return; }
+    setProfileSaving(true);
+    try {
+      await updateUser({ name: profileName.trim(), companyName: profileCompany.trim(), phoneNumber: profilePhone.trim() });
+      flash(setProfileSuccess, 'Profile updated successfully.');
+    } catch (err) {
+      setProfileError(err.response?.data?.error || 'Failed to update profile.');
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  const handlePasswordSave = async (e) => {
+    e.preventDefault();
+    setPwdError('');
+    if (!currentPwd || !newPwd || !confirmPwd) { setPwdError('All password fields are required.'); return; }
+    if (newPwd.length < 6) { setPwdError('New password must be at least 6 characters.'); return; }
+    if (newPwd !== confirmPwd) { setPwdError('New passwords do not match.'); return; }
+    setPwdSaving(true);
+    try {
+      await changePassword({ currentPassword: currentPwd, newPassword: newPwd });
+      flash(setPwdSuccess, 'Password changed successfully.');
+      setCurrentPwd(''); setNewPwd(''); setConfirmPwd('');
+    } catch (err) {
+      setPwdError(err.response?.data?.error || 'Failed to change password.');
+    } finally {
+      setPwdSaving(false);
+    }
+  };
 
   // ── General settings state ──────────────────────────────────────────────
   const [enablePasscode, setEnablePasscode] = useState(false);
@@ -37,24 +109,8 @@ export default function SettingsPage() {
   const [blockNewItemsFromTxn, setBlockNewItemsFromTxn] = useState(false);
   const [blockNewPartiesFromTxn, setBlockNewPartiesFromTxn] = useState(false);
 
-  // More Transactions
-  const [estimateQuotation, setEstimateQuotation] = useState(true);
-  const [proformaInvoice, setProformaInvoice] = useState(true);
-  const [salePurchaseOrder, setSalePurchaseOrder] = useState(true);
-  const [otherIncome, setOtherIncome] = useState(false);
-  const [fixedAssets, setFixedAssets] = useState(false);
-  const [deliveryChallan, setDeliveryChallan] = useState(true);
-
   // Multi Firm
   const [multiFirm, setMultiFirm] = useState(false);
-
-  // Backup
-  const [autoBackup, setAutoBackup] = useState(false);
-  const [auditTrail, setAuditTrail] = useState(true);
-  const lastBackup = '11/07/2026 | 09:07 PM';
-
-  // Stock Transfer
-  const [godownManagement, setGodownManagement] = useState(false);
 
   // Zoom
   const [zoomLevel, setZoomLevel] = useState(100);
@@ -108,6 +164,15 @@ export default function SettingsPage() {
   const [thermalPrintCompanyName, setThermalPrintCompanyName] = useState(true);
   const [thermalCompanyName, setThermalCompanyName] = useState('');
 
+
+  // Populate profile fields when user loads
+  useEffect(() => {
+    if (user) {
+      setProfileName(user.name || '');
+      setProfileCompany(user.companyName || '');
+      setProfilePhone(user.phoneNumber || '');
+    }
+  }, [user]);
 
   useEffect(() => {
     const load = async () => {
@@ -343,16 +408,6 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* More Transactions */}
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#111827', margin: '24px 0 14px' }}>More Transactions</div>
-                <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, padding: '16px 18px' }}>
-                  <SettingRow checked={estimateQuotation} onChange={setEstimateQuotation} label="Estimate/Quotation" info />
-                  <SettingRow checked={proformaInvoice} onChange={setProformaInvoice} label="Proforma Invoice" info />
-                  <SettingRow checked={salePurchaseOrder} onChange={setSalePurchaseOrder} label="Sale/Purchase Order" info />
-                  <SettingRow checked={otherIncome} onChange={setOtherIncome} label="Other Income" info />
-                  <SettingRow checked={fixedAssets} onChange={setFixedAssets} label="Fixed Assets (FA)" info />
-                  <SettingRow checked={deliveryChallan} onChange={setDeliveryChallan} label="Delivery Challan" info />
-                </div>
               </div>
 
               {/* ── Column 2: Multi Firm + Stock Transfer ── */}
@@ -374,40 +429,10 @@ export default function SettingsPage() {
                   )}
                 </div>
 
-                {/* Stock Transfer Between Godowns */}
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#111827', margin: '24px 0 14px' }}>Stock Transfer Between Godowns</div>
-                <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, padding: '16px 18px' }}>
-                  <p style={{ fontSize: 12, color: '#3B82F6', lineHeight: 1.6, marginBottom: 12 }}>
-                    Manage all your stores/godowns and transfer stock seamlessly between them. Using this feature, you can transfer stock between stores/godowns and manage your inventory more efficiently.
-                  </p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <input
-                      type="checkbox" checked={godownManagement} onChange={e => setGodownManagement(e.target.checked)}
-                      style={{ width: 14, height: 14, cursor: 'pointer' }}
-                    />
-                    <span style={{ fontSize: 13, color: '#374151' }}>Godown management &amp; Stock transfer</span>
-                    <div style={{ display: 'flex', gap: 4, marginLeft: 4 }}>
-                      <span style={{ fontSize: 10, background: '#EF4444', color: '#fff', borderRadius: 3, padding: '1px 5px', fontWeight: 600 }}>🔥</span>
-                      <span style={{ fontSize: 10, background: '#F59E0B', color: '#fff', borderRadius: 3, padding: '1px 5px', fontWeight: 600 }}>▶</span>
-                    </div>
-                  </div>
-                </div>
               </div>
 
-              {/* ── Column 3: Backup & History + Customize View ── */}
+              {/* ── Column 3: Customize View ── */}
               <div>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#111827', marginBottom: 16 }}>Backup &amp; History</div>
-                <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, padding: '16px 18px' }}>
-                  <SettingRow checked={autoBackup} onChange={setAutoBackup} label="Auto Backup" info />
-                  <div style={{ fontSize: 12, color: '#374151', padding: '8px 0', borderTop: '1px solid #F3F4F6', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span>Last Backup</span>
-                    <span style={{ fontWeight: 600, color: '#111827' }}>{lastBackup}</span>
-                    <HelpCircle style={{ width: 12, height: 12, color: '#9CA3AF' }} />
-                  </div>
-                  <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 4 }}>
-                    <SettingRow checked={auditTrail} onChange={setAuditTrail} label="Audit Trail" info />
-                  </div>
-                </div>
 
                 {/* Customize Your View */}
                 <div style={{ fontWeight: 700, fontSize: 14, color: '#111827', margin: '24px 0 14px' }}>Customize Your View</div>
@@ -445,59 +470,224 @@ export default function SettingsPage() {
 
         {/* PRINT section */}
         {activeSection === 'PRINT' && (
-          <div style={{ padding: '28px 32px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-              {/* Layout */}
-              <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, padding: '18px 20px' }}>
-                <div style={{ fontWeight: 700, fontSize: 13, color: '#111827', marginBottom: 14 }}>Layout Template</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  {['Standard','TaxInvoice','Minimalist','Commercial','Modern','Proforma'].map(l => (
-                    <button key={l} onClick={() => setRegularLayoutTheme(l)}
-                      style={{ padding: '10px 8px', borderRadius: 6, border: `1px solid ${regularLayoutTheme === l ? '#3B82F6' : '#E5E7EB'}`, background: regularLayoutTheme === l ? '#EFF6FF' : '#fff', color: regularLayoutTheme === l ? '#1D4ED8' : '#374151', fontSize: 12, fontWeight: regularLayoutTheme === l ? 700 : 500, cursor: 'pointer' }}>
-                      {l === 'TaxInvoice' ? 'GST Tax Invoice' : l}
-                    </button>
-                  ))}
-                </div>
-                <div style={{ marginTop: 18 }}>
-                  <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 8, fontWeight: 600 }}>Accent Color</div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {['#2563eb','#059669','#4f46e5','#e11d48','#d97706','#7c3aed','#0d9488','#475569','#1b3a4b'].map(c => (
-                      <button key={c} onClick={() => setRegularThemeColor(c)}
-                        style={{ width: 26, height: 26, borderRadius: 6, background: c, border: regularThemeColor === c ? '2.5px solid #111' : '2px solid transparent', cursor: 'pointer' }} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Print options */}
-              <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, padding: '18px 20px' }}>
-                <div style={{ fontWeight: 700, fontSize: 13, color: '#111827', marginBottom: 14 }}>Print Options</div>
-                <SettingRow checked={printCompanyName} onChange={setPrintCompanyName} label="Print Company Name" />
-                <SettingRow checked={printCompanyLogo} onChange={setPrintCompanyLogo} label="Print Company Logo" />
-                <SettingRow checked={printAddress} onChange={setPrintAddress} label="Print Address" />
-                <SettingRow checked={printPhone} onChange={setPrintPhone} label="Print Phone" />
-                <SettingRow checked={printEmail} onChange={setPrintEmail} label="Print Email" />
-                <SettingRow checked={printGSTIN} onChange={setPrintGSTIN} label="Print GSTIN" />
-                <SettingRow checked={printTaxDetails} onChange={setPrintTaxDetails} label="Print Tax Details" />
-                <SettingRow checked={printTotalQty} onChange={setPrintTotalQty} label="Print Total Quantity" />
-                <SettingRow checked={printBankDetails} onChange={setPrintBankDetails} label="Print Bank Details" />
-                <div style={{ marginTop: 12, borderTop: '1px solid #F3F4F6', paddingTop: 12 }}>
-                  <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 6 }}>Paper Size</div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {['A4','A5','Letter'].map(s => (
-                      <button key={s} onClick={() => setPaperSize(s)}
-                        style={{ padding: '4px 12px', borderRadius: 5, border: `1px solid ${paperSize === s ? '#3B82F6' : '#E5E7EB'}`, background: paperSize === s ? '#EFF6FF' : '#fff', color: paperSize === s ? '#1D4ED8' : '#6B7280', fontSize: 12, fontWeight: paperSize === s ? 700 : 400, cursor: 'pointer' }}>
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div style={{ padding: 0, margin: '-1px' }}>
+            <PrintSettings />
           </div>
         )}
 
-        {/* No other sections */}
+        {/* PROFILE section */}
+        {activeSection === 'PROFILE' && (
+          <div style={{ padding: '28px 32px' }}>
+
+            {/* Profile header card */}
+            <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: '24px 28px', marginBottom: 28, display: 'flex', alignItems: 'center', gap: 18 }}>
+              <div style={{ width: 56, height: 56, borderRadius: 14, background: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 20, flexShrink: 0, boxShadow: '0 4px 14px rgba(79,70,229,0.3)' }}>
+                {user?.name?.substring(0, 2)?.toUpperCase()}
+              </div>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 18, color: '#111827' }}>{user?.name}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+                  <span style={{ fontSize: 12, color: '#6B7280' }}>{user?.email}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: '#EEF2FF', color: '#4F46E5', border: '1px solid #C7D2FE' }}>{user?.role}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+
+              {/* Profile Details */}
+              <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10, padding: '20px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 14, marginBottom: 16, borderBottom: '1px solid #F3F4F6' }}>
+                  <div style={{ background: '#EEF2FF', borderRadius: 8, padding: 7, color: '#4F46E5', display: 'flex' }}>
+                    <User style={{ width: 15, height: 15 }} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#111827' }}>Profile Details</div>
+                    <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>Your name, company and contact info</div>
+                  </div>
+                </div>
+
+                {profileSuccess && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: '1px solid #A7F3D0', background: '#ECFDF5', color: '#047857', fontSize: 12, fontWeight: 600, marginBottom: 14 }}>
+                    <CheckCircle style={{ width: 14, height: 14, flexShrink: 0 }} />{profileSuccess}
+                  </div>
+                )}
+                {profileError && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: '1px solid #FECACA', background: '#FEF2F2', color: '#DC2626', fontSize: 12, fontWeight: 600, marginBottom: 14 }}>
+                    <AlertTriangle style={{ width: 14, height: 14, flexShrink: 0 }} />{profileError}
+                  </div>
+                )}
+
+                <form onSubmit={handleProfileSave} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+                  {/* Full Name */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                      Full Name <span style={{ color: '#EF4444' }}>*</span>
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <User style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: '#9CA3AF' }} />
+                      <input
+                        type="text" value={profileName} onChange={e => setProfileName(e.target.value)}
+                        placeholder="Jane Doe"
+                        className={`${inputCls(!profileName.trim())} pl-9`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Company Name */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                      Company / Shop Name
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <Building2 style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: '#9CA3AF' }} />
+                      <input
+                        type="text" value={profileCompany} onChange={e => setProfileCompany(e.target.value)}
+                        placeholder="e.g. IntellectBill Pvt. Ltd."
+                        className={`${inputCls(false)} pl-9`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Mobile */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                      Mobile Number <span style={{ fontSize: 9, fontWeight: 400, color: '#9CA3AF', textTransform: 'none' }}>(for WhatsApp invoices)</span>
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <Phone style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: '#9CA3AF' }} />
+                      <input
+                        type="tel" value={profilePhone} onChange={e => setProfilePhone(e.target.value)}
+                        placeholder="+919876543210"
+                        className={`${inputCls(false)} pl-9`}
+                        style={{ fontFamily: 'monospace' }}
+                      />
+                    </div>
+                    {!profilePhone.trim() && (
+                      <p style={{ fontSize: 10, color: '#D97706', fontWeight: 500, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <AlertTriangle style={{ width: 11, height: 11 }} />Add mobile to enable WhatsApp sharing
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Email (read-only) */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                      Email <span style={{ fontWeight: 400, color: '#9CA3AF', textTransform: 'none', fontSize: 9 }}>(cannot be changed)</span>
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <Mail style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: '#C4B5FD' }} />
+                      <input
+                        type="email" value={user?.email || ''} readOnly
+                        style={{ width: '100%', paddingLeft: 36, paddingRight: 16, paddingTop: 10, paddingBottom: 10, borderRadius: 12, background: '#F3F4F6', border: '1px solid #E5E7EB', fontSize: 13, color: '#9CA3AF', cursor: 'not-allowed', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit" disabled={profileSaving}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 700, border: 'none', cursor: profileSaving ? 'not-allowed' : 'pointer', opacity: profileSaving ? 0.7 : 1 }}
+                  >
+                    {profileSaving ? <><Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /><span>Saving...</span></> : <span>Save Profile</span>}
+                  </button>
+                </form>
+              </div>
+
+              {/* Change Password */}
+              <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10, padding: '20px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 14, marginBottom: 16, borderBottom: '1px solid #F3F4F6' }}>
+                  <div style={{ background: '#EEF2FF', borderRadius: 8, padding: 7, color: '#4F46E5', display: 'flex' }}>
+                    <KeyRound style={{ width: 15, height: 15 }} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#111827' }}>Change Password</div>
+                    <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>Update your login password</div>
+                  </div>
+                </div>
+
+                {pwdSuccess && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: '1px solid #A7F3D0', background: '#ECFDF5', color: '#047857', fontSize: 12, fontWeight: 600, marginBottom: 14 }}>
+                    <CheckCircle style={{ width: 14, height: 14, flexShrink: 0 }} />{pwdSuccess}
+                  </div>
+                )}
+                {pwdError && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: '1px solid #FECACA', background: '#FEF2F2', color: '#DC2626', fontSize: 12, fontWeight: 600, marginBottom: 14 }}>
+                    <AlertTriangle style={{ width: 14, height: 14, flexShrink: 0 }} />{pwdError}
+                  </div>
+                )}
+
+                {user?.googleId && !user?.password ? (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: 16, borderRadius: 10, border: '1px solid #FDE68A', background: '#FFFBEB', color: '#92400E', fontSize: 12 }}>
+                    <Shield style={{ width: 15, height: 15, flexShrink: 0, marginTop: 1 }} />
+                    <p>This account uses <strong>Google Sign-In</strong> and has no local password. Password change is not available.</p>
+                  </div>
+                ) : (
+                  <form onSubmit={handlePasswordSave} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+                    {/* Current Password */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Current Password</label>
+                      <div style={{ position: 'relative' }}>
+                        <Lock style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: '#9CA3AF' }} />
+                        <input
+                          type={showCurrent ? 'text' : 'password'} value={currentPwd} onChange={e => setCurrentPwd(e.target.value)}
+                          placeholder="••••••••" className={`${inputCls(false)} pl-9 pr-11`}
+                        />
+                        <button type="button" onClick={() => setShowCurrent(!showCurrent)}
+                          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'flex' }}>
+                          {showCurrent ? <EyeOff style={{ width: 15, height: 15 }} /> : <Eye style={{ width: 15, height: 15 }} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* New Password */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>New Password</label>
+                      <div style={{ position: 'relative' }}>
+                        <Lock style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: '#9CA3AF' }} />
+                        <input
+                          type={showNew ? 'text' : 'password'} value={newPwd} onChange={e => setNewPwd(e.target.value)}
+                          placeholder="Min. 6 characters" className={`${inputCls(newPwd && newPwd.length < 6)} pl-9 pr-11`}
+                        />
+                        <button type="button" onClick={() => setShowNew(!showNew)}
+                          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'flex' }}>
+                          {showNew ? <EyeOff style={{ width: 15, height: 15 }} /> : <Eye style={{ width: 15, height: 15 }} />}
+                        </button>
+                      </div>
+                      {newPwd && newPwd.length < 6 && <p style={{ fontSize: 10, color: '#EF4444', marginTop: 4 }}>Must be at least 6 characters</p>}
+                    </div>
+
+                    {/* Confirm Password */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Confirm New Password</label>
+                      <div style={{ position: 'relative' }}>
+                        <Lock style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: '#9CA3AF' }} />
+                        <input
+                          type={showConfirm ? 'text' : 'password'} value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)}
+                          placeholder="••••••••" className={`${inputCls(confirmPwd && confirmPwd !== newPwd)} pl-9 pr-11`}
+                        />
+                        <button type="button" onClick={() => setShowConfirm(!showConfirm)}
+                          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'flex' }}>
+                          {showConfirm ? <EyeOff style={{ width: 15, height: 15 }} /> : <Eye style={{ width: 15, height: 15 }} />}
+                        </button>
+                      </div>
+                      {confirmPwd && confirmPwd !== newPwd && <p style={{ fontSize: 10, color: '#EF4444', marginTop: 4 }}>Passwords do not match</p>}
+                    </div>
+
+                    <button
+                      type="submit" disabled={pwdSaving}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 700, border: 'none', cursor: pwdSaving ? 'not-allowed' : 'pointer', opacity: pwdSaving ? 0.7 : 1 }}
+                    >
+                      {pwdSaving ? <><Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /><span>Updating...</span></> : <span>Change Password</span>}
+                    </button>
+                  </form>
+                )}
+              </div>
+
+            </div>
+          </div>
+        )}
 
       </div>{/* end main */}
     </div>

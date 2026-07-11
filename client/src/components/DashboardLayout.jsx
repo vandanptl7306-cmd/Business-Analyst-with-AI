@@ -94,7 +94,7 @@ export default function DashboardLayout() {
 
         {/* User profile & Logout footer */}
         <div className="p-4 border-t border-slate-800 bg-slate-950/40 space-y-3">
-          <Link to="/profile" className="flex items-center space-x-3 px-2 group hover:opacity-80 transition-opacity">
+          <Link to="/settings" className="flex items-center space-x-3 px-2 group hover:opacity-80 transition-opacity">
             <div className="h-8 w-8 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center justify-center font-bold text-xs uppercase flex-shrink-0">
               {user?.name?.substring(0, 2)}
             </div>

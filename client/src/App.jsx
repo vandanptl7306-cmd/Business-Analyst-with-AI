@@ -83,7 +83,7 @@ function AppRoutes() {
           <Route path="/stock" element={<StockManagement />} />
           <Route path="/tally" element={<TallySync />} />
           <Route path="/forecast" element={<DemandForecast />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile" element={<Navigate to="/settings" replace />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
 
           {/* Protected + Admin Routes */}
