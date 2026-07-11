@@ -6,7 +6,11 @@ const { createInvoice, generateComplianceData, getInvoice, getInvoices, getUpcom
 const { printInvoice } = require('../controllers/pdfController');
 const { protect, admin } = require('../middleware/auth');
 
-// Apply protection to all invoice routes
+// Print route is EXEMPT from router.use(protect) because it uses ?token= query param
+// and handles its own auth via the protect middleware directly on the route
+router.get('/:id/print', protect, printInvoice);
+
+// Apply protection to all other invoice routes
 router.use(protect);
 
 // Define specific routes BEFORE parameterized routes
@@ -15,7 +19,6 @@ router.post('/', createInvoice);
 router.get('/', getInvoices);
 router.get('/analytics/profit', admin, getProfitAnalytics);
 router.get('/:id', getInvoice);
-router.get('/:id/print', printInvoice);
 router.post('/:id/compliance', generateComplianceData);
 router.patch('/:id/status', updateInvoiceStatus);
 router.post('/:id/send-whatsapp', sendInvoiceWhatsApp);
