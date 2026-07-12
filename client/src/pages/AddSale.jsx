@@ -256,7 +256,7 @@ export default function AddSale() {
                     <span className="w-[60px]">Invoice No.</span>: 2
                   </div>
                   <div className="flex gap-2">
-                    <span className="w-[60px]">Date</span>: {billDate}
+                    <span className="w-[60px]">Date</span>: {todayStr}
                   </div>
                 </div>
               </div>

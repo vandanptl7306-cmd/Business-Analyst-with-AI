@@ -148,7 +148,6 @@ export default function AddPurchase() {
     let dAmt = parseFloat(item.discountAmt) || 0;
     if (item.discountPercent) {
       dAmt = base * (parseFloat(item.discountPercent) / 100);
-      item.discountAmt = dAmt.toFixed(2);
     }
     base = base - dAmt;
 
@@ -160,9 +159,11 @@ export default function AddPurchase() {
         tAmt = base * (rate / 100);
       }
     }
-    item.taxAmt = tAmt ? tAmt.toFixed(2) : '';
-    item.amount = (base + tAmt).toFixed(2);
-    return item;
+    return {
+      calcDiscountAmt: dAmt ? dAmt.toFixed(2) : '',
+      calcTaxAmt: tAmt ? tAmt.toFixed(2) : '',
+      calcAmount: (base + tAmt).toFixed(2)
+    };
   };
 
   const handleItemChange = (index, field, value) => {
@@ -170,6 +171,13 @@ export default function AddPurchase() {
     newItems[index][field] = value;
     
     if (field === 'discountAmt') newItems[index].discountPercent = '';
+    
+    const calcs = calcItem(newItems[index]);
+    if (newItems[index].discountPercent) {
+      newItems[index].discountAmt = calcs.calcDiscountAmt;
+    }
+    newItems[index].taxAmt = calcs.calcTaxAmt;
+    newItems[index].amount = calcs.calcAmount;
     
     setItems(newItems);
   };
@@ -310,10 +318,10 @@ export default function AddPurchase() {
                           <div className="w-1/2 px-1 relative h-full flex items-center">
                             <FloatingDropdown value={it.tax} options={TAX_OPTIONS} onChange={v => handleItemChange(idx, 'tax', v)} placeholder="Select" width="w-full" />
                           </div>
-                          <div className="w-1/2 px-2 py-1.5 text-right text-gray-500 bg-transparent flex items-center justify-end">{calcItem(it).taxAmt}</div>
+                          <div className="w-1/2 px-2 py-1.5 text-right text-gray-500 bg-transparent flex items-center justify-end">{it.taxAmt}</div>
                         </div>
                       </td>
-                      <td className="py-0 px-2 align-top text-right font-semibold text-gray-800"><div className="mt-1.5">{calcItem(it).amount}</div></td>
+                      <td className="py-0 px-2 align-top text-right font-semibold text-gray-800"><div className="mt-1.5">{it.amount}</div></td>
                     </tr>
                   )
                 })}
