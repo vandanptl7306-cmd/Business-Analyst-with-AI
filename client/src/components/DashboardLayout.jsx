@@ -14,6 +14,7 @@ import {
   UserCircle,
   ChevronLeft,
   ChevronRight,
+  ShoppingCart,
 } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -88,6 +89,11 @@ export default function DashboardLayout() {
           <Link to="/dashboard" className={navItemClass('/dashboard')} title={!sidebarOpen ? 'Dashboard' : ''}>
             <Sliders className={`h-4 w-4 flex-shrink-0 ${iconColor('/dashboard')}`} />
             {sidebarOpen && <span>Dashboard</span>}
+          </Link>
+
+          <Link to="/sales/create" className={navItemClass('/sales/create')} title={!sidebarOpen ? 'Add Sale' : ''}>
+            <ShoppingCart className={`h-4 w-4 flex-shrink-0 ${iconColor('/sales/create')}`} />
+            {sidebarOpen && <span>Add Sale</span>}
           </Link>
 
           <Link to="/stock" className={navItemClass('/stock')} title={!sidebarOpen ? 'Stock' : ''}>

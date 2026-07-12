@@ -22,6 +22,7 @@ import Reports from './pages/Reports';
 import DemandForecast from './pages/DemandForecast';
 import StockManagement from './pages/StockManagement';
 import Profile from './pages/Profile';
+import AddSale from './pages/AddSale';
 
 function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();
@@ -78,6 +79,7 @@ function AppRoutes() {
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/invoices/create" element={<CreateInvoice />} />
+          <Route path="/sales/create" element={<AddSale />} />
           <Route path="/invoices/:id" element={<InvoiceDetail />} />
           <Route path="/customers" element={<CustomerLedger />} />
           <Route path="/stock" element={<StockManagement />} />
