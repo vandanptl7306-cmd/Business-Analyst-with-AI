@@ -730,6 +730,66 @@ function RegularPrinterPanel({ s, set }) {
               <FloatingInput className="flex-1" placeholder="GSTIN on Sale" value={s.gstin} onChange={e => upd('gstin', e.target.value.toUpperCase())} />
               <InfoTooltip text="GST number displayed on invoice" />
             </div>
+
+            {/* Bank Details */}
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <CBRow checked={s.printBankDetails} onChange={v => upd('printBankDetails', v)} label="Print Bank Details" info="Show bank info and QR code on invoice" />
+
+              {s.printBankDetails && (
+                <div className="ml-9 space-y-3 mt-2">
+                  <FloatingInput label="Bank Name" value={s.bankName} onChange={e => upd('bankName', e.target.value)} className="w-full" />
+                  <FloatingInput label="Bank Account Number" value={s.bankAccountNumber} onChange={e => upd('bankAccountNumber', e.target.value)} className="w-full" />
+                  <FloatingInput label="Bank IFSC Code" value={s.bankIfscCode} onChange={e => upd('bankIfscCode', e.target.value.toUpperCase())} className="w-full" />
+                  
+                  {/* QR Code Scanner / Photo */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <QrCode className="w-4 h-4 text-gray-500" />
+                      <span className="text-[13px] font-semibold text-gray-700">Payment QR Code</span>
+                      <InfoTooltip text="Upload or scan your UPI/bank QR code for invoices" />
+                    </div>
+
+                    {s.bankQrCodeUrl ? (
+                      <div className="flex items-center gap-4">
+                        <div className="relative w-24 h-24 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-1">
+                          <img src={s.bankQrCodeUrl} alt="QR Code" className="w-full h-full object-contain" />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <label className="flex items-center gap-2 px-3 py-1.5 text-[12px] text-blue-600 border border-blue-200 rounded-[6px] hover:bg-blue-50 cursor-pointer transition-colors">
+                            <Camera className="w-3.5 h-3.5" />
+                            Change Photo
+                            <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => {
+                              const f = e.target.files[0]; if (!f) return;
+                              const reader = new FileReader(); reader.onload = ev => upd('bankQrCodeUrl', ev.target.result); reader.readAsDataURL(f); e.target.value = '';
+                            }} />
+                          </label>
+                          <button type="button" onClick={() => upd('bankQrCodeUrl', '')} className="flex items-center gap-2 px-3 py-1.5 text-[12px] text-red-500 border border-red-200 rounded-[6px] hover:bg-red-50 transition-colors">
+                            <Trash2 className="w-3.5 h-3.5" /> Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 border-2 border-dashed border-gray-300 rounded-lg px-5 py-3 text-[12px] text-gray-500 hover:border-blue-400 hover:text-blue-600 cursor-pointer transition-colors">
+                          <Upload className="w-4 h-4" /> Upload QR Image
+                          <input type="file" accept="image/*" className="hidden" onChange={e => {
+                            const f = e.target.files[0]; if (!f) return;
+                            const reader = new FileReader(); reader.onload = ev => upd('bankQrCodeUrl', ev.target.result); reader.readAsDataURL(f); e.target.value = '';
+                          }} />
+                        </label>
+                        <label className="flex items-center gap-2 border-2 border-dashed border-blue-300 rounded-lg px-5 py-3 text-[12px] text-blue-600 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-colors">
+                          <Camera className="w-4 h-4" /> Scan with Camera
+                          <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => {
+                            const f = e.target.files[0]; if (!f) return;
+                            const reader = new FileReader(); reader.onload = ev => upd('bankQrCodeUrl', ev.target.result); reader.readAsDataURL(f); e.target.value = '';
+                          }} />
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </SettingsSection>
 
           {/* ── Paper Settings ── */}
@@ -1048,121 +1108,7 @@ function RegularPrinterPanel({ s, set }) {
             <CBRow checked={s.printAcknowledgement} onChange={v => upd('printAcknowledgement', v)} label="Print Acknowledgement" info="Add acknowledgement section" />
           </SettingsSection>
 
-          {/* ── Bank Details ── */}
-          <SettingsSection title="Bank Details">
-            <CBRow checked={s.printBankDetails} onChange={v => upd('printBankDetails', v)} label="Print Bank Details" info="Show bank info and QR code on invoice" />
 
-            {s.printBankDetails && (
-              <div className="ml-9 space-y-3 mt-2">
-                {/* Bank Name */}
-                <FloatingInput
-                  label="Bank Name"
-                  value={s.bankName}
-                  onChange={e => upd('bankName', e.target.value)}
-                  className="w-full"
-                />
-
-                {/* Account Number */}
-                <FloatingInput
-                  label="Bank Account Number"
-                  value={s.bankAccountNumber}
-                  onChange={e => upd('bankAccountNumber', e.target.value)}
-                  className="w-full"
-                />
-
-                {/* IFSC Code */}
-                <FloatingInput
-                  label="Bank IFSC Code"
-                  value={s.bankIfscCode}
-                  onChange={e => upd('bankIfscCode', e.target.value.toUpperCase())}
-                  className="w-full"
-                />
-
-                {/* QR Code Scanner / Photo */}
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <QrCode className="w-4 h-4 text-gray-500" />
-                    <span className="text-[13px] font-semibold text-gray-700">Payment QR Code</span>
-                    <InfoTooltip text="Upload or scan your UPI/bank QR code for invoices" />
-                  </div>
-
-                  {s.bankQrCodeUrl ? (
-                    <div className="flex items-center gap-4">
-                      <div className="relative w-24 h-24 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-1">
-                        <img src={s.bankQrCodeUrl} alt="QR Code" className="w-full h-full object-contain" />
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <label className="flex items-center gap-2 px-3 py-1.5 text-[12px] text-blue-600 border border-blue-200 rounded-[6px] hover:bg-blue-50 cursor-pointer transition-colors">
-                          <Camera className="w-3.5 h-3.5" />
-                          Change Photo
-                          <input
-                            type="file"
-                            accept="image/*"
-                            capture="environment"
-                            className="hidden"
-                            onChange={e => {
-                              const f = e.target.files[0];
-                              if (!f) return;
-                              const reader = new FileReader();
-                              reader.onload = ev => upd('bankQrCodeUrl', ev.target.result);
-                              reader.readAsDataURL(f);
-                              e.target.value = '';
-                            }}
-                          />
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => upd('bankQrCodeUrl', '')}
-                          className="flex items-center gap-2 px-3 py-1.5 text-[12px] text-red-500 border border-red-200 rounded-[6px] hover:bg-red-50 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <label className="flex items-center gap-2 border-2 border-dashed border-gray-300 rounded-lg px-5 py-3 text-[12px] text-gray-500 hover:border-blue-400 hover:text-blue-600 cursor-pointer transition-colors">
-                        <Upload className="w-4 h-4" />
-                        Upload QR Image
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={e => {
-                            const f = e.target.files[0];
-                            if (!f) return;
-                            const reader = new FileReader();
-                            reader.onload = ev => upd('bankQrCodeUrl', ev.target.result);
-                            reader.readAsDataURL(f);
-                            e.target.value = '';
-                          }}
-                        />
-                      </label>
-                      <label className="flex items-center gap-2 border-2 border-dashed border-blue-300 rounded-lg px-5 py-3 text-[12px] text-blue-600 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-colors">
-                        <Camera className="w-4 h-4" />
-                        Scan with Camera
-                        <input
-                          type="file"
-                          accept="image/*"
-                          capture="environment"
-                          className="hidden"
-                          onChange={e => {
-                            const f = e.target.files[0];
-                            if (!f) return;
-                            const reader = new FileReader();
-                            reader.onload = ev => upd('bankQrCodeUrl', ev.target.result);
-                            reader.readAsDataURL(f);
-                            e.target.value = '';
-                          }}
-                        />
-                      </label>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </SettingsSection>
 
           <div className="pb-10" />
         </div>
