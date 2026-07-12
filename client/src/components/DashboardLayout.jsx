@@ -141,11 +141,8 @@ export default function DashboardLayout() {
               <>
                 <div className="truncate flex-1 min-w-0 ml-3">
                   <div className="text-xs font-semibold text-slate-200 truncate">{user?.name}</div>
-                  <div className="text-[10px] text-slate-500 font-mono capitalize flex items-center gap-1">
+                  <div className="text-[10px] text-slate-500 font-mono capitalize">
                     <span>{user?.role}</span>
-                    {!user?.phoneNumber && (
-                      <span className="text-amber-500 font-bold">· Add mobile</span>
-                    )}
                   </div>
                 </div>
                 <UserCircle className="h-3.5 w-3.5 text-slate-600 group-hover:text-indigo-400 flex-shrink-0 transition-colors ml-2" />

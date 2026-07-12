@@ -223,7 +223,75 @@ const getInvoiceHTML = (invoice, store, template) => {
   };
 
   // 1. --- GST TAX INVOICE TEMPLATE ---
-  if (template === 'TaxInvoice') {
+  if (template === 'TaxInvoice' || template === 'Tally Theme' || template === 'tally') {
+    const tallyItemRows = invoice.items.map((item, idx) => {
+      const rate = (item.isTaxInclusive ? item.mrp : item.price) || 0;
+      const amount = item.totalAmount || 0;
+      const hsn = item.hsnCode || 'N/A';
+      const disc = item.discount || 0;
+      const discPct = item.discountPercent || 0;
+      const gstRate = item.gstRate || 0;
+      return `
+        <tr style="background: ${idx % 2 === 1 ? '#f8fafc' : '#ffffff'};">
+          <td style="text-align: center; border-right: 1.5px solid #334155; border-bottom: 1px solid #e2e8f0; padding: 6px 8px;">${idx + 1}</td>
+          <td style="border-right: 1.5px solid #334155; border-bottom: 1px solid #e2e8f0; padding: 6px 8px; font-weight: 600;">${item.description}</td>
+          <td style="text-align: center; font-family: monospace; border-right: 1.5px solid #334155; border-bottom: 1px solid #e2e8f0; padding: 6px 8px;">${hsn}</td>
+          <td style="text-align: center; border-right: 1.5px solid #334155; border-bottom: 1px solid #e2e8f0; padding: 6px 8px;">${item.quantity}</td>
+          <td style="text-align: right; font-family: monospace; border-right: 1.5px solid #334155; border-bottom: 1px solid #e2e8f0; padding: 6px 8px;">${currencySymbol}${formatAmount(rate)}</td>
+          <td style="text-align: right; font-family: monospace; border-right: 1.5px solid #334155; border-bottom: 1px solid #e2e8f0; padding: 6px 8px;">
+            ${disc > 0 ? `${currencySymbol}${formatAmount(disc)} (${discPct}%)` : `${currencySymbol}0.00 (0%)`}
+          </td>
+          <td style="text-align: right; font-family: monospace; border-right: 1.5px solid #334155; border-bottom: 1px solid #e2e8f0; padding: 6px 8px;">
+            ${gstRate}%
+          </td>
+          <td style="text-align: right; font-family: monospace; font-weight: bold; border-bottom: 1px solid #e2e8f0; padding: 6px 8px;">${currencySymbol}${formatAmount(amount)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const totalQty = invoice.items.reduce((acc, i) => acc + (i.quantity || 0), 0);
+    const totalDisc = invoice.items.reduce((acc, i) => acc + (i.discount || 0), 0);
+    const totalAmountSum = invoice.items.reduce((acc, i) => acc + (i.totalAmount || 0), 0);
+
+    const hsnRowsHTML = invoice.items.map(item => {
+      const cgst = item.cgst || 0;
+      const sgst = item.sgst || 0;
+      const igst = item.igst || 0;
+      const totalAmount = item.totalAmount || 0;
+      const taxableValue = totalAmount - (cgst + sgst + igst);
+      const gstRate = item.gstRate || 0;
+      const hsn = item.hsnCode || 'N/A';
+      return `
+        <tr>
+          <td style="font-family: monospace; border: 1px solid #334155; padding: 4px; text-align: center;">${hsn}</td>
+          <td style="font-family: monospace; border: 1px solid #334155; padding: 4px; text-align: right;">${currencySymbol}${formatAmount(taxableValue)}</td>
+          ${!isInterState ? `
+            <td style="border: 1px solid #334155; padding: 4px; text-align: center;">${(gstRate / 2)}%</td>
+            <td style="font-family: monospace; border: 1px solid #334155; padding: 4px; text-align: right;">${currencySymbol}${formatAmount(cgst)}</td>
+            <td style="border: 1px solid #334155; padding: 4px; text-align: center;">${(gstRate / 2)}%</td>
+            <td style="font-family: monospace; border: 1px solid #334155; padding: 4px; text-align: right;">${currencySymbol}${formatAmount(sgst)}</td>
+          ` : `
+            <td style="border: 1px solid #334155; padding: 4px; text-align: center;">${gstRate}%</td>
+            <td style="font-family: monospace; border: 1px solid #334155; padding: 4px; text-align: right;">${currencySymbol}${formatAmount(igst)}</td>
+          `}
+          <td style="font-family: monospace; border: 1px solid #334155; padding: 4px; text-align: right; font-weight: bold;">${currencySymbol}${formatAmount(cgst + sgst + igst)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const totalTaxable = invoice.items.reduce((acc, item) => {
+      const cgst = item.cgst || 0;
+      const sgst = item.sgst || 0;
+      const igst = item.igst || 0;
+      return acc + (item.totalAmount - (cgst + sgst + igst));
+    }, 0);
+    const totalCgst = invoice.items.reduce((acc, i) => acc + (i.cgst || 0), 0);
+    const totalSgst = invoice.items.reduce((acc, i) => acc + (i.sgst || 0), 0);
+    const totalIgst = invoice.items.reduce((acc, i) => acc + (i.igst || 0), 0);
+    const totalTaxAmount = totalCgst + totalSgst + totalIgst;
+
+    const youSaved = invoice.items.reduce((acc, item) => acc + ((item.mrp && item.mrp > item.price) ? (item.mrp - item.price) * item.quantity : 0), 0);
+
     return `
       <!DOCTYPE html>
       <html lang="en">
@@ -232,249 +300,1182 @@ const getInvoiceHTML = (invoice, store, template) => {
         <title>Tax Invoice #${invoice.invoiceNumber}</title>
         <style>
           @page { size: ${store.paperSize || 'A4'} ${store.orientation || 'portrait'}; margin: 10mm; }
-          body { font-family: 'Arial', sans-serif; font-size: 11px; line-height: 1.4; color: #000000; padding: 20px; background-color: #ffffff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .tax-invoice-container { max-width: 800px; margin: auto; border: 1.5px solid #000000; }
-          .title-banner { text-align: center; border-bottom: 1.5px solid #000000; padding: 8px; font-weight: bold; font-size: ${invoiceTitleSize}; letter-spacing: 1px; text-transform: uppercase; color: ${themeColor}; }
-          .grid-header { display: grid; grid-template-columns: 1.2fr 1fr; border-bottom: 1px solid #000000; }
-          .header-left { border-right: 1.5px solid #000000; padding: 8px; }
-          .header-right { display: grid; grid-template-columns: 1fr 1fr; }
-          .header-cell { border-bottom: 1px solid #000000; border-right: 1px solid #000000; padding: 6px; }
-          .header-cell:nth-child(2n) { border-right: none; }
-          .header-cell.full { grid-column: span 2; border-right: none; }
-          .buyer-box { border-bottom: 1.5px solid #000000; padding: 8px; }
-          .items-table { width: 100%; border-collapse: collapse; }
-          .items-table th, .items-table td { border-right: 1px solid #000000; border-bottom: 1px solid #000000; padding: 6px; font-size: 11px; }
-          .items-table th { background: ${themeColor}; color: #ffffff; border-right: 1px solid #ffffff; border-bottom: 1.5px solid ${themeColor}; text-transform: uppercase; font-weight: bold; text-align: left; }
-          .hsn-table th { background: ${themeColor}; color: #ffffff; border-right: 1px solid #ffffff; }
-          .hsn-table td { border-right: 1px solid #000000; border-bottom: 1px solid #000000; padding: 5px; font-size: 10px; text-align: center; }
-          .hsn-table th { background: #f3f4f6; }
-          .hsn-table tr:last-child td { border-bottom: none; }
-          .hsn-table th:last-child, .hsn-table td:last-child { border-right: none; }
-          .amount-words { padding: 6px 8px; font-size: 11px; font-weight: bold; border-top: 1px solid #000000; border-bottom: 1px solid #000000; }
-          .declaration-section { display: grid; grid-template-columns: 1.5fr 1fr; border-top: 1.5px solid #000000; }
-          .decl-left { border-right: 1.5px solid #000000; padding: 8px; font-size: 10px; }
-          .signature-right { padding: 8px; text-align: right; display: flex; flex-direction: column; justify-content: space-between; height: 80px; }
-          .hsn-table { width: 100%; border-collapse: collapse; margin-top: 0; }
-          .hsn-table th { background: #f3f4f6; color: #374151; font-size: 9px; font-weight: bold; text-align: center; padding: 5px 6px; border: 1px solid #000; }
-          .hsn-table td { font-size: 10px; text-align: center; padding: 5px 6px; border: 1px solid #000; }
+          body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #000000;
+            padding: 0;
+            margin: 0;
+            background-color: #ffffff;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .tally-invoice-container {
+            max-width: 800px;
+            margin: auto;
+            border: 1.5px solid #334155;
+            background: #ffffff;
+          }
+          .tally-title-banner {
+            text-align: center;
+            border-bottom: 1.5px solid #334155;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            text-transform: uppercase;
+            background: #f8fafc;
+            color: #1e293b;
+            letter-spacing: 1px;
+          }
+          .tally-header-block {
+            display: flex;
+            border-bottom: 1.5px solid #334155;
+            padding: 12px;
+            align-items: center;
+          }
+          .tally-logo-box {
+            width: 60px;
+            height: 60px;
+            border: 1px solid #334155;
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #64748b;
+            margin-right: 15px;
+            flex-shrink: 0;
+          }
+          .tally-logo-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+          }
+          .tally-company-name {
+            font-size: 20px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.2;
+          }
+          .tally-company-phone {
+            font-size: 11px;
+            color: #334155;
+            font-weight: 600;
+            margin-top: 4px;
+          }
+          .tally-party-invoice-grid {
+            display: flex;
+            border-bottom: 1.5px solid #334155;
+          }
+          .tally-bill-to {
+            width: 50%;
+            border-right: 1.5px solid #334155;
+            padding: 10px;
+          }
+          .tally-invoice-details {
+            width: 50%;
+            padding: 10px;
+            background: #f8fafc;
+          }
+          .tally-section-title {
+            font-size: 9px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #475569;
+            margin-bottom: 4px;
+          }
+          .tally-ship-to-row {
+            border-bottom: 1.5px solid #334155;
+            padding: 10px;
+          }
+          .tally-items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+          }
+          .tally-items-table th, .tally-items-table td {
+            border-right: 1.5px solid #334155;
+            padding: 6px 8px;
+            vertical-align: middle;
+          }
+          .tally-items-table th {
+            background: #f8fafc;
+            color: #1e293b;
+            font-weight: bold;
+            border-bottom: 1.5px solid #334155;
+            text-align: left;
+          }
+          .tally-items-table tr.tally-totals-row td {
+            font-weight: bold;
+            background: #f8fafc;
+            border-top: 1.5px solid #334155;
+            border-bottom: 1.5px solid #334155;
+          }
+          .tally-items-table th:last-child, .tally-items-table td:last-child {
+            border-right: none;
+          }
+          .tally-bottom-grid {
+            display: flex;
+            border-bottom: 1.5px solid #334155;
+          }
+          .tally-tax-summary-side {
+            width: 60%;
+            border-right: 1.5px solid #334155;
+            padding: 10px;
+          }
+          .tally-totals-side {
+            width: 40%;
+            padding: 10px;
+            font-size: 10.5px;
+          }
+          .tally-totals-row-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            border-bottom: 1px solid #f1f5f9;
+          }
+          .tally-totals-row-item.highlight {
+            font-weight: bold;
+            border-bottom: 1.5px solid #334155;
+            font-size: 12px;
+            padding: 5px 0;
+          }
+          .tally-words-box {
+            margin-top: 6px;
+            padding-top: 4px;
+          }
+          .tally-footer-grid {
+            display: flex;
+          }
+          .tally-footer-left {
+            width: 50%;
+            border-right: 1.5px solid #334155;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+          }
+          .tally-footer-right {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+          }
+          .tally-footer-block {
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+          }
+          .tally-footer-block:last-child {
+            border-bottom: none;
+          }
+          .tally-signature-box {
+            padding: 10px;
+            background: #f8fafc;
+            height: 90px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+          }
+          .tally-sig-image {
+            width: 100px;
+            height: 35px;
+            border: 1px dashed #cbd5e1;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 10px;
+            font-style: italic;
+            margin-left: auto;
+          }
+          @media print {
+            body { padding: 0; margin: 10mm; }
+            .tally-invoice-container { border: 1.5px solid #000000; }
+            .tally-title-banner, .tally-header-block, .tally-party-invoice-grid, .tally-ship-to-row, .tally-items-table th, .tally-items-table tr.tally-totals-row td, .tally-bottom-grid, .tally-tax-summary-side, .tally-footer-left, .tally-footer-right {
+              border-color: #000000 !important;
+            }
+            .tally-totals-row-item.highlight { border-color: #000000 !important; }
+            .tally-items-table th, .tally-items-table td { border-right-color: #000000 !important; }
+            .tally-logo-box, .tally-items-table th, .tally-items-table tr:nth-child(even) td, .tally-invoice-details, .tally-signature-box {
+              background: none !important;
+            }
+            tr { page-break-inside: avoid; }
+          }
         </style>
       </head>
-      <body onload="window.print()">
-        <div class="tax-invoice-container">
-          <div class="title-banner">Tax Invoice</div>
+      <body>
+        <div class="tally-invoice-container">
+          <div class="tally-title-banner">Tax Invoice</div>
           
-          <div class="grid-header">
-            <div class="header-left">
-              ${logoHTML}
-              ${companyNameHTML}
-              ${companyTaglineHTML}
-              ${addressHTML}
-              ${gstinHTML}
-              ${emailHTML}
-              ${phoneHTML}
+          <div class="tally-header-block">
+            <div class="tally-logo-box">
+              ${logoHTML ? logoHTML : 'Image'}
             </div>
-            <div class="header-right">
-              <div class="header-cell">
-                <small style="color: #555; display:block; font-size: 8px;">Invoice No.</small>
-                <strong>${invoice.invoiceNumber}</strong>
-              </div>
-              <div class="header-cell">
-                <small style="color: #555; display:block; font-size: 8px;">Dated</small>
-                <strong>${new Date(invoice.invoiceDate).toLocaleDateString()}</strong>
-              </div>
-              <div class="header-cell">
-                <small style="color: #555; display:block; font-size: 8px;">Delivery Note</small>
-                Standard
-              </div>
-              <div class="header-cell">
-                <small style="color: #555; display:block; font-size: 8px;">Mode/Terms of Payment</small>
-                Immediate
-              </div>
-              <div class="header-cell">
-                <small style="color: #555; display:block; font-size: 8px;">Reference No. & Date</small>
-                N/A
-              </div>
-              <div class="header-cell">
-                <small style="color: #555; display:block; font-size: 8px;">Other References</small>
-                N/A
-              </div>
-              <div class="header-cell">
-                <small style="color: #555; display:block; font-size: 8px;">Dispatch Doc No.</small>
-                RW/${invoice.invoiceNumber.substring(invoice.invoiceNumber.length - 3)}
-              </div>
-              <div class="header-cell">
-                <small style="color: #555; display:block; font-size: 8px;">Dispatched through</small>
-                Road
-              </div>
-              <div class="header-cell full">
-                <small style="color: #555; display:block; font-size: 8px;">Terms of Delivery</small>
-                Delivery at buyer's billing address.
-              </div>
+            <div>
+              <div class="tally-company-name">${store.customCompanyName || store.shopName}</div>
+              ${store.printPhone !== false ? `<div class="tally-company-phone">Phone: ${store.customPhone || store.phoneNumber}</div>` : ''}
             </div>
           </div>
           
-          <div class="buyer-box">
-            <small style="color: #555; display:block; text-transform:uppercase; font-size: 8px; margin-bottom: 2px;">Buyer (Bill to)</small>
-            <strong style="font-size: 12px;">${invoice.buyerName}</strong><br/>
-            ${invoice.buyerBillingAddress}<br/>
-            GSTIN/UIN: <strong>${invoice.buyerGSTIN}</strong><br/>
-            PIN Code: ${invoice.buyerPIN}
+          <div class="tally-party-invoice-grid">
+            <div class="tally-bill-to">
+              <div class="tally-section-title">Bill To:</div>
+              <strong style="font-size: 12px; color: #000000;">${invoice.buyerName}</strong><br/>
+              ${invoice.buyerBillingAddress}<br/>
+              ${invoice.buyerGSTIN ? `GSTIN/UIN: <strong>${invoice.buyerGSTIN}</strong><br/>` : ''}
+              ${invoice.buyerPIN ? `PIN Code: ${invoice.buyerPIN}` : ''}
+            </div>
+            
+            <div class="tally-invoice-details">
+              <div class="tally-section-title">Invoice Details:</div>
+              <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <tr><td style="font-weight: 600; padding: 2px 0;">Invoice No.:</td><td style="font-weight: bold; color: #000;">${invoice.invoiceNumber}</td></tr>
+                <tr><td style="font-weight: 600; padding: 2px 0;">Date:</td><td>${new Date(invoice.invoiceDate).toLocaleDateString()}</td></tr>
+                <tr><td style="font-weight: 600; padding: 2px 0;">Time:</td><td>12:30 PM</td></tr>
+                <tr><td style="font-weight: 600; padding: 2px 0;">Due Date:</td><td>${new Date(new Date(invoice.invoiceDate).getTime() + 15*24*60*60*1000).toLocaleDateString()}</td></tr>
+              </table>
+            </div>
           </div>
           
-          <table class="items-table">
+          <div class="tally-ship-to-row">
+            <div class="tally-section-title">Ship To:</div>
+            <strong style="font-size: 12px; color: #000000;">${invoice.buyerName}</strong><br/>
+            ${invoice.buyerBillingAddress}
+          </div>
+          
+          <table class="tally-items-table">
             <thead>
               <tr>
-                <th style="width: 6%; text-align: center;">SI No.</th>
-                <th style="width: 48%;">Description of Goods</th>
-                <th style="width: 14%; text-align: center;">HSN/SAC</th>
-                ${store.printTotalQty !== false ? '<th style="width: 8%; text-align: center;">Qty</th>' : ''}
-                <th style="width: 12%; text-align: right;">Rate</th>
-                <th style="width: 12%; text-align: right;">Amount</th>
+                <th style="width: 5%; text-align: center;">#</th>
+                <th style="width: 45%;">Item name</th>
+                <th style="width: 10%; text-align: center;">HSC/SAC</th>
+                <th style="width: 8%; text-align: center;">Quantity</th>
+                <th style="width: 10%; text-align: right;">Price/unit</th>
+                <th style="width: 12%; text-align: right;">Discount</th>
+                <th style="width: 10%; text-align: right;">GST</th>
+                <th style="width: 10%; text-align: right;">Amount</th>
               </tr>
             </thead>
             <tbody>
-              ${invoice.items.map((item, idx) => {
-                const cgst = item.cgst || 0;
-                const sgst = item.sgst || 0;
-                const igst = item.igst || 0;
-                const rate = (item.isTaxInclusive ? item.mrp : item.price) || 0;
-                const totalAmount = item.totalAmount || 0;
-                const hsn = item.hsnCode || 'N/A';
-                return `
-                  <tr>
-                    <td style="text-align: center;">${idx + 1}</td>
-                    <td>
-                      <strong>${item.description}</strong>
-                      ${(store.printTaxDetails !== false) ? (!isInterState ? `
-                        <div style="margin-top: 4px; padding-left: 10px; font-size: 9px; font-style: italic; color: #555;">
-                          CGST Split<br/>
-                          SGST Split
-                        </div>
-                      ` : `
-                        <div style="margin-top: 4px; padding-left: 10px; font-size: 9px; font-style: italic; color: #555;">
-                          IGST Split
-                        </div>
-                      `) : ''}
-                    </td>
-                    <td style="text-align: center; font-family: monospace; font-size: 10px;">${hsn}</td>
-                    ${store.printTotalQty !== false ? `<td style="text-align: center;">${item.quantity}</td>` : ''}
-                    <td style="text-align: right; font-family: monospace;">${currencySymbol}${formatAmount(rate)}</td>
-                    <td style="text-align: right; font-family: monospace;">
-                      ${currencySymbol}${formatAmount(totalAmount)}
-                      ${(store.printTaxDetails !== false) ? (!isInterState ? `
-                        <div style="margin-top: 4px; font-size: 9px; font-family: monospace; color: #555;">
-                          ${currencySymbol}${formatAmount(cgst)}<br/>
-                          ${currencySymbol}${formatAmount(sgst)}
-                        </div>
-                      ` : `
-                        <div style="margin-top: 4px; font-size: 9px; font-family: monospace; color: #555;">
-                          ${currencySymbol}${formatAmount(igst)}
-                        </div>
-                      `) : ''}
-                    </td>
-                  </tr>
-                `;
-              }).join('')}
-              
-              <tr class="totals-row">
-                <td colspan="3" style="text-align: right;">Total</td>
-                ${store.printTotalQty !== false ? `<td style="text-align: center;">${invoice.items.reduce((acc, i) => acc + i.quantity, 0)}</td>` : ''}
+              ${tallyItemRows}
+              <tr class="tally-totals-row">
                 <td></td>
-                <td style="text-align: right; font-family: monospace;">${currencySymbol}${formatAmount(invoice.grandTotal || 0)}</td>
+                <td>TOTAL</td>
+                <td></td>
+                <td style="text-align: center;">${totalQty}</td>
+                <td></td>
+                <td style="text-align: right; font-family: monospace;">${currencySymbol}${formatAmount(totalDisc)}</td>
+                <td style="text-align: right; font-family: monospace;">${currencySymbol}${formatAmount(totalTaxAmount)}</td>
+                <td style="text-align: right; font-family: monospace;">${currencySymbol}${formatAmount(totalAmountSum)}</td>
               </tr>
             </tbody>
           </table>
           
-          <div class="amount-words">
-            Amount Chargeable (in words): <span style="font-size: 10px; font-weight: normal;">${numberToWords(invoice.grandTotal)}</span>
+          <div class="tally-bottom-grid">
+            <div class="tally-tax-summary-side">
+              <div class="tally-section-title">Tax Summary:</div>
+              <table style="width: 100%; border-collapse: collapse; font-size: 10px; border: 1px solid #334155;">
+                <thead>
+                  <tr style="background: #f8fafc; font-weight: bold; text-align: center;">
+                    <th style="border: 1px solid #334155; padding: 4px;" rowspan="2">HSN/ SAC</th>
+                    <th style="border: 1px solid #334155; padding: 4px;" rowspan="2">Taxable amount(₹)</th>
+                    ${!isInterState ? `
+                      <th style="border: 1px solid #334155; padding: 4px;" colspan="2">Central Tax</th>
+                      <th style="border: 1px solid #334155; padding: 4px;" colspan="2">State Tax</th>
+                    ` : `
+                      <th style="border: 1px solid #334155; padding: 4px;" colspan="2">Integrated Tax</th>
+                    `}
+                    <th style="border: 1px solid #334155; padding: 4px;" rowspan="2">Total Tax Amount(₹)</th>
+                  </tr>
+                  <tr style="background: #f8fafc; font-weight: bold; text-align: center;">
+                    <th style="border: 1px solid #334155; padding: 4px;">Rate</th>
+                    <th style="border: 1px solid #334155; padding: 4px;">Amount</th>
+                    ${!isInterState ? `
+                      <th style="border: 1px solid #334155; padding: 4px;">Rate</th>
+                      <th style="border: 1px solid #334155; padding: 4px;">Amount</th>
+                    ` : ''}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${hsnRowsHTML}
+                  <tr style="font-weight: bold; background: #f8fafc;">
+                    <td style="border: 1px solid #334155; padding: 4px; text-align: center;">Total</td>
+                    <td style="font-family: monospace; border: 1px solid #334155; padding: 4px; text-align: right;">${currencySymbol}${formatAmount(totalTaxable)}</td>
+                    ${!isInterState ? `
+                      <td style="border: 1px solid #334155; padding: 4px;"></td>
+                      <td style="font-family: monospace; border: 1px solid #334155; padding: 4px; text-align: right;">${currencySymbol}${formatAmount(totalCgst)}</td>
+                      <td style="border: 1px solid #334155; padding: 4px;"></td>
+                      <td style="font-family: monospace; border: 1px solid #334155; padding: 4px; text-align: right;">${currencySymbol}${formatAmount(totalSgst)}</td>
+                    ` : `
+                      <td style="border: 1px solid #334155; padding: 4px;"></td>
+                      <td style="font-family: monospace; border: 1px solid #334155; padding: 4px; text-align: right;">${currencySymbol}${formatAmount(totalIgst)}</td>
+                    `}
+                    <td style="font-family: monospace; border: 1px solid #334155; padding: 4px; text-align: right;">${currencySymbol}${formatAmount(totalTaxAmount)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div class="tally-totals-side">
+              <div class="tally-totals-row-item">
+                <span>Sub Total:</span>
+                <span style="font-weight: bold;">${currencySymbol}${formatAmount(invoice.subTotal || 0)}</span>
+              </div>
+              ${totalDisc > 0 ? `
+              <div class="tally-totals-row-item">
+                <span>Discount:</span>
+                <span>-${currencySymbol}${formatAmount(totalDisc)}</span>
+              </div>
+              ` : ''}
+              <div class="tally-totals-row-item">
+                <span>Tax (GST):</span>
+                <span>${currencySymbol}${formatAmount(totalTaxAmount)}</span>
+              </div>
+              <div class="tally-totals-row-item highlight">
+                <span>Total:</span>
+                <span>${currencySymbol}${formatAmount(grandTotal)}</span>
+              </div>
+              
+              <div class="tally-words-box">
+                <span style="font-weight: bold; color: #475569; display: block; margin-bottom: 2px;">Invoice Amount In Words:</span>
+                <span style="font-style: italic; font-weight: 600; color: #1e293b; font-size: 10px; display: block; line-height: 1.3;">${numberToWords(grandTotal)}</span>
+              </div>
+              
+              <div class="tally-totals-row-item" style="margin-top: 6px; border-top: 1px solid #e2e8f0; padding-top: 4px;">
+                <span>Received:</span>
+                <span>${currencySymbol}${formatAmount(received)}</span>
+              </div>
+              <div class="tally-totals-row-item" style="color: #dc2626; font-weight: bold;">
+                <span>Balance:</span>
+                <span>${currencySymbol}${formatAmount(balance)}</span>
+              </div>
+              ${youSaved > 0 ? `
+              <div class="tally-totals-row-item" style="color: #10b981; font-weight: bold; border-top: 1px solid #e2e8f0; padding-top: 4px;">
+                <span>You Saved:</span>
+                <span>${currencySymbol}${formatAmount(youSaved)}</span>
+              </div>
+              ` : ''}
+            </div>
           </div>
           
-          ${store.printTaxDetails !== false ? `
-          <table class="hsn-table">
-            <thead>
-              <tr>
-                <th rowspan="2">HSN/SAC</th>
-                <th rowspan="2">Taxable Value</th>
-                ${!isInterState ? `
-                  <th colspan="2">Central Tax</th>
-                  <th colspan="2">State Tax</th>
-                ` : `
-                  <th colspan="2">Integrated Tax</th>
-                `}
-                <th rowspan="2">Total Tax Amount</th>
-              </tr>
-              <tr>
-                <th>Rate</th>
-                <th>Amount</th>
-                ${!isInterState ? `
-                  <th>Rate</th>
-                  <th>Amount</th>
-                ` : ''}
-              </tr>
-            </thead>
-            <tbody>
-              ${invoice.items.map(item => {
-                const cgst = item.cgst || 0;
-                const sgst = item.sgst || 0;
-                const igst = item.igst || 0;
-                const totalAmount = item.totalAmount || 0;
-                const taxableValue = totalAmount - (cgst + sgst + igst);
-                const gstRate = item.gstRate || 0;
-                const hsn = item.hsnCode || 'N/A';
-                return `
-                  <tr>
-                    <td style="font-family: monospace;">${hsn}</td>
-                    <td style="font-family: monospace;">${currencySymbol}${formatAmount(taxableValue)}</td>
-                    ${!isInterState ? `
-                      <td>${(gstRate / 2)}%</td>
-                      <td style="font-family: monospace;">${currencySymbol}${formatAmount(cgst)}</td>
-                      <td>${(gstRate / 2)}%</td>
-                      <td style="font-family: monospace;">${currencySymbol}${formatAmount(sgst)}</td>
-                    ` : `
-                      <td>${gstRate}%</td>
-                      <td style="font-family: monospace;">${currencySymbol}${formatAmount(igst)}</td>
-                    `}
-                    <td style="font-family: monospace;">${currencySymbol}${formatAmount(cgst + sgst + igst)}</td>
-                  </tr>
-                `;
-              }).join('')}
-              <tr style="font-weight: bold; background: #f9fafb;">
-                <td>Total</td>
-                <td style="font-family: monospace;">${currencySymbol}${formatAmount(invoice.subTotal || 0)}</td>
-                ${!isInterState ? `
-                  <td></td>
-                  <td style="font-family: monospace;">${currencySymbol}${formatAmount(invoice.items.reduce((acc, i) => acc + (i.cgst || 0), 0))}</td>
-                  <td></td>
-                  <td style="font-family: monospace;">${currencySymbol}${formatAmount(invoice.items.reduce((acc, i) => acc + (i.sgst || 0), 0))}</td>
-                ` : `
-                  <td></td>
-                  <td style="font-family: monospace;">${currencySymbol}${formatAmount(invoice.items.reduce((acc, i) => acc + (i.igst || 0), 0))}</td>
-                `}
-                <td style="font-family: monospace;">${currencySymbol}${formatAmount(invoice.taxTotal || 0)}</td>
-              </tr>
-            </tbody>
-          </table>
-          ` : ''}
-          
-          <div class="declaration-section">
-            <div class="decl-left">
-              <strong>Declaration:</strong><br/>
-              We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.
-              ${notesHTML}
-              ${bankDetailsHTML}
+          <div class="tally-footer-grid">
+            <div class="tally-footer-left">
+              <div class="tally-footer-block">
+                <div class="tally-section-title">Description:</div>
+                <div style="font-weight: 600;">Sale Description</div>
+              </div>
+              <div class="tally-footer-block">
+                <div class="tally-section-title">Bank Details:</div>
+                <div style="display: flex; align-items: center;">
+                  <div style="width: 45px; height: 45px; border: 1px solid #334155; margin-right: 12px; flex-shrink: 0; padding: 2px;">
+                    <svg viewBox="0 0 100 100" style="width: 100%; height: 100%; color: #000000;">
+                      <rect x="0" y="0" width="25" height="25" fill="currentColor"/>
+                      <rect x="5" y="5" width="15" height="15" fill="white"/>
+                      <rect x="75" y="0" width="25" height="25" fill="currentColor"/>
+                      <rect x="75" y="5" width="15" height="15" fill="white"/>
+                      <rect x="0" y="75" width="25" height="25" fill="currentColor"/>
+                      <rect x="5" y="75" width="15" height="15" fill="white"/>
+                      <rect x="35" y="35" width="30" height="30" fill="currentColor"/>
+                      <rect x="45" y="45" width="10" height="10" fill="white"/>
+                      <rect x="10" y="35" width="15" height="10" fill="currentColor"/>
+                      <rect x="40" y="10" width="25" height="15" fill="currentColor"/>
+                      <rect x="75" y="40" width="15" height="25" fill="currentColor"/>
+                    </svg>
+                  </div>
+                  <div style="font-size: 10px; line-height: 1.4;">
+                    <div>Bank Name: <strong>${store.bankName || '123123123123'}</strong></div>
+                    <div>Account No.: <strong>${store.bankAccountNumber || '12312312312'}</strong></div>
+                    <div>IFSC Code: <strong>${store.bankIfscCode || '123123123'}</strong></div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="signature-right">
-              <small style="color: #444;">for <strong>${store.customCompanyName || store.shopName}</strong></small>
-              <span style="font-size: 9px; font-weight: bold; border-top: 1px dotted #000; display: inline-block; width: 130px; margin-left: auto; text-align: center;">Authorised Signatory</span>
+            
+            <div class="tally-footer-right">
+              <div class="tally-footer-block" style="flex: 1;">
+                <div class="tally-section-title">Terms & Conditions:</div>
+                <div style="font-weight: 600;">Thanks for doing business with us!</div>
+              </div>
+              <div class="tally-signature-box">
+                <div style="font-size: 9px; font-weight: bold; text-align: right;">For: ${store.customCompanyName || store.shopName}</div>
+                <div class="tally-sig-image">Image</div>
+                <div style="font-size: 9px; font-weight: bold; text-align: right; border-top: 1px dotted #000; padding-top: 3px; width: 130px; margin-left: auto;">Authorized Signatory</div>
+              </div>
             </div>
           </div>
         </div>
-        ${footerHTML}
       </body>
       </html>
     `;
-  }  // 2. --- MINIMALIST CORPORATE TEMPLATE (Photo 2) ---
+  }  // 2. --- LANDSCAPE THEME 1 (A4 Landscape) ---
+  if (template === 'Landscape Theme 1' || template === 'landscape1') {
+    const lsItemRows = invoice.items.map((item, idx) => {
+      const rate = (item.isTaxInclusive ? item.mrp : item.price) || 0;
+      const amount = item.totalAmount || 0;
+      const hsn = item.hsnCode || 'N/A';
+      const disc = item.discount || 0;
+      const discPct = item.discountPercent || 0;
+      const gstRate = item.gstRate || 0;
+      const cgst = item.cgst || 0;
+      const sgst = item.sgst || 0;
+      return `
+        <tr style="background: ${idx % 2 === 1 ? '#f8fafc' : '#ffffff'};">
+          <td style="text-align: center; border-right: 1px solid #94a3b8; border-bottom: 1px solid #cbd5e1; padding: 4px 6px;">${idx + 1}</td>
+          <td style="border-right: 1px solid #94a3b8; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; font-weight: 600;">${item.description}</td>
+          <td style="text-align: center; font-family: monospace; border-right: 1px solid #94a3b8; border-bottom: 1px solid #cbd5e1; padding: 4px 6px;">${hsn}</td>
+          <td style="text-align: center; border-right: 1px solid #94a3b8; border-bottom: 1px solid #cbd5e1; padding: 4px 6px;">${item.quantity}</td>
+          <td style="text-align: right; font-family: monospace; border-right: 1px solid #94a3b8; border-bottom: 1px solid #cbd5e1; padding: 4px 6px;">${currencySymbol}${formatAmount(rate)}</td>
+          <td style="text-align: right; font-family: monospace; border-right: 1px solid #94a3b8; border-bottom: 1px solid #cbd5e1; padding: 4px 6px;">${disc > 0 ? `${currencySymbol}${formatAmount(disc)} (${discPct}%)` : '0.00 (0%)'}</td>
+          <td style="text-align: right; font-family: monospace; border-right: 1px solid #94a3b8; border-bottom: 1px solid #cbd5e1; padding: 4px 6px;">${cgst > 0 || sgst > 0 ? `${currencySymbol}${formatAmount(cgst + sgst)} (${gstRate}%)` : `0.00 (${gstRate}%)`}</td>
+          <td style="text-align: right; font-family: monospace; font-weight: bold; border-bottom: 1px solid #cbd5e1; padding: 4px 6px;">${currencySymbol}${formatAmount(amount)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const lsTotalQty = invoice.items.reduce((acc, i) => acc + (i.quantity || 0), 0);
+    const lsTotalDisc = invoice.items.reduce((acc, i) => acc + (i.discount || 0), 0);
+    const lsTotalAmount = invoice.items.reduce((acc, i) => acc + (i.totalAmount || 0), 0);
+    const lsTotalCgst = invoice.items.reduce((acc, i) => acc + (i.cgst || 0), 0);
+    const lsTotalSgst = invoice.items.reduce((acc, i) => acc + (i.sgst || 0), 0);
+    const lsTotalIgst = invoice.items.reduce((acc, i) => acc + (i.igst || 0), 0);
+    const lsTotalTax = lsTotalCgst + lsTotalSgst + lsTotalIgst;
+    const lsGrandTotal = invoice.totalAmount || 0;
+    const lsReceived = invoice.receivedAmount || 0;
+    const lsBalance = lsGrandTotal - lsReceived;
+    const lsYouSaved = invoice.items.reduce((acc, item) => acc + ((item.mrp && item.mrp > item.price) ? (item.mrp - item.price) * item.quantity : 0), 0);
+
+    const lsHsnRows = invoice.items.map(item => {
+      const cgst = item.cgst || 0;
+      const sgst = item.sgst || 0;
+      const igst = item.igst || 0;
+      const gstRate = item.gstRate || 0;
+      const hsn = item.hsnCode || 'N/A';
+      const taxable = (item.totalAmount || 0) - (cgst + sgst + igst);
+      return `
+        <tr>
+          <td style="font-family: monospace; border: 1px solid #94a3b8; padding: 3px 5px; text-align: center;">${hsn}</td>
+          <td style="font-family: monospace; border: 1px solid #94a3b8; padding: 3px 5px; text-align: right;">${currencySymbol}${formatAmount(taxable)}</td>
+          ${!isInterState ? `
+            <td style="border: 1px solid #94a3b8; padding: 3px 5px; text-align: center;">${gstRate / 2}%</td>
+            <td style="font-family: monospace; border: 1px solid #94a3b8; padding: 3px 5px; text-align: right;">${currencySymbol}${formatAmount(cgst)}</td>
+            <td style="border: 1px solid #94a3b8; padding: 3px 5px; text-align: center;">${gstRate / 2}%</td>
+            <td style="font-family: monospace; border: 1px solid #94a3b8; padding: 3px 5px; text-align: right;">${currencySymbol}${formatAmount(sgst)}</td>
+          ` : `
+            <td style="border: 1px solid #94a3b8; padding: 3px 5px; text-align: center;">${gstRate}%</td>
+            <td style="font-family: monospace; border: 1px solid #94a3b8; padding: 3px 5px; text-align: right;">${currencySymbol}${formatAmount(igst)}</td>
+            <td style="border: 1px solid #94a3b8; padding: 3px 5px; text-align: center;">-</td>
+            <td style="border: 1px solid #94a3b8; padding: 3px 5px;">-</td>
+          `}
+          <td style="font-family: monospace; border: 1px solid #94a3b8; padding: 3px 5px; text-align: right; font-weight: bold;">${currencySymbol}${formatAmount(cgst + sgst + igst)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    return `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Tax Invoice #${invoice.invoiceNumber}</title>
+        <style>
+          @page { size: A4 landscape; margin: 10mm; }
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #ffffff;
+            color: #000000;
+            font-size: 9px;
+            line-height: 1.3;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .ls-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
+            border: 1px solid #475569;
+            padding: 4px;
+            background: #f8fafc;
+            margin-bottom: 6px;
+            letter-spacing: 0.04em;
+          }
+          .ls-outer {
+            border: 1px solid #475569;
+          }
+          .ls-header {
+            display: flex;
+            border-bottom: 1px solid #475569;
+          }
+          .ls-header-left {
+            width: 60%;
+            border-right: 1px solid #475569;
+            padding: 6px 8px;
+            display: flex;
+            align-items: center;
+          }
+          .ls-logo-box {
+            width: 44px;
+            height: 44px;
+            border: 1px solid #94a3b8;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 7px;
+            color: #64748b;
+            margin-right: 10px;
+            flex-shrink: 0;
+          }
+          .ls-company-name {
+            font-weight: 900;
+            font-size: 14px;
+            color: #0f172a;
+            line-height: 1.2;
+            margin-bottom: 3px;
+          }
+          .ls-company-phone {
+            font-size: 9px;
+            font-weight: 700;
+            color: #334155;
+          }
+          .ls-header-right {
+            width: 40%;
+            padding: 6px 8px;
+            background: #f8fafc;
+          }
+          .ls-header-right-title {
+            font-weight: bold;
+            font-size: 9px;
+            color: #0f172a;
+            margin-bottom: 3px;
+          }
+          .ls-inv-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px 8px;
+            font-size: 8.5px;
+          }
+          .ls-inv-label { color: #475569; font-weight: 600; }
+          .ls-inv-value { color: #0f172a; font-weight: 700; }
+          .ls-billing {
+            display: flex;
+            border-bottom: 1px solid #475569;
+          }
+          .ls-bill-col {
+            width: 50%;
+            padding: 5px 8px;
+          }
+          .ls-bill-col:first-child {
+            border-right: 1px solid #475569;
+          }
+          .ls-section-label {
+            font-weight: bold;
+            font-size: 9px;
+            color: #0f172a;
+            margin-bottom: 2px;
+          }
+          .ls-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8.5px;
+          }
+          .ls-table th {
+            background: #f1f5f9;
+            font-weight: bold;
+            color: #334155;
+            padding: 4px 5px;
+            border-right: 1px solid #94a3b8;
+            border-bottom: 1px solid #475569;
+            white-space: nowrap;
+          }
+          .ls-table th:last-child { border-right: none; }
+          .ls-table td { border-right: 1px solid #cbd5e1; }
+          .ls-table td:last-child { border-right: none; }
+          .ls-total-row td {
+            background: #f1f5f9;
+            font-weight: bold;
+            border-top: 1px solid #475569;
+            border-right: 1px solid #94a3b8;
+            padding: 4px 5px;
+          }
+          .ls-summary {
+            border-top: 1px solid #475569;
+            border-bottom: 1px solid #475569;
+          }
+          .ls-summary-row {
+            display: flex;
+            border-bottom: 1px solid #cbd5e1;
+            font-size: 8px;
+            font-weight: bold;
+            color: #0f172a;
+          }
+          .ls-summary-row:last-child { border-bottom: none; }
+          .ls-summary-cell {
+            padding: 3px 6px;
+            border-right: 1px solid #94a3b8;
+          }
+          .ls-summary-cell:last-child { border-right: none; }
+          .ls-tax-bank {
+            display: flex;
+            border-bottom: 1px solid #475569;
+          }
+          .ls-tax-side {
+            width: 65%;
+            border-right: 1px solid #475569;
+            padding: 5px;
+          }
+          .ls-bank-side {
+            width: 35%;
+            padding: 5px 8px;
+          }
+          .ls-mini-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 7.5px;
+            text-align: center;
+            border: 1px solid #94a3b8;
+          }
+          .ls-mini-table th, .ls-mini-table td {
+            border: 1px solid #94a3b8;
+            padding: 2px 3px;
+          }
+          .ls-mini-table th {
+            background: #f1f5f9;
+            font-weight: bold;
+            color: #334155;
+          }
+          .ls-footer {
+            display: flex;
+            min-height: 60px;
+          }
+          .ls-footer-col {
+            padding: 5px 8px;
+            border-right: 1px solid #475569;
+          }
+          .ls-footer-col:last-child { border-right: none; }
+          .ls-footer-label {
+            font-weight: bold;
+            font-size: 7.5px;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 2px;
+          }
+          .ls-sig-box {
+            width: 80px;
+            height: 24px;
+            border: 1px dashed #94a3b8;
+            background: rgba(255,255,255,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 7px;
+            color: #94a3b8;
+            font-style: italic;
+            margin: 4px 0 2px auto;
+          }
+          @media print {
+            body { margin: 0; }
+            .ls-outer, .ls-table, .ls-mini-table { page-break-inside: avoid; }
+          }
+        </style>
+      </head>
+      <body>
+        <!-- Centered Title -->
+        <div class="ls-title">Tax Invoice</div>
+
+        <div class="ls-outer">
+          <!-- Header -->
+          <div class="ls-header">
+            <div class="ls-header-left">
+              <div class="ls-logo-box">
+                ${(store.printCompanyLogo !== false && (store.customLogoUrl || store.logoUrl))
+                  ? `<img src="${store.customLogoUrl || store.logoUrl}" style="width:100%;height:100%;object-fit:contain;" alt="logo"/>`
+                  : 'Image'}
+              </div>
+              <div>
+                ${store.printCompanyName !== false ? `<div class="ls-company-name">${store.customCompanyName || store.shopName}</div>` : ''}
+                ${store.printPhone !== false ? `<div class="ls-company-phone">Phone: ${store.customPhone || store.phoneNumber || ''}</div>` : ''}
+              </div>
+            </div>
+            <div class="ls-header-right">
+              <div class="ls-header-right-title">Invoice Details:</div>
+              <div class="ls-inv-grid">
+                <div><span class="ls-inv-label">Invoice No.:</span></div>
+                <div><span class="ls-inv-value">${invoice.invoiceNumber}</span></div>
+                <div><span class="ls-inv-label">Date:</span></div>
+                <div>${invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString('en-IN') : ''}</div>
+                <div><span class="ls-inv-label">Time:</span></div>
+                <div>${invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : ''}</div>
+                <div><span class="ls-inv-label">Due Date:</span></div>
+                <div>${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-IN') : '-'}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Billing and shipping -->
+          <div class="ls-billing">
+            <div class="ls-bill-col">
+              <div class="ls-section-label">Bill To:</div>
+              <div style="font-weight:bold;color:#0f172a;">${invoice.buyerName || ''}</div>
+              <div style="color:#334155;">${invoice.buyerAddress || ''}</div>
+              ${invoice.buyerPhone ? `<div style="margin-top:2px;"><span style="font-weight:600;">Contact No.:</span> ${invoice.buyerPhone}</div>` : ''}
+            </div>
+            <div class="ls-bill-col">
+              <div class="ls-section-label">Ship To:</div>
+              <div style="font-weight:500;color:#0f172a;">${invoice.shippingAddress || invoice.buyerAddress || ''}</div>
+            </div>
+          </div>
+
+          <!-- Item table -->
+          <table class="ls-table">
+            <thead>
+              <tr>
+                <th style="text-align:center;width:24px;">#</th>
+                <th style="text-align:left;">Item name</th>
+                <th style="text-align:center;width:50px;">HSC/SAC</th>
+                <th style="text-align:center;width:50px;">Quantity</th>
+                <th style="text-align:right;width:60px;">Price/unit</th>
+                <th style="text-align:right;width:70px;">Discount</th>
+                <th style="text-align:right;width:70px;">GST</th>
+                <th style="text-align:right;width:60px;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${lsItemRows}
+            </tbody>
+            <tfoot>
+              <tr class="ls-total-row">
+                <td></td>
+                <td style="text-align:left;">TOTAL</td>
+                <td></td>
+                <td style="text-align:center;">${lsTotalQty}</td>
+                <td></td>
+                <td style="text-align:right;font-family:monospace;">${currencySymbol}${formatAmount(lsTotalDisc)}</td>
+                <td style="text-align:right;font-family:monospace;">${currencySymbol}${formatAmount(lsTotalTax)}</td>
+                <td style="text-align:right;font-family:monospace;">${currencySymbol}${formatAmount(lsTotalAmount)}</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <!-- Summary bar -->
+          <div class="ls-summary">
+            <div class="ls-summary-row">
+              <div class="ls-summary-cell" style="width:15%;">Sub Total: ${currencySymbol}${formatAmount(invoice.subTotal || lsTotalAmount)}</div>
+              <div class="ls-summary-cell" style="width:20%;">Discount: ${currencySymbol}${formatAmount(lsTotalDisc)}</div>
+              <div class="ls-summary-cell" style="width:15%;">Tax: ${currencySymbol}${formatAmount(lsTotalTax)}</div>
+              <div class="ls-summary-cell" style="width:15%;">TCS: ${currencySymbol}0.00</div>
+              <div class="ls-summary-cell" style="flex:1;">Total: ${currencySymbol}${formatAmount(lsGrandTotal)} (${numberToWords(lsGrandTotal)})</div>
+            </div>
+            <div class="ls-summary-row">
+              <div class="ls-summary-cell" style="width:25%;">Received: ${currencySymbol}${formatAmount(lsReceived)}</div>
+              <div class="ls-summary-cell" style="width:25%;">Balance: ${currencySymbol}${formatAmount(lsBalance)}</div>
+              <div class="ls-summary-cell" style="width:25%;">Current Balance: ${currencySymbol}${formatAmount(invoice.outstandingAmount || 0)}</div>
+              <div class="ls-summary-cell" style="flex:1;color:#059669;">You Saved: ${currencySymbol}${formatAmount(lsYouSaved)}</div>
+            </div>
+          </div>
+
+          <!-- Tax summary & bank details -->
+          <div class="ls-tax-bank">
+            <div class="ls-tax-side">
+              <table class="ls-mini-table">
+                <thead>
+                  <tr>
+                    <th rowspan="2">HSN/ SAC</th>
+                    <th rowspan="2">Taxable amount(${currencySymbol})</th>
+                    <th colspan="2">CGST</th>
+                    <th colspan="2">SGST</th>
+                    <th rowspan="2">Total Tax Amount(${currencySymbol})</th>
+                  </tr>
+                  <tr>
+                    <th>Rate(%)</th>
+                    <th>Amount(${currencySymbol})</th>
+                    <th>Rate(%)</th>
+                    <th>Amount(${currencySymbol})</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${lsHsnRows}
+                  <tr style="background:#f1f5f9;font-weight:bold;">
+                    <td>TOTAL</td>
+                    <td style="text-align:right;font-family:monospace;">${currencySymbol}${formatAmount(invoice.items.reduce((a, i) => a + ((i.totalAmount || 0) - (i.cgst||0) - (i.sgst||0) - (i.igst||0)), 0))}</td>
+                    <td></td>
+                    <td style="text-align:right;font-family:monospace;">${currencySymbol}${formatAmount(lsTotalCgst)}</td>
+                    <td></td>
+                    <td style="text-align:right;font-family:monospace;">${currencySymbol}${formatAmount(lsTotalSgst)}</td>
+                    <td style="text-align:right;font-family:monospace;">${currencySymbol}${formatAmount(lsTotalTax)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="ls-bank-side">
+              <div class="ls-footer-label">Bank Details:</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:3px;">
+                <div style="width:40px;height:40px;border:1px solid #94a3b8;flex-shrink:0;padding:1px;">
+                  <svg viewBox="0 0 100 100" style="width:100%;height:100%;">
+                    <rect x="0" y="0" width="25" height="25" fill="#000"/>
+                    <rect x="5" y="5" width="15" height="15" fill="white"/>
+                    <rect x="75" y="0" width="25" height="25" fill="#000"/>
+                    <rect x="75" y="5" width="15" height="15" fill="white"/>
+                    <rect x="0" y="75" width="25" height="25" fill="#000"/>
+                    <rect x="5" y="75" width="15" height="15" fill="white"/>
+                    <rect x="35" y="35" width="30" height="30" fill="#000"/>
+                    <rect x="45" y="45" width="10" height="10" fill="white"/>
+                    <rect x="10" y="35" width="15" height="10" fill="#000"/>
+                    <rect x="40" y="10" width="25" height="15" fill="#000"/>
+                    <rect x="75" y="40" width="15" height="25" fill="#000"/>
+                  </svg>
+                </div>
+                <div style="font-size:8px;line-height:1.5;">
+                  <div>Bank Name: <strong>${store.bankName || ''}</strong></div>
+                  <div>Bank Account No.: <strong>${store.bankAccountNumber || ''}</strong></div>
+                  <div>Bank IFSC code: <strong>${store.bankIfscCode || ''}</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="ls-footer">
+            <div class="ls-footer-col" style="width:35%;">
+              <div class="ls-footer-label">Description:</div>
+              <div style="font-weight:600;color:#0f172a;">${invoice.description || 'Sale Description'}</div>
+            </div>
+            <div class="ls-footer-col" style="width:35%;">
+              <div class="ls-footer-label">Terms &amp; Conditions:</div>
+              <div style="font-weight:600;">${store.termsAndConditions || 'Thanks for doing business with us!'}</div>
+            </div>
+            <div class="ls-footer-col" style="width:30%;display:flex;flex-direction:column;justify-content:space-between;">
+              <div style="text-align:right;font-weight:bold;font-size:9px;">For: ${store.customCompanyName || store.shopName}</div>
+              <div class="ls-sig-box">Image</div>
+              <div style="text-align:right;font-weight:bold;font-size:8.5px;border-top:1px dotted #94a3b8;padding-top:3px;">Authorized Signatory</div>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }  // 3. --- LANDSCAPE THEME 2 (A4 Landscape, Totals Panel) --
+  if (template === 'Landscape Theme 2' || template === 'landscape2') {
+    const l2ItemRows = invoice.items.map((item, idx) => {
+      const rate = (item.isTaxInclusive ? item.mrp : item.price) || 0;
+      const amount = item.totalAmount || 0;
+      const hsn = item.hsnCode || 'N/A';
+      const disc = item.discount || 0;
+      const discPct = item.discountPercent || 0;
+      const gstRate = item.gstRate || 0;
+      const cgst = item.cgst || 0;
+      const sgst = item.sgst || 0;
+      return `
+        <tr style="background: ${idx % 2 === 1 ? '#f8fafc' : '#ffffff'};">
+          <td style="text-align:center;border-right:1px solid #94a3b8;border-bottom:1px solid #cbd5e1;padding:4px 5px;">${idx + 1}</td>
+          <td style="border-right:1px solid #94a3b8;border-bottom:1px solid #cbd5e1;padding:4px 5px;font-weight:600;">${item.description}</td>
+          <td style="text-align:center;font-family:monospace;border-right:1px solid #94a3b8;border-bottom:1px solid #cbd5e1;padding:4px 5px;">${hsn}</td>
+          <td style="text-align:center;border-right:1px solid #94a3b8;border-bottom:1px solid #cbd5e1;padding:4px 5px;">${item.quantity}</td>
+          <td style="text-align:right;font-family:monospace;border-right:1px solid #94a3b8;border-bottom:1px solid #cbd5e1;padding:4px 5px;">${currencySymbol}${formatAmount(rate)}</td>
+          <td style="text-align:right;font-family:monospace;border-right:1px solid #94a3b8;border-bottom:1px solid #cbd5e1;padding:4px 5px;">${disc > 0 ? `${currencySymbol}${formatAmount(disc)} (${discPct}%)` : '0.00 (0%)'}</td>
+          <td style="text-align:right;font-family:monospace;border-right:1px solid #94a3b8;border-bottom:1px solid #cbd5e1;padding:4px 5px;">${cgst > 0 || sgst > 0 ? `${currencySymbol}${formatAmount(cgst + sgst)} (${gstRate}%)` : `0.00 (${gstRate}%)`}</td>
+          <td style="text-align:right;font-family:monospace;font-weight:bold;border-bottom:1px solid #cbd5e1;padding:4px 5px;">${currencySymbol}${formatAmount(amount)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const l2TotalQty  = invoice.items.reduce((a,i) => a + (i.quantity||0), 0);
+    const l2TotalDisc = invoice.items.reduce((a,i) => a + (i.discount||0), 0);
+    const l2TotalAmt  = invoice.items.reduce((a,i) => a + (i.totalAmount||0), 0);
+    const l2TotalCgst = invoice.items.reduce((a,i) => a + (i.cgst||0), 0);
+    const l2TotalSgst = invoice.items.reduce((a,i) => a + (i.sgst||0), 0);
+    const l2TotalIgst = invoice.items.reduce((a,i) => a + (i.igst||0), 0);
+    const l2TotalTax  = l2TotalCgst + l2TotalSgst + l2TotalIgst;
+    const l2Grand     = invoice.totalAmount || 0;
+    const l2Received  = invoice.receivedAmount || 0;
+    const l2Balance   = l2Grand - l2Received;
+    const l2YouSaved  = invoice.items.reduce((a,i) => a + ((i.mrp && i.mrp > i.price) ? (i.mrp - i.price) * i.quantity : 0), 0);
+
+    const l2HsnRows = invoice.items.map(item => {
+      const cgst = item.cgst || 0;
+      const sgst = item.sgst || 0;
+      const igst = item.igst || 0;
+      const gstRate = item.gstRate || 0;
+      const hsn = item.hsnCode || 'N/A';
+      const taxable = (item.totalAmount||0) - (cgst + sgst + igst);
+      return `
+        <tr>
+          <td style="font-family:monospace;border:1px solid #94a3b8;padding:2px 3px;text-align:center;">${hsn}</td>
+          <td style="font-family:monospace;border:1px solid #94a3b8;padding:2px 3px;text-align:right;">${currencySymbol}${formatAmount(taxable)}</td>
+          ${!isInterState ? `
+            <td style="border:1px solid #94a3b8;padding:2px 3px;text-align:center;">${gstRate/2}%</td>
+            <td style="font-family:monospace;border:1px solid #94a3b8;padding:2px 3px;text-align:right;">${currencySymbol}${formatAmount(cgst)}</td>
+            <td style="border:1px solid #94a3b8;padding:2px 3px;text-align:center;">${gstRate/2}%</td>
+            <td style="font-family:monospace;border:1px solid #94a3b8;padding:2px 3px;text-align:right;">${currencySymbol}${formatAmount(sgst)}</td>
+          ` : `
+            <td style="border:1px solid #94a3b8;padding:2px 3px;text-align:center;">${gstRate}%</td>
+            <td style="font-family:monospace;border:1px solid #94a3b8;padding:2px 3px;text-align:right;">${currencySymbol}${formatAmount(igst)}</td>
+            <td style="border:1px solid #94a3b8;padding:2px 3px;text-align:center;">-</td>
+            <td style="border:1px solid #94a3b8;padding:2px 3px;">-</td>
+          `}
+          <td style="font-family:monospace;border:1px solid #94a3b8;padding:2px 3px;text-align:right;font-weight:bold;">${currencySymbol}${formatAmount(cgst+sgst+igst)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    return `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Tax Invoice #${invoice.invoiceNumber}</title>
+        <style>
+          @page { size: A4 landscape; margin: 10mm; }
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #ffffff;
+            color: #000000;
+            font-size: 9px;
+            line-height: 1.3;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .l2-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
+            border: 1px solid #475569;
+            padding: 4px;
+            background: #f8fafc;
+            margin-bottom: 6px;
+            letter-spacing: 0.04em;
+          }
+          .l2-outer { border: 1px solid #475569; }
+          .l2-flex { display: flex; }
+          .l2-border-b { border-bottom: 1px solid #475569; }
+          .l2-border-r { border-right: 1px solid #475569; }
+          .l2-pad { padding: 5px 8px; }
+          .l2-logo-box {
+            width: 44px; height: 44px;
+            border: 1px solid #94a3b8;
+            background: #e2e8f0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 7px; color: #64748b;
+            margin-right: 10px; flex-shrink: 0;
+          }
+          .l2-co-name { font-weight: 900; font-size: 14px; color: #0f172a; line-height: 1.2; margin-bottom: 3px; }
+          .l2-co-phone { font-size: 9px; font-weight: 700; color: #334155; }
+          .l2-inv-grid { display: grid; grid-template-columns: auto 1fr; gap: 2px 6px; font-size: 8px; }
+          .l2-label { color: #475569; font-weight: 600; }
+          .l2-value { font-weight: 700; color: #0f172a; }
+          .l2-section-title { font-weight: bold; font-size: 8.5px; color: #0f172a; margin-bottom: 2px; }
+          .l2-table { width: 100%; border-collapse: collapse; font-size: 8.5px; }
+          .l2-table th {
+            background: #f1f5f9; font-weight: bold; color: #334155;
+            padding: 4px 5px; border-right: 1px solid #94a3b8;
+            border-bottom: 1px solid #475569; white-space: nowrap;
+          }
+          .l2-table th:last-child { border-right: none; }
+          .l2-table td { border-right: 1px solid #cbd5e1; }
+          .l2-table td:last-child { border-right: none; }
+          .l2-total-tr td {
+            background: #f1f5f9; font-weight: bold;
+            border-top: 1px solid #475569;
+            border-right: 1px solid #94a3b8;
+            padding: 3px 5px;
+          }
+          .l2-mini-table { width: 100%; border-collapse: collapse; font-size: 7.5px; border: 1px solid #94a3b8; text-align: center; }
+          .l2-mini-table th, .l2-mini-table td { border: 1px solid #94a3b8; padding: 2px 3px; }
+          .l2-mini-table th { background: #f1f5f9; font-weight: bold; color: #334155; }
+          .l2-totals-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 2px 0; border-bottom: 1px solid #e2e8f0;
+            font-size: 8px; font-weight: 600; color: #334155;
+          }
+          .l2-totals-row:last-child { border-bottom: none; }
+          .l2-totals-val { font-family: monospace; color: #0f172a; }
+          .l2-footer-label { font-weight: 700; font-size: 7.5px; text-transform: uppercase; color: #475569; margin-bottom: 2px; }
+          .l2-sig-box {
+            width: 70px; height: 24px;
+            border: 1px dashed #94a3b8; background: #f1f5f9;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 7px; color: #94a3b8; font-style: italic;
+            margin: 4px auto 2px;
+          }
+          @media print {
+            body { margin: 0; }
+            .l2-outer, .l2-table, .l2-mini-table { page-break-inside: avoid; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="l2-title">Tax Invoice</div>
+        <div class="l2-outer">
+
+          <!-- Header -->
+          <div class="l2-flex l2-border-b">
+            <div class="l2-border-r l2-pad" style="width:60%;display:flex;align-items:center;">
+              <div class="l2-logo-box">
+                ${(store.printCompanyLogo !== false && (store.customLogoUrl || store.logoUrl))
+                  ? `<img src="${store.customLogoUrl || store.logoUrl}" style="width:100%;height:100%;object-fit:contain;" alt="logo"/>`
+                  : 'Image'}
+              </div>
+              <div>
+                ${store.printCompanyName !== false ? `<div class="l2-co-name">${store.customCompanyName || store.shopName}</div>` : ''}
+                ${store.printPhone !== false ? `<div class="l2-co-phone">Phone: ${store.customPhone || store.phoneNumber || ''}</div>` : ''}
+              </div>
+            </div>
+            <div class="l2-pad" style="width:40%;background:#f8fafc;">
+              <div style="font-weight:bold;font-size:8.5px;color:#0f172a;margin-bottom:3px;">Invoice Details:</div>
+              <div class="l2-inv-grid">
+                <span class="l2-label">Invoice No.:</span><span class="l2-value">${invoice.invoiceNumber}</span>
+                <span class="l2-label">Date:</span><span>${invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString('en-IN') : ''}</span>
+                <span class="l2-label">Time:</span><span>${invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'}) : ''}</span>
+                <span class="l2-label">Due Date:</span><span>${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-IN') : '-'}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bill To / Ship To -->
+          <div class="l2-flex l2-border-b">
+            <div class="l2-border-r l2-pad" style="width:50%;">
+              <div class="l2-section-title">Bill To:</div>
+              <div style="font-weight:bold;color:#334155;">${invoice.buyerName || ''}</div>
+              <div>${invoice.buyerAddress || ''}</div>
+              ${invoice.buyerPhone ? `<div style="margin-top:2px;"><span style="font-weight:600;">Contact No.:</span> ${invoice.buyerPhone}</div>` : ''}
+            </div>
+            <div class="l2-pad" style="width:50%;">
+              <div class="l2-section-title">Ship To:</div>
+              <div style="font-weight:500;color:#0f172a;">${invoice.shippingAddress || invoice.buyerAddress || ''}</div>
+            </div>
+          </div>
+
+          <!-- Item Table -->
+          <table class="l2-table">
+            <thead>
+              <tr>
+                <th style="text-align:center;width:22px;">#</th>
+                <th style="text-align:left;">Item name</th>
+                <th style="text-align:center;width:50px;">HSC/SAC</th>
+                <th style="text-align:center;width:50px;">Quantity</th>
+                <th style="text-align:right;width:58px;">Price/unit</th>
+                <th style="text-align:right;width:64px;">Discount</th>
+                <th style="text-align:right;width:64px;">GST</th>
+                <th style="text-align:right;width:58px;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>${l2ItemRows}</tbody>
+            <tfoot>
+              <tr class="l2-total-tr">
+                <td></td>
+                <td style="text-align:left;">TOTAL</td>
+                <td></td>
+                <td style="text-align:center;">${l2TotalQty}</td>
+                <td></td>
+                <td style="text-align:right;font-family:monospace;">${currencySymbol}${formatAmount(l2TotalDisc)}</td>
+                <td style="text-align:right;font-family:monospace;">${currencySymbol}${formatAmount(l2TotalTax)}</td>
+                <td style="text-align:right;font-family:monospace;">${currencySymbol}${formatAmount(l2TotalAmt)}</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <!-- Tax summary + Totals panel -->
+          <div class="l2-flex l2-border-b" style="border-top:1px solid #475569;">
+            <!-- Left: Tax summary -->
+            <div class="l2-border-r" style="width:58%;padding:5px;">
+              <table class="l2-mini-table">
+                <thead>
+                  <tr>
+                    <th rowspan="2">HSN/ SAC</th>
+                    <th rowspan="2">Taxable amount(${currencySymbol})</th>
+                    <th colspan="2">CGST</th>
+                    <th colspan="2">SGST</th>
+                    <th rowspan="2">Total Tax Amount(${currencySymbol})</th>
+                  </tr>
+                  <tr>
+                    <th>Rate(%)</th><th>Amount(${currencySymbol})</th>
+                    <th>Rate(%)</th><th>Amount(${currencySymbol})</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${l2HsnRows}
+                  <tr style="background:#f1f5f9;font-weight:bold;">
+                    <td>TOTAL</td>
+                    <td style="text-align:right;font-family:monospace;">${currencySymbol}${formatAmount(invoice.items.reduce((a,i) => a+((i.totalAmount||0)-(i.cgst||0)-(i.sgst||0)-(i.igst||0)),0))}</td>
+                    <td></td>
+                    <td style="text-align:right;font-family:monospace;">${currencySymbol}${formatAmount(l2TotalCgst)}</td>
+                    <td></td>
+                    <td style="text-align:right;font-family:monospace;">${currencySymbol}${formatAmount(l2TotalSgst)}</td>
+                    <td style="text-align:right;font-family:monospace;">${currencySymbol}${formatAmount(l2TotalTax)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- Right: Totals panel -->
+            <div style="width:42%;padding:5px 8px;">
+              <div class="l2-totals-row"><span>Sub Total</span><span style="display:flex;gap:8px;"><span style="color:#94a3b8;">:</span><span class="l2-totals-val">${currencySymbol}${formatAmount(invoice.subTotal || l2TotalAmt)}</span></span></div>
+              <div class="l2-totals-row"><span>Discount</span><span style="display:flex;gap:8px;"><span style="color:#94a3b8;">:</span><span class="l2-totals-val">${currencySymbol}${formatAmount(l2TotalDisc)}</span></span></div>
+              <div class="l2-totals-row"><span>Tax (GST)</span><span style="display:flex;gap:8px;"><span style="color:#94a3b8;">:</span><span class="l2-totals-val">${currencySymbol}${formatAmount(l2TotalTax)}</span></span></div>
+              <div class="l2-totals-row"><span>TCS</span><span style="display:flex;gap:8px;"><span style="color:#94a3b8;">:</span><span class="l2-totals-val">${currencySymbol}0.00</span></span></div>
+              <div class="l2-totals-row" style="font-weight:800;"><span>Total</span><span style="display:flex;gap:8px;"><span style="color:#94a3b8;">:</span><span class="l2-totals-val">${currencySymbol}${formatAmount(l2Grand)}</span></span></div>
+              <div style="padding:3px 0;border-bottom:1px solid #e2e8f0;">
+                <div style="font-size:7.5px;font-weight:600;color:#334155;margin-bottom:1px;">Invoice Amount In Words :</div>
+                <div style="color:#1d4ed8;font-style:italic;font-weight:600;font-size:7.5px;line-height:1.3;">${numberToWords(l2Grand)}</div>
+              </div>
+              <div class="l2-totals-row"><span>Received</span><span style="display:flex;gap:8px;"><span style="color:#94a3b8;">:</span><span class="l2-totals-val">${currencySymbol}${formatAmount(l2Received)}</span></span></div>
+              <div class="l2-totals-row"><span>Balance</span><span style="display:flex;gap:8px;"><span style="color:#94a3b8;">:</span><span class="l2-totals-val">${currencySymbol}${formatAmount(l2Balance)}</span></span></div>
+              ${l2YouSaved > 0 ? `<div class="l2-totals-row" style="font-weight:800;color:#059669;"><span>You Saved</span><span style="display:flex;gap:8px;"><span style="color:#94a3b8;">:</span><span style="font-family:monospace;">${currencySymbol}${formatAmount(l2YouSaved)}</span></span></div>` : ''}
+            </div>
+          </div>
+
+          <!-- Footer row 1: Description | Terms -->
+          <div class="l2-flex l2-border-b">
+            <div class="l2-border-r l2-pad" style="width:50%;">
+              <div class="l2-footer-label">Description:</div>
+              <div style="font-weight:600;color:#1d4ed8;">${invoice.description || 'Sale Description'}</div>
+            </div>
+            <div class="l2-pad" style="width:50%;">
+              <div class="l2-footer-label">Terms &amp; Conditions:</div>
+              <div style="font-weight:600;color:#1d4ed8;">${store.termsAndConditions || 'Thanks for doing business with us!'}</div>
+            </div>
+          </div>
+
+          <!-- Footer row 2: Bank Details | For/Signature -->
+          <div class="l2-flex">
+            <div class="l2-border-r l2-pad" style="width:50%;">
+              <div class="l2-footer-label">Bank Details:</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:3px;">
+                <div style="width:40px;height:40px;border:1px solid #94a3b8;flex-shrink:0;padding:1px;">
+                  <svg viewBox="0 0 100 100" style="width:100%;height:100%;">
+                    <rect x="0" y="0" width="25" height="25" fill="#000"/><rect x="5" y="5" width="15" height="15" fill="white"/>
+                    <rect x="75" y="0" width="25" height="25" fill="#000"/><rect x="75" y="5" width="15" height="15" fill="white"/>
+                    <rect x="0" y="75" width="25" height="25" fill="#000"/><rect x="5" y="75" width="15" height="15" fill="white"/>
+                    <rect x="35" y="35" width="30" height="30" fill="#000"/><rect x="45" y="45" width="10" height="10" fill="white"/>
+                    <rect x="10" y="35" width="15" height="10" fill="#000"/>
+                    <rect x="40" y="10" width="25" height="15" fill="#000"/>
+                    <rect x="75" y="40" width="15" height="25" fill="#000"/>
+                  </svg>
+                </div>
+                <div style="font-size:8px;line-height:1.5;color:#1d4ed8;font-weight:600;">
+                  <div>Bank Name: ${store.bankName || ''}</div>
+                  <div>Bank Account No.: ${store.bankAccountNumber || ''}</div>
+                  <div>Bank IFSC code: ${store.bankIfscCode || ''}</div>
+                </div>
+              </div>
+            </div>
+            <div class="l2-pad" style="width:50%;display:flex;flex-direction:column;min-height:70px;">
+              <div class="l2-footer-label">For: ${store.customCompanyName || store.shopName}:</div>
+              <div class="l2-sig-box">Image</div>
+              <div style="text-align:center;font-weight:bold;font-size:8px;color:#334155;border-top:1px dotted #94a3b8;padding-top:3px;margin-top:auto;">Authorized Signatory</div>
+            </div>
+          </div>
+
+        </div>
+      </body>
+      </html>
+    `;
+  }  // 4. --- MINIMALIST CORPORATE TEMPLATE (Photo 2) ---
   if (template === 'Minimalist') {
+
     return `
       <!DOCTYPE html>
       <html lang="en">

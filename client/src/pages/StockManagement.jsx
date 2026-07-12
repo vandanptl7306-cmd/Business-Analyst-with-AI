@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Package, Plus, Pencil, Trash2, AlertTriangle, CheckCircle,
   RefreshCw, X, Save, Loader2, Search, ShieldAlert, CalendarClock,
-  Image, ChevronDown, Settings,
+  Image, ChevronDown,
 } from 'lucide-react';
 import {
   getProductsList, createProduct, updateProduct, deleteProduct,
@@ -396,22 +396,8 @@ export default function StockManagement() {
 
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 flex-shrink-0">
-              <div className="flex items-center gap-4">
-                <h2 className="text-base font-bold text-slate-800">{editingId ? 'Edit Item' : 'Add Item'}</h2>
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-semibold ${form.itemType === 'Product' ? 'text-slate-800' : 'text-slate-400'}`}>Product</span>
-                  <button type="button"
-                    onClick={() => setForm({ ...form, itemType: form.itemType === 'Product' ? 'Service' : 'Product' })}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.itemType === 'Product' ? 'bg-blue-500' : 'bg-slate-300'}`}>
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.itemType === 'Product' ? 'translate-x-6' : 'translate-x-1'}`} />
-                  </button>
-                  <span className={`text-sm font-semibold ${form.itemType === 'Service' ? 'text-slate-800' : 'text-slate-400'}`}>Service</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <button type="button" className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"><Settings className="h-4 w-4" /></button>
-                <button type="button" onClick={closeForm} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"><X className="h-4 w-4" /></button>
-              </div>
+              <h2 className="text-base font-bold text-slate-800">{editingId ? 'Edit Item' : 'Add Item'}</h2>
+              <button type="button" onClick={closeForm} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"><X className="h-4 w-4" /></button>
             </div>
 
             {/* Top fields — Item Name, HSN, Unit, Image, Category, Item Code */}

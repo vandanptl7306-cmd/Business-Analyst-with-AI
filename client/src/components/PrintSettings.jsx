@@ -1,8 +1,8 @@
 // client/src/components/PrintSettings.jsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  Info, ChevronRight, ChevronLeft, X, Upload, RotateCcw,
-  Download, FolderOpen, Check, Minus, Plus, ChevronDown,
+  Info, ChevronRight, ChevronLeft, X, Upload,
+  Check, Minus, Plus, ChevronDown, Camera, QrCode, Trash2,
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -74,6 +74,12 @@ const DEFAULT_REGULAR = {
   signatureText: 'Authorized Signatory',
   paymentMode: false,
   printAcknowledgement: false,
+  // Bank Details
+  printBankDetails: true,
+  bankName: '',
+  bankAccountNumber: '',
+  bankIfscCode: '',
+  bankQrCodeUrl: '',
 };
 
 const DEFAULT_THERMAL = {
@@ -1042,6 +1048,122 @@ function RegularPrinterPanel({ s, set }) {
             <CBRow checked={s.printAcknowledgement} onChange={v => upd('printAcknowledgement', v)} label="Print Acknowledgement" info="Add acknowledgement section" />
           </SettingsSection>
 
+          {/* ── Bank Details ── */}
+          <SettingsSection title="Bank Details">
+            <CBRow checked={s.printBankDetails} onChange={v => upd('printBankDetails', v)} label="Print Bank Details" info="Show bank info and QR code on invoice" />
+
+            {s.printBankDetails && (
+              <div className="ml-9 space-y-3 mt-2">
+                {/* Bank Name */}
+                <FloatingInput
+                  label="Bank Name"
+                  value={s.bankName}
+                  onChange={e => upd('bankName', e.target.value)}
+                  className="w-full"
+                />
+
+                {/* Account Number */}
+                <FloatingInput
+                  label="Bank Account Number"
+                  value={s.bankAccountNumber}
+                  onChange={e => upd('bankAccountNumber', e.target.value)}
+                  className="w-full"
+                />
+
+                {/* IFSC Code */}
+                <FloatingInput
+                  label="Bank IFSC Code"
+                  value={s.bankIfscCode}
+                  onChange={e => upd('bankIfscCode', e.target.value.toUpperCase())}
+                  className="w-full"
+                />
+
+                {/* QR Code Scanner / Photo */}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <QrCode className="w-4 h-4 text-gray-500" />
+                    <span className="text-[13px] font-semibold text-gray-700">Payment QR Code</span>
+                    <InfoTooltip text="Upload or scan your UPI/bank QR code for invoices" />
+                  </div>
+
+                  {s.bankQrCodeUrl ? (
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-24 h-24 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-1">
+                        <img src={s.bankQrCodeUrl} alt="QR Code" className="w-full h-full object-contain" />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <label className="flex items-center gap-2 px-3 py-1.5 text-[12px] text-blue-600 border border-blue-200 rounded-[6px] hover:bg-blue-50 cursor-pointer transition-colors">
+                          <Camera className="w-3.5 h-3.5" />
+                          Change Photo
+                          <input
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            className="hidden"
+                            onChange={e => {
+                              const f = e.target.files[0];
+                              if (!f) return;
+                              const reader = new FileReader();
+                              reader.onload = ev => upd('bankQrCodeUrl', ev.target.result);
+                              reader.readAsDataURL(f);
+                              e.target.value = '';
+                            }}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => upd('bankQrCodeUrl', '')}
+                          className="flex items-center gap-2 px-3 py-1.5 text-[12px] text-red-500 border border-red-200 rounded-[6px] hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-2 border-2 border-dashed border-gray-300 rounded-lg px-5 py-3 text-[12px] text-gray-500 hover:border-blue-400 hover:text-blue-600 cursor-pointer transition-colors">
+                        <Upload className="w-4 h-4" />
+                        Upload QR Image
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={e => {
+                            const f = e.target.files[0];
+                            if (!f) return;
+                            const reader = new FileReader();
+                            reader.onload = ev => upd('bankQrCodeUrl', ev.target.result);
+                            reader.readAsDataURL(f);
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
+                      <label className="flex items-center gap-2 border-2 border-dashed border-blue-300 rounded-lg px-5 py-3 text-[12px] text-blue-600 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-colors">
+                        <Camera className="w-4 h-4" />
+                        Scan with Camera
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          className="hidden"
+                          onChange={e => {
+                            const f = e.target.files[0];
+                            if (!f) return;
+                            const reader = new FileReader();
+                            reader.onload = ev => upd('bankQrCodeUrl', ev.target.result);
+                            reader.readAsDataURL(f);
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </SettingsSection>
+
           <div className="pb-10" />
         </div>
       )}
@@ -1531,6 +1653,765 @@ function PrintToolbar({ onSave, onReset, onExport, onImport, saved }) {
    Regular Printer — Live A4 Invoice Preview
 ───────────────────────────────────────────────────────────────────────────── */
 function RegularInvoicePreview({ s }) {
+  if (s.selectedLayout === 'Landscape Theme 1') {
+    const border = s.borderColor || '#334155';
+    return (
+      <div
+        className="bg-white shadow-xl mx-auto"
+        style={{
+          width: 680,
+          fontFamily: "'Segoe UI', Arial, sans-serif",
+          color: '#000000',
+          padding: '16px',
+          boxSizing: 'border-box',
+          fontSize: '9px',
+          lineHeight: '1.3',
+        }}
+      >
+        {/* Centered Title */}
+        <div className="text-center font-bold text-xs uppercase mb-2 border py-1 bg-slate-50 text-slate-800" style={{ borderColor: border }}>
+          Tax Invoice
+        </div>
+
+        {/* Outer container */}
+        <div className="border" style={{ borderColor: border }}>
+          {/* Header */}
+          <div className="flex border-b" style={{ borderColor: border }}>
+            {/* Left side: Logo next to Company Name & Phone */}
+            <div className="w-[60%] border-r p-2 flex items-center" style={{ borderColor: border }}>
+              <div className="w-12 h-12 bg-slate-200 border flex items-center justify-center text-[8px] text-slate-500 mr-3 flex-shrink-0" style={{ borderColor: border }}>
+                {s.printLogo && s.logoUrl ? (
+                  <img src={s.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                ) : (
+                  'Image'
+                )}
+              </div>
+              <div>
+                {s.printCompanyName && (
+                  <div className="font-extrabold text-sm text-slate-900 leading-tight">
+                    {s.companyName || 'My Company'}
+                  </div>
+                )}
+                {s.printPhone && (
+                  <div className="text-[9px] text-slate-700 mt-0.5 font-semibold">
+                    Phone: {s.phone || '9913039185'}
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* Right side: Invoice Details */}
+            <div className="w-[40%] p-2 space-y-0.5 bg-slate-50/50">
+              <div className="font-bold text-[8.5px] text-slate-900 mb-0.5">Invoice Details:</div>
+              <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
+                <div><span className="font-semibold text-slate-600">Invoice No.:</span> <span className="font-bold text-slate-800">Inv. 101</span></div>
+                <div><span className="font-semibold text-slate-600">Date:</span> 02-07-2019</div>
+                <div><span className="font-semibold text-slate-600">Time:</span> 12:30 PM</div>
+                <div><span className="font-semibold text-slate-600">Due Date:</span> 17-07-2019</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Billing and shipping section */}
+          <div className="flex border-b" style={{ borderColor: border }}>
+            {/* Left column: Bill To */}
+            <div className="w-1/2 border-r p-2" style={{ borderColor: border }}>
+              <div className="font-bold text-[9px] text-slate-900 mb-0.5">Bill To:</div>
+              <div className="font-bold text-slate-800">Classic enterprises</div>
+              <div className="text-slate-750">Plot No. 1, Shop No. 8, Koramangala, Banglore, 560034</div>
+              <div className="text-slate-600 mt-1"><span className="font-semibold">Contact No.:</span> 8888888888</div>
+            </div>
+            {/* Right column: Ship To */}
+            <div className="w-1/2 p-2">
+              <div className="font-bold text-[9px] text-slate-900 mb-0.5">Ship To:</div>
+              <div className="text-slate-850 font-medium">Mehta Textiles, Marathalli Road, Banglore, Karnataka, 560034</div>
+            </div>
+          </div>
+
+          {/* Item details table */}
+          <table className="w-full border-collapse text-left text-[9px]" style={{ borderCollapse: 'collapse' }}>
+            <thead>
+              <tr className="bg-slate-50 border-b text-slate-700 font-bold" style={{ borderColor: border }}>
+                <th className="border-r p-1 text-center w-6" style={{ borderColor: border }}>#</th>
+                <th className="border-r p-1" style={{ borderColor: border }}>Item name</th>
+                <th className="border-r p-1 text-center w-12" style={{ borderColor: border }}>HSC/SAC</th>
+                <th className="border-r p-1 text-center w-12" style={{ borderColor: border }}>Quantity</th>
+                <th className="border-r p-1 text-right w-14" style={{ borderColor: border }}>Price/unit</th>
+                <th className="border-r p-1 text-right w-16" style={{ borderColor: border }}>Discount</th>
+                <th className="border-r p-1 text-right w-16" style={{ borderColor: border }}>GST</th>
+                <th className="p-1 text-right w-14">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {/* Row 1 */}
+              <tr className="border-b border-slate-200">
+                <td className="border-r p-1 text-center" style={{ borderColor: border }}>1</td>
+                <td className="border-r p-1 font-semibold text-slate-850" style={{ borderColor: border }}>ITEM 1</td>
+                <td className="border-r p-1 text-center text-slate-600 font-mono" style={{ borderColor: border }}>1234</td>
+                <td className="border-r p-1 text-center text-slate-800" style={{ borderColor: border }}>1 + 1</td>
+                <td className="border-r p-1 text-right text-slate-700 font-mono" style={{ borderColor: border }}>10.00</td>
+                <td className="border-r p-1 text-right text-slate-600 font-mono" style={{ borderColor: border }}>0.10 (1%)</td>
+                <td className="border-r p-1 text-right text-slate-600 font-mono" style={{ borderColor: border }}>0.50 (5%)</td>
+                <td className="p-1 text-right font-bold text-slate-800 font-mono">10.40</td>
+              </tr>
+              {/* Row 2 */}
+              <tr className="border-b bg-slate-50/30" style={{ borderColor: border }}>
+                <td className="border-r p-1 text-center" style={{ borderColor: border }}>2</td>
+                <td className="border-r p-1 font-semibold text-slate-850" style={{ borderColor: border }}>ITEM 2</td>
+                <td className="border-r p-1 text-center text-slate-600 font-mono" style={{ borderColor: border }}>6325</td>
+                <td className="border-r p-1 text-center text-slate-800" style={{ borderColor: border }}>1</td>
+                <td className="border-r p-1 text-right text-slate-700 font-mono" style={{ borderColor: border }}>30.00</td>
+                <td className="border-r p-1 text-right text-slate-600 font-mono" style={{ borderColor: border }}>0.00 (0%)</td>
+                <td className="border-r p-1 text-right text-slate-600 font-mono" style={{ borderColor: border }}>5.40 (18%)</td>
+                <td className="p-1 text-right font-bold text-slate-800 font-mono">35.40</td>
+              </tr>
+              {/* Total Row */}
+              <tr className="bg-slate-50 font-bold border-b text-slate-800" style={{ borderColor: border }}>
+                <td className="border-r p-1" style={{ borderColor: border }}></td>
+                <td className="border-r p-1 text-left" style={{ borderColor: border }}>TOTAL</td>
+                <td className="border-r p-1" style={{ borderColor: border }}></td>
+                <td className="border-r p-1 text-center" style={{ borderColor: border }}>2 + 1</td>
+                <td className="border-r p-1" style={{ borderColor: border }}></td>
+                <td className="border-r p-1 text-right font-mono" style={{ borderColor: border }}>0.10</td>
+                <td className="border-r p-1 text-right font-mono" style={{ borderColor: border }}>5.90</td>
+                <td className="p-1 text-right font-mono">45.80</td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* Summary bar */}
+          <div className="border-b" style={{ borderColor: border }}>
+            {/* Row 1 */}
+            <div className="flex border-b bg-slate-50/50 text-[8.5px] font-bold text-slate-800" style={{ borderColor: border }}>
+              <div className="w-[15%] border-r p-1" style={{ borderColor: border }}>Sub Total: 45.80</div>
+              <div className="w-[20%] border-r p-1" style={{ borderColor: border }}>Discount (12%): 5.50</div>
+              <div className="w-[15%] border-r p-1" style={{ borderColor: border }}>Tax (5%): 2.02</div>
+              <div className="w-[15%] border-r p-1" style={{ borderColor: border }}>TCS (1%): 0.42</div>
+              <div className="w-[35%] p-1">Total: ₹ 42.32 (Forty Two Rupees and Thirty Two Paisa only)</div>
+            </div>
+            {/* Row 2 */}
+            <div className="flex bg-slate-50/20 text-[8.5px] font-bold text-slate-800">
+              <div className="w-[25%] border-r p-1" style={{ borderColor: border }}>Received: 12.00</div>
+              <div className="w-[25%] border-r p-1" style={{ borderColor: border }}>Balance: 30.32</div>
+              <div className="w-[25%] border-r p-1" style={{ borderColor: border }}>Current Balance: 1,24,097.11</div>
+              <div className="w-[25%] p-1 text-emerald-600">You Saved: 111.60</div>
+            </div>
+          </div>
+
+          {/* Tax summary & bank details section */}
+          <div className="flex border-b" style={{ borderColor: border }}>
+            {/* Left side: Tax Summary table */}
+            <div className="w-[65%] border-r p-1.5" style={{ borderColor: border }}>
+              <table className="w-full border-collapse text-[8px] text-center border" style={{ borderCollapse: 'collapse', borderColor: border }}>
+                <thead>
+                  <tr className="bg-slate-50 font-bold text-slate-700">
+                    <th className="border p-0.5" rowSpan="2" style={{ borderColor: border }}>HSN/ SAC</th>
+                    <th className="border p-0.5" rowSpan="2" style={{ borderColor: border }}>Taxable amount(₹)</th>
+                    <th className="border p-0.5" colSpan="2" style={{ borderColor: border }}>CGST</th>
+                    <th className="border p-0.5" colSpan="2" style={{ borderColor: border }}>SGST</th>
+                    <th className="border p-0.5" rowSpan="2" style={{ borderColor: border }}>Total Tax Amount(₹)</th>
+                  </tr>
+                  <tr className="bg-slate-50 font-bold text-slate-700">
+                    <th className="border p-0.5" style={{ borderColor: border }}>Rate(%)</th>
+                    <th className="border p-0.5" style={{ borderColor: border }}>Amount(₹)</th>
+                    <th className="border p-0.5" style={{ borderColor: border }}>Rate(%)</th>
+                    <th className="border p-0.5" style={{ borderColor: border }}>Amount(₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border" style={{ borderColor: border }}>
+                    <td className="border p-0.5 font-mono" style={{ borderColor: border }}>1234</td>
+                    <td className="border p-0.5 text-right font-mono" style={{ borderColor: border }}>50.20</td>
+                    <td className="border p-0.5">2.5%</td>
+                    <td className="border p-0.5 text-right font-mono" style={{ borderColor: border }}>1.26</td>
+                    <td className="border p-0.5">2.5%</td>
+                    <td className="border p-0.5 text-right font-mono" style={{ borderColor: border }}>1.26</td>
+                    <td className="border p-0.5 text-right font-mono font-bold" style={{ borderColor: border }}>2.52</td>
+                  </tr>
+                  <tr className="border" style={{ borderColor: border }}>
+                    <td className="border p-0.5 font-mono" style={{ borderColor: border }}>6325</td>
+                    <td className="border p-0.5 text-right font-mono" style={{ borderColor: border }}>30.00</td>
+                    <td className="border p-0.5">9.0%</td>
+                    <td className="border p-0.5 text-right font-mono" style={{ borderColor: border }}>2.70</td>
+                    <td className="border p-0.5">9.0%</td>
+                    <td className="border p-0.5 text-right font-mono" style={{ borderColor: border }}>2.70</td>
+                    <td className="border p-0.5 text-right font-mono font-bold" style={{ borderColor: border }}>5.40</td>
+                  </tr>
+                  <tr className="bg-slate-50 font-bold border" style={{ borderColor: border }}>
+                    <td className="border p-0.5" style={{ borderColor: border }}>Total</td>
+                    <td className="border p-0.5 text-right font-mono" style={{ borderColor: border }}>80.20</td>
+                    <td className="border p-0.5"></td>
+                    <td className="border p-0.5 text-right font-mono" style={{ borderColor: border }}>3.96</td>
+                    <td className="border p-0.5"></td>
+                    <td className="border p-0.5 text-right font-mono" style={{ borderColor: border }}>3.96</td>
+                    <td className="border p-0.5 text-right font-mono">9.92</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            {/* Right side: Bank Details box */}
+            <div className="w-[35%] p-1.5 space-y-1">
+              <div className="font-bold text-[8.5px] uppercase text-slate-500 mb-0.5">Bank Details:</div>
+              <div className="flex items-center gap-2">
+                {/* QR code */}
+                <div className="w-10 h-10 border border-slate-400 bg-white p-0.5 flex-shrink-0">
+                  <svg viewBox="0 0 100 100" className="w-full h-full text-slate-800">
+                    <rect x="0" y="0" width="25" height="25" fill="currentColor"/>
+                    <rect x="5" y="5" width="15" height="15" fill="white"/>
+                    <rect x="75" y="0" width="25" height="25" fill="currentColor"/>
+                    <rect x="75" y="5" width="15" height="15" fill="white"/>
+                    <rect x="0" y="75" width="25" height="25" fill="currentColor"/>
+                    <rect x="5" y="75" width="15" height="15" fill="white"/>
+                    <rect x="35" y="35" width="30" height="30" fill="currentColor"/>
+                    <rect x="45" y="45" width="10" height="10" fill="white"/>
+                    <rect x="10" y="35" width="15" height="10" fill="currentColor"/>
+                    <rect x="40" y="10" width="25" height="15" fill="currentColor"/>
+                    <rect x="75" y="40" width="15" height="25" fill="currentColor"/>
+                  </svg>
+                </div>
+                <div className="text-[7.5px] text-slate-700 font-medium leading-tight">
+                  <div>Bank: {s.bankName || '123123123123'}</div>
+                  <div className="truncate">A/C: {s.bankAccountNumber || '12312312312'}</div>
+                  <div>IFSC: {s.bankIfscCode || '123123123'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer Grid */}
+          <div className="flex text-[8.5px]">
+            {/* Left column: Description */}
+            <div className="w-[35%] border-r p-1.5" style={{ borderColor: border }}>
+              <div className="font-bold text-[8px] uppercase text-slate-500 mb-0.5">Description:</div>
+              <div className="text-slate-800 font-semibold">Sale Description</div>
+            </div>
+            {/* Center column: Terms */}
+            <div className="w-[35%] border-r p-1.5" style={{ borderColor: border }}>
+              <div className="font-bold text-[8px] uppercase text-slate-500 mb-0.5">Terms & Conditions:</div>
+              <div className="text-slate-650 leading-relaxed font-semibold">Thanks for doing business with us!</div>
+            </div>
+            {/* Right column: Signature */}
+            <div className="w-[30%] p-1.5 flex flex-col justify-between h-20 bg-slate-50/30">
+              <div className="font-bold text-[8px] text-right text-slate-700">For: {s.companyName || 'My Company'}</div>
+              <div className="flex justify-end pr-2">
+                <div className="w-14 h-5 border border-dashed border-slate-300 bg-white/70 flex items-center justify-center text-[7.5px] text-slate-400 italic">
+                  Image
+                </div>
+              </div>
+              <div className="text-right font-bold text-[8px] text-slate-700">Authorized Signatory</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  if (s.selectedLayout === 'Landscape Theme 2') {
+    const border = s.borderColor || '#334155';
+    return (
+      <div
+        className="bg-white shadow-xl mx-auto"
+        style={{
+          width: 680,
+          fontFamily: "'Segoe UI', Arial, sans-serif",
+          color: '#000000',
+          padding: '12px',
+          boxSizing: 'border-box',
+          fontSize: '9px',
+          lineHeight: '1.3',
+        }}
+      >
+        {/* Centered Title */}
+        <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', border: `1px solid ${border}`, padding: '3px', background: '#f8fafc', marginBottom: '5px', letterSpacing: '0.04em' }}>
+          Tax Invoice
+        </div>
+
+        {/* Outer container */}
+        <div style={{ border: `1px solid ${border}` }}>
+
+          {/* Header */}
+          <div style={{ display: 'flex', borderBottom: `1px solid ${border}` }}>
+            {/* Logo + Company */}
+            <div style={{ width: '60%', borderRight: `1px solid ${border}`, padding: '6px 8px', display: 'flex', alignItems: 'center' }}>
+              <div style={{ width: 44, height: 44, background: '#e2e8f0', border: `1px solid #94a3b8`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '7px', color: '#64748b', marginRight: 10, flexShrink: 0 }}>
+                {s.printLogo && s.logoUrl ? <img src={s.logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : 'Image'}
+              </div>
+              <div>
+                {s.printCompanyName && <div style={{ fontWeight: 900, fontSize: '13px', color: '#0f172a', lineHeight: '1.2', marginBottom: 2 }}>{s.companyName || 'My Company'}</div>}
+                {s.printPhone && <div style={{ fontWeight: 700, fontSize: '9px', color: '#334155' }}>Phone: {s.phone || '9913039185'}</div>}
+              </div>
+            </div>
+            {/* Invoice details */}
+            <div style={{ width: '40%', padding: '6px 8px', background: '#f8fafc' }}>
+              <div style={{ fontWeight: 'bold', fontSize: '8.5px', color: '#0f172a', marginBottom: 3 }}>Invoice Details:</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 6px', fontSize: '8px' }}>
+                <span style={{ color: '#475569', fontWeight: 600 }}>Invoice No.:</span><span style={{ fontWeight: 700, color: '#0f172a' }}>Inv. 101</span>
+                <span style={{ color: '#475569', fontWeight: 600 }}>Date:</span><span>02-07-2019</span>
+                <span style={{ color: '#475569', fontWeight: 600 }}>Time:</span><span>12:30 PM</span>
+                <span style={{ color: '#475569', fontWeight: 600 }}>Due Date:</span><span>17-07-2019</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Bill To / Ship To */}
+          <div style={{ display: 'flex', borderBottom: `1px solid ${border}` }}>
+            <div style={{ width: '50%', borderRight: `1px solid ${border}`, padding: '5px 8px' }}>
+              <div style={{ fontWeight: 'bold', fontSize: '8.5px', color: '#0f172a', marginBottom: 2 }}>Bill To:</div>
+              <div style={{ fontWeight: 'bold', color: '#334155' }}>Classic enterprises</div>
+              <div style={{ color: '#334155' }}>Plot No. 1, Shop No. 8, Koramangala, Banglore, 560034</div>
+              <div style={{ marginTop: 2 }}><span style={{ fontWeight: 600 }}>Contact No.:</span> 8888888888</div>
+            </div>
+            <div style={{ width: '50%', padding: '5px 8px' }}>
+              <div style={{ fontWeight: 'bold', fontSize: '8.5px', color: '#0f172a', marginBottom: 2 }}>Ship To:</div>
+              <div style={{ fontWeight: 500, color: '#0f172a' }}>Mehta Textiles, Marathalli Road, Banglore, Karnataka, 560034</div>
+            </div>
+          </div>
+
+          {/* Item table */}
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.5px' }}>
+            <thead>
+              <tr style={{ background: '#f1f5f9', borderBottom: `1px solid ${border}` }}>
+                <th style={{ textAlign: 'center', borderRight: `1px solid #94a3b8`, padding: '4px 5px', width: 20, fontWeight: 700, color: '#334155' }}>#</th>
+                <th style={{ textAlign: 'left', borderRight: `1px solid #94a3b8`, padding: '4px 5px', fontWeight: 700, color: '#334155' }}>Item name</th>
+                <th style={{ textAlign: 'center', borderRight: `1px solid #94a3b8`, padding: '4px 5px', width: 48, fontWeight: 700, color: '#334155' }}>HSC/SAC</th>
+                <th style={{ textAlign: 'center', borderRight: `1px solid #94a3b8`, padding: '4px 5px', width: 48, fontWeight: 700, color: '#334155' }}>Quantity</th>
+                <th style={{ textAlign: 'right', borderRight: `1px solid #94a3b8`, padding: '4px 5px', width: 58, fontWeight: 700, color: '#334155' }}>Price/unit</th>
+                <th style={{ textAlign: 'right', borderRight: `1px solid #94a3b8`, padding: '4px 5px', width: 64, fontWeight: 700, color: '#334155' }}>Discount</th>
+                <th style={{ textAlign: 'right', borderRight: `1px solid #94a3b8`, padding: '4px 5px', width: 64, fontWeight: 700, color: '#334155' }}>GST</th>
+                <th style={{ textAlign: 'right', padding: '4px 5px', width: 56, fontWeight: 700, color: '#334155' }}>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                <td style={{ textAlign: 'center', borderRight: `1px solid #cbd5e1`, padding: '3px 5px' }}>1</td>
+                <td style={{ borderRight: `1px solid #cbd5e1`, padding: '3px 5px', fontWeight: 600 }}>ITEM 1</td>
+                <td style={{ textAlign: 'center', borderRight: `1px solid #cbd5e1`, padding: '3px 5px', fontFamily: 'monospace' }}>1234</td>
+                <td style={{ textAlign: 'center', borderRight: `1px solid #cbd5e1`, padding: '3px 5px' }}>1+1</td>
+                <td style={{ textAlign: 'right', borderRight: `1px solid #cbd5e1`, padding: '3px 5px', fontFamily: 'monospace' }}>10.00</td>
+                <td style={{ textAlign: 'right', borderRight: `1px solid #cbd5e1`, padding: '3px 5px', fontFamily: 'monospace' }}>0.10 (1%)</td>
+                <td style={{ textAlign: 'right', borderRight: `1px solid #cbd5e1`, padding: '3px 5px', fontFamily: 'monospace' }}>0.50 (5%)</td>
+                <td style={{ textAlign: 'right', padding: '3px 5px', fontFamily: 'monospace', fontWeight: 700 }}>10.40</td>
+              </tr>
+              <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                <td style={{ textAlign: 'center', borderRight: `1px solid #cbd5e1`, padding: '3px 5px' }}>2</td>
+                <td style={{ borderRight: `1px solid #cbd5e1`, padding: '3px 5px', fontWeight: 600 }}>ITEM 2</td>
+                <td style={{ textAlign: 'center', borderRight: `1px solid #cbd5e1`, padding: '3px 5px', fontFamily: 'monospace' }}>6325</td>
+                <td style={{ textAlign: 'center', borderRight: `1px solid #cbd5e1`, padding: '3px 5px' }}>1</td>
+                <td style={{ textAlign: 'right', borderRight: `1px solid #cbd5e1`, padding: '3px 5px', fontFamily: 'monospace' }}>30.00</td>
+                <td style={{ textAlign: 'right', borderRight: `1px solid #cbd5e1`, padding: '3px 5px', fontFamily: 'monospace' }}>0.00 (0%)</td>
+                <td style={{ textAlign: 'right', borderRight: `1px solid #cbd5e1`, padding: '3px 5px', fontFamily: 'monospace' }}>5.40 (18%)</td>
+                <td style={{ textAlign: 'right', padding: '3px 5px', fontFamily: 'monospace', fontWeight: 700 }}>35.40</td>
+              </tr>
+              <tr style={{ background: '#f1f5f9', fontWeight: 700, borderTop: `1px solid ${border}` }}>
+                <td style={{ borderRight: `1px solid #94a3b8`, padding: '3px 5px' }}></td>
+                <td style={{ borderRight: `1px solid #94a3b8`, padding: '3px 5px' }}>TOTAL</td>
+                <td style={{ borderRight: `1px solid #94a3b8`, padding: '3px 5px' }}></td>
+                <td style={{ textAlign: 'center', borderRight: `1px solid #94a3b8`, padding: '3px 5px' }}>2+1</td>
+                <td style={{ borderRight: `1px solid #94a3b8`, padding: '3px 5px' }}></td>
+                <td style={{ textAlign: 'right', borderRight: `1px solid #94a3b8`, padding: '3px 5px', fontFamily: 'monospace' }}>0.10</td>
+                <td style={{ textAlign: 'right', borderRight: `1px solid #94a3b8`, padding: '3px 5px', fontFamily: 'monospace' }}>5.90</td>
+                <td style={{ textAlign: 'right', padding: '3px 5px', fontFamily: 'monospace' }}>45.80</td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* Tax summary + Totals panel */}
+          <div style={{ display: 'flex', borderTop: `1px solid ${border}`, borderBottom: `1px solid ${border}` }}>
+            {/* Left: Tax Summary */}
+            <div style={{ width: '58%', borderRight: `1px solid ${border}`, padding: '5px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '7.5px', border: `1px solid #94a3b8` }}>
+                <thead>
+                  <tr style={{ background: '#f1f5f9', fontWeight: 700, color: '#334155' }}>
+                    <th style={{ border: `1px solid #94a3b8`, padding: '2px 3px' }} rowSpan="2">HSN/ SAC</th>
+                    <th style={{ border: `1px solid #94a3b8`, padding: '2px 3px' }} rowSpan="2">Taxable amount(₹)</th>
+                    <th style={{ border: `1px solid #94a3b8`, padding: '2px 3px' }} colSpan="2">CGST</th>
+                    <th style={{ border: `1px solid #94a3b8`, padding: '2px 3px' }} colSpan="2">SGST</th>
+                    <th style={{ border: `1px solid #94a3b8`, padding: '2px 3px' }} rowSpan="2">Total Tax Amount(₹)</th>
+                  </tr>
+                  <tr style={{ background: '#f1f5f9', fontWeight: 700, color: '#334155' }}>
+                    <th style={{ border: `1px solid #94a3b8`, padding: '2px 3px' }}>Rate(%)</th>
+                    <th style={{ border: `1px solid #94a3b8`, padding: '2px 3px' }}>Amount(₹)</th>
+                    <th style={{ border: `1px solid #94a3b8`, padding: '2px 3px' }}>Rate(%)</th>
+                    <th style={{ border: `1px solid #94a3b8`, padding: '2px 3px' }}>Amount(₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px', fontFamily: 'monospace', textAlign: 'center' }}>1234</td>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px', fontFamily: 'monospace', textAlign: 'right' }}>50.20</td>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px', textAlign: 'center' }}>2.5%</td>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px', fontFamily: 'monospace', textAlign: 'right' }}>1.26</td>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px', textAlign: 'center' }}>2.5%</td>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px', fontFamily: 'monospace', textAlign: 'right' }}>1.26</td>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px', fontFamily: 'monospace', textAlign: 'right', fontWeight: 700 }}>2.52</td>
+                  </tr>
+                  <tr>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px', fontFamily: 'monospace', textAlign: 'center' }}>6325</td>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px', fontFamily: 'monospace', textAlign: 'right' }}>30.00</td>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px', textAlign: 'center' }}>9.0%</td>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px', fontFamily: 'monospace', textAlign: 'right' }}>2.70</td>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px', textAlign: 'center' }}>9.0%</td>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px', fontFamily: 'monospace', textAlign: 'right' }}>2.70</td>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px', fontFamily: 'monospace', textAlign: 'right', fontWeight: 700 }}>5.40</td>
+                  </tr>
+                  <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px', textAlign: 'right' }}>TOTAL</td>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px', fontFamily: 'monospace', textAlign: 'right' }}>80.20</td>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px' }}></td>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px', fontFamily: 'monospace', textAlign: 'right' }}>3.96</td>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px' }}></td>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px', fontFamily: 'monospace', textAlign: 'right' }}>3.96</td>
+                    <td style={{ border: `1px solid #94a3b8`, padding: '2px 3px', fontFamily: 'monospace', textAlign: 'right' }}>9.92</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Right: Totals panel */}
+            <div style={{ width: '42%', padding: '5px 8px', fontSize: '8px' }}>
+              {[
+                ['Sub Total', ':', '45.80'],
+                ['Discount (12%)', ':', '5.50'],
+                ['Tax (5%)', ':', '2.02'],
+                ['TCS (1%)', ':', '0.42'],
+                ['Total', ':', '₹ 42.32', true],
+              ].map(([label, colon, value, bold], i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0', borderBottom: '1px solid #e2e8f0', fontWeight: bold ? 800 : 600 }}>
+                  <span style={{ color: '#334155' }}>{label}</span>
+                  <span style={{ display: 'flex', gap: 8 }}>
+                    <span style={{ color: '#94a3b8' }}>{colon}</span>
+                    <span style={{ fontFamily: 'monospace', color: '#0f172a' }}>{value}</span>
+                  </span>
+                </div>
+              ))}
+              <div style={{ padding: '3px 0', borderBottom: '1px solid #e2e8f0' }}>
+                <div style={{ fontWeight: 600, color: '#334155', marginBottom: 1 }}>Invoice Amount In Words :</div>
+                <div style={{ color: '#1d4ed8', fontStyle: 'italic', fontWeight: 600, fontSize: '7.5px', lineHeight: '1.3' }}>Forty Two Rupees and Thirty Two Paisa only</div>
+              </div>
+              {[
+                ['Received', ':', '12.00'],
+                ['Balance', ':', '30.32'],
+                ['You Saved', ':', '₹ 111.60', true, '#059669'],
+              ].map(([label, colon, value, bold, color], i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0', borderBottom: '1px solid #e2e8f0', fontWeight: bold ? 800 : 600 }}>
+                  <span style={{ color: '#334155' }}>{label}</span>
+                  <span style={{ display: 'flex', gap: 8 }}>
+                    <span style={{ color: '#94a3b8' }}>{colon}</span>
+                    <span style={{ fontFamily: 'monospace', color: color || '#0f172a' }}>{value}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer — first row: Description | Terms */}
+          <div style={{ display: 'flex', borderBottom: `1px solid ${border}` }}>
+            <div style={{ width: '50%', borderRight: `1px solid ${border}`, padding: '5px 8px' }}>
+              <div style={{ fontWeight: 700, fontSize: '8px', color: '#475569', textTransform: 'uppercase', marginBottom: 2 }}>Description:</div>
+              <div style={{ fontWeight: 600, color: '#1d4ed8' }}>Sale Description</div>
+            </div>
+            <div style={{ width: '50%', padding: '5px 8px' }}>
+              <div style={{ fontWeight: 700, fontSize: '8px', color: '#475569', textTransform: 'uppercase', marginBottom: 2 }}>Terms &amp; Conditions:</div>
+              <div style={{ fontWeight: 600, color: '#1d4ed8' }}>Thanks for doing business with us!</div>
+            </div>
+          </div>
+
+          {/* Footer — second row: Bank Details | For/Signature */}
+          <div style={{ display: 'flex' }}>
+            <div style={{ width: '50%', borderRight: `1px solid ${border}`, padding: '5px 8px' }}>
+              <div style={{ fontWeight: 700, fontSize: '8px', color: '#475569', textTransform: 'uppercase', marginBottom: 3 }}>Bank Details:</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 36, height: 36, border: '1px solid #94a3b8', flexShrink: 0, padding: 1 }}>
+                  <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }}>
+                    <rect x="0" y="0" width="25" height="25" fill="#000"/><rect x="5" y="5" width="15" height="15" fill="white"/>
+                    <rect x="75" y="0" width="25" height="25" fill="#000"/><rect x="75" y="5" width="15" height="15" fill="white"/>
+                    <rect x="0" y="75" width="25" height="25" fill="#000"/><rect x="5" y="75" width="15" height="15" fill="white"/>
+                    <rect x="35" y="35" width="30" height="30" fill="#000"/><rect x="45" y="45" width="10" height="10" fill="white"/>
+                    <rect x="10" y="35" width="15" height="10" fill="#000"/>
+                    <rect x="40" y="10" width="25" height="15" fill="#000"/>
+                    <rect x="75" y="40" width="15" height="25" fill="#000"/>
+                  </svg>
+                </div>
+                <div style={{ fontSize: '7.5px', lineHeight: 1.5, color: '#1d4ed8', fontWeight: 600 }}>
+                  <div>Bank Name: {s.bankName || '123123123123'}</div>
+                  <div>Bank Account No.: {s.bankAccountNumber || '12312312312'}</div>
+                  <div>Bank IFSC code: {s.bankIfscCode || '123123123'}</div>
+                </div>
+              </div>
+            </div>
+            <div style={{ width: '50%', padding: '5px 8px', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ fontWeight: 700, fontSize: '8px', color: '#475569', textTransform: 'uppercase', marginBottom: 2 }}>For: {s.companyName || 'My Company'}:</div>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 60, height: 22, border: '1px dashed #94a3b8', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '7px', color: '#94a3b8', fontStyle: 'italic' }}>
+                  Image
+                </div>
+              </div>
+              <div style={{ textAlign: 'center', fontWeight: 700, fontSize: '8px', color: '#334155' }}>Authorized Signatory</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  if (s.selectedLayout === 'Tally Theme' || !s.selectedLayout) {
+
+    const pc = s.primaryColor || '#2563EB';
+    const border = s.borderColor || '#334155';
+    return (
+      <div
+        className="bg-white shadow-xl mx-auto"
+        style={{
+          width: 480,
+          fontFamily: "'Segoe UI', Arial, sans-serif",
+          color: '#000000',
+          padding: '16px',
+          boxSizing: 'border-box',
+          fontSize: '9px',
+          lineHeight: '1.3',
+        }}
+      >
+        {/* Centered Title */}
+        <div className="text-center font-bold text-xs uppercase mb-2 border py-1 bg-slate-50 text-slate-800" style={{ borderColor: border }}>
+          Tax Invoice
+        </div>
+
+        {/* Outer border container */}
+        <div className="border" style={{ borderColor: border }}>
+          {/* Header */}
+          <div className="flex border-b p-2 items-center" style={{ borderColor: border }}>
+            {/* Logo */}
+            <div className="w-12 h-12 bg-slate-200 border flex items-center justify-center text-[8px] text-slate-500 mr-3 flex-shrink-0" style={{ borderColor: border }}>
+              {s.printLogo && s.logoUrl ? (
+                <img src={s.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+              ) : (
+                'Image'
+              )}
+            </div>
+            {/* Company Info */}
+            <div>
+              {s.printCompanyName && (
+                <div className="font-extrabold text-sm text-slate-900 leading-tight">
+                  {s.companyName || 'My Company'}
+                </div>
+              )}
+              {s.printPhone && (
+                <div className="text-[9px] text-slate-700 mt-0.5 font-semibold">
+                  Phone: {s.phone || '9913039185'}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Bill To & Invoice Details columns */}
+          <div className="flex border-b" style={{ borderColor: border }}>
+            {/* Bill To */}
+            <div className="w-1/2 border-r p-2" style={{ borderColor: border }}>
+              <div className="font-bold text-[9px] text-slate-900 mb-0.5">Bill To:</div>
+              <div className="font-bold text-slate-800">Classic enterprises</div>
+              <div className="text-slate-750">Plot No. 1, Shop No. 8, Koramangala, Banglore, 560034</div>
+              <div className="text-slate-600 mt-1"><span className="font-semibold">Contact No.:</span> 8888888888</div>
+            </div>
+            {/* Invoice Details */}
+            <div className="w-1/2 p-2 space-y-0.5 bg-slate-50/50">
+              <div className="font-bold text-[9px] text-slate-900 mb-0.5">Invoice Details:</div>
+              <div><span className="font-semibold text-slate-600">Invoice No.:</span> <span className="font-bold text-slate-800">Inv. 101</span></div>
+              <div><span className="font-semibold text-slate-600">Date:</span> 02-07-2019</div>
+              <div><span className="font-semibold text-slate-600">Time:</span> 12:30 PM</div>
+              <div><span className="font-semibold text-slate-600">Due Date:</span> 17-07-2019</div>
+            </div>
+          </div>
+
+          {/* Ship To Row */}
+          <div className="border-b p-2" style={{ borderColor: border }}>
+            <div className="font-bold text-[9px] text-slate-900 mb-0.5">Ship To:</div>
+            <div className="text-slate-800 font-medium">Mehta Textiles, Marathalli Road, Banglore, Karnataka, 560034</div>
+          </div>
+
+          {/* Item Table */}
+          <table className="w-full border-collapse text-left text-[9px]" style={{ borderCollapse: 'collapse' }}>
+            <thead>
+              <tr className="bg-slate-50 border-b text-slate-700 font-bold" style={{ borderColor: border }}>
+                <th className="border-r p-1 text-center w-6" style={{ borderColor: border }}>#</th>
+                <th className="border-r p-1" style={{ borderColor: border }}>Item name</th>
+                <th className="border-r p-1 text-center w-12" style={{ borderColor: border }}>HSC/SAC</th>
+                <th className="border-r p-1 text-center w-12" style={{ borderColor: border }}>Quantity</th>
+                <th className="border-r p-1 text-right w-14" style={{ borderColor: border }}>Price/unit</th>
+                <th className="border-r p-1 text-right w-16" style={{ borderColor: border }}>Discount</th>
+                <th className="border-r p-1 text-right w-16" style={{ borderColor: border }}>GST</th>
+                <th className="p-1 text-right w-14">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {/* Row 1 */}
+              <tr className="border-b border-slate-200">
+                <td className="border-r p-1 text-center" style={{ borderColor: border }}>1</td>
+                <td className="border-r p-1 font-semibold text-slate-850" style={{ borderColor: border }}>ITEM 1</td>
+                <td className="border-r p-1 text-center text-slate-600 font-mono" style={{ borderColor: border }}>1234</td>
+                <td className="border-r p-1 text-center text-slate-800" style={{ borderColor: border }}>1 + 1</td>
+                <td className="border-r p-1 text-right text-slate-700 font-mono" style={{ borderColor: border }}>₹ 10.00</td>
+                <td className="border-r p-1 text-right text-slate-600 font-mono" style={{ borderColor: border }}>₹ 0.10 (1%)</td>
+                <td className="border-r p-1 text-right text-slate-600 font-mono" style={{ borderColor: border }}>₹ 0.50 (5%)</td>
+                <td className="p-1 text-right font-bold text-slate-800 font-mono">₹ 10.40</td>
+              </tr>
+              {/* Row 2 */}
+              <tr className="border-b bg-slate-50/30" style={{ borderColor: border }}>
+                <td className="border-r p-1 text-center" style={{ borderColor: border }}>2</td>
+                <td className="border-r p-1 font-semibold text-slate-850" style={{ borderColor: border }}>ITEM 2</td>
+                <td className="border-r p-1 text-center text-slate-600 font-mono" style={{ borderColor: border }}>6325</td>
+                <td className="border-r p-1 text-center text-slate-800" style={{ borderColor: border }}>1</td>
+                <td className="border-r p-1 text-right text-slate-700 font-mono" style={{ borderColor: border }}>₹ 30.00</td>
+                <td className="border-r p-1 text-right text-slate-600 font-mono" style={{ borderColor: border }}>₹ 0.00 (0%)</td>
+                <td className="border-r p-1 text-right text-slate-600 font-mono" style={{ borderColor: border }}>₹ 5.40 (18%)</td>
+                <td className="p-1 text-right font-bold text-slate-800 font-mono">₹ 35.40</td>
+              </tr>
+              {/* Total Row */}
+              <tr className="bg-slate-50 font-bold border-b text-slate-800" style={{ borderColor: border }}>
+                <td className="border-r p-1" style={{ borderColor: border }}></td>
+                <td className="border-r p-1 text-left" style={{ borderColor: border }}>TOTAL</td>
+                <td className="border-r p-1" style={{ borderColor: border }}></td>
+                <td className="border-r p-1 text-center" style={{ borderColor: border }}>2 + 1</td>
+                <td className="border-r p-1" style={{ borderColor: border }}></td>
+                <td className="border-r p-1 text-right font-mono" style={{ borderColor: border }}>₹ 0.10</td>
+                <td className="border-r p-1 text-right font-mono" style={{ borderColor: border }}>₹ 5.90</td>
+                <td className="p-1 text-right font-mono">₹ 45.80</td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* Tax Summary & Totals Panel columns */}
+          <div className="flex border-b" style={{ borderColor: border }}>
+            {/* Left Column: Tax Summary */}
+            <div className="w-[60%] border-r p-1.5" style={{ borderColor: border }}>
+              <div className="font-bold text-[8px] uppercase text-slate-500 mb-1">Tax Summary:</div>
+              <table className="w-full border-collapse text-[8px] text-center border" style={{ borderCollapse: 'collapse', borderColor: border }}>
+                <thead>
+                  <tr className="bg-slate-100 font-bold text-slate-700">
+                    <th className="border p-0.5" rowSpan="2" style={{ borderColor: border }}>HSN/ SAC</th>
+                    <th className="border p-0.5" rowSpan="2" style={{ borderColor: border }}>Taxable amount(₹)</th>
+                    <th className="border p-0.5" colSpan="2" style={{ borderColor: border }}>CGST</th>
+                    <th className="border p-0.5" colSpan="2" style={{ borderColor: border }}>SGST</th>
+                    <th className="border p-0.5" rowSpan="2" style={{ borderColor: border }}>Total Tax Amount(₹)</th>
+                  </tr>
+                  <tr className="bg-slate-100 font-bold text-slate-700">
+                    <th className="border p-0.5" style={{ borderColor: border }}>Rate(%)</th>
+                    <th className="border p-0.5" style={{ borderColor: border }}>Amount(₹)</th>
+                    <th className="border p-0.5" style={{ borderColor: border }}>Rate(%)</th>
+                    <th className="border p-0.5" style={{ borderColor: border }}>Amount(₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border" style={{ borderColor: border }}>
+                    <td className="border p-0.5 font-mono" style={{ borderColor: border }}>1234</td>
+                    <td className="border p-0.5 text-right font-mono" style={{ borderColor: border }}>₹ 50.20</td>
+                    <td className="border p-0.5" style={{ borderColor: border }}>2.5%</td>
+                    <td className="border p-0.5 text-right font-mono" style={{ borderColor: border }}>₹ 1.26</td>
+                    <td className="border p-0.5" style={{ borderColor: border }}>2.5%</td>
+                    <td className="border p-0.5 text-right font-mono" style={{ borderColor: border }}>₹ 1.26</td>
+                    <td className="border p-0.5 text-right font-mono font-bold" style={{ borderColor: border }}>₹ 2.52</td>
+                  </tr>
+                  <tr className="border" style={{ borderColor: border }}>
+                    <td className="border p-0.5 font-mono" style={{ borderColor: border }}>6325</td>
+                    <td className="border p-0.5 text-right font-mono" style={{ borderColor: border }}>₹ 30.00</td>
+                    <td className="border p-0.5" style={{ borderColor: border }}>9.0%</td>
+                    <td className="border p-0.5 text-right font-mono" style={{ borderColor: border }}>₹ 2.70</td>
+                    <td className="border p-0.5" style={{ borderColor: border }}>9.0%</td>
+                    <td className="border p-0.5 text-right font-mono" style={{ borderColor: border }}>₹ 2.70</td>
+                    <td className="border p-0.5 text-right font-mono font-bold" style={{ borderColor: border }}>₹ 5.40</td>
+                  </tr>
+                  <tr className="bg-slate-50 font-bold border" style={{ borderColor: border }}>
+                    <td className="border p-0.5" style={{ borderColor: border }}>Total</td>
+                    <td className="border p-0.5 text-right font-mono" style={{ borderColor: border }}>₹ 80.20</td>
+                    <td className="border p-0.5" style={{ borderColor: border }}></td>
+                    <td className="border p-0.5 text-right font-mono" style={{ borderColor: border }}>₹ 3.96</td>
+                    <td className="border p-0.5" style={{ borderColor: border }}></td>
+                    <td className="border p-0.5 text-right font-mono" style={{ borderColor: border }}>₹ 3.96</td>
+                    <td className="border p-0.5 text-right font-mono" style={{ borderColor: border }}>₹ 7.92</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Right Column: Invoice Totals */}
+            <div className="w-[40%] p-1.5 text-[8.5px] space-y-0.5">
+              <div className="flex justify-between border-b border-slate-205 pb-0.5"><span className="text-slate-600 font-semibold">Sub Total:</span><span className="font-bold font-mono">₹ 45.80</span></div>
+              <div className="flex justify-between border-b border-slate-205 pb-0.5"><span className="text-slate-600">Discount (12%):</span><span className="font-mono">₹ 5.50</span></div>
+              <div className="flex justify-between border-b border-slate-205 pb-0.5"><span className="text-slate-600">Tax (5%):</span><span className="font-mono">₹ 2.02</span></div>
+              <div className="flex justify-between border-b border-slate-205 pb-0.5"><span className="text-slate-600">TCS (1%):</span><span className="font-mono">₹ 0.42</span></div>
+              <div className="flex justify-between font-bold border-b pb-1 text-slate-900" style={{ borderColor: border }}><span className="text-[9px]">Total:</span><span className="text-[9px] font-mono">₹ 42.32</span></div>
+              <div className="pt-0.5"><span className="text-slate-600 font-semibold block">Invoice Amount In Words:</span><span className="italic font-medium text-slate-800">Forty Two Rupees and Thirty Two Paisa only</span></div>
+              <div className="flex justify-between border-t border-slate-200 pt-1"><span className="text-slate-600">Received:</span><span className="font-mono">₹ 12.00</span></div>
+              <div className="flex justify-between text-red-600 font-bold"><span className="">Balance:</span><span className="font-mono">₹ 30.32</span></div>
+              <div className="flex justify-between text-emerald-600 font-bold border-t border-slate-200 pt-1"><span className="">You Saved:</span><span className="font-mono">₹ 111.60</span></div>
+            </div>
+          </div>
+
+          {/* Footer Grid */}
+          <div className="flex">
+            {/* Left side: Description & Bank details */}
+            <div className="w-1/2 border-r flex flex-col justify-between" style={{ borderColor: border }}>
+              {/* Description */}
+              <div className="border-b p-2" style={{ borderColor: border }}>
+                <div className="font-bold text-[8.5px] uppercase text-slate-500 mb-0.5">Description:</div>
+                <div className="text-slate-800 font-semibold">Sale Description</div>
+              </div>
+              {/* Bank Details */}
+              <div className="p-2">
+                <div className="font-bold text-[8.5px] uppercase text-slate-500 mb-1">Bank Details:</div>
+                <div className="flex items-center gap-2.5">
+                  {/* QR placeholder */}
+                  <div className="w-10 h-10 border border-slate-400 bg-white p-0.5 flex-shrink-0">
+                    <svg viewBox="0 0 100 100" className="w-full h-full text-slate-800">
+                      <rect x="0" y="0" width="25" height="25" fill="currentColor"/>
+                      <rect x="5" y="5" width="15" height="15" fill="white"/>
+                      <rect x="75" y="0" width="25" height="25" fill="currentColor"/>
+                      <rect x="75" y="5" width="15" height="15" fill="white"/>
+                      <rect x="0" y="75" width="25" height="25" fill="currentColor"/>
+                      <rect x="5" y="75" width="15" height="15" fill="white"/>
+                      <rect x="35" y="35" width="30" height="30" fill="currentColor"/>
+                      <rect x="45" y="45" width="10" height="10" fill="white"/>
+                      <rect x="10" y="35" width="15" height="10" fill="currentColor"/>
+                      <rect x="40" y="10" width="25" height="15" fill="currentColor"/>
+                      <rect x="75" y="40" width="15" height="25" fill="currentColor"/>
+                    </svg>
+                  </div>
+                  {/* Info */}
+                  <div className="text-[8px] text-slate-700 font-medium leading-normal">
+                    <div>Bank Name: {s.bankName || '123123123123'}</div>
+                    <div>Bank Account No.: {s.bankAccountNumber || '12312312312'}</div>
+                    <div>Bank IFSC code: {s.bankIfscCode || '123123123'}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right side: Terms & Conditions & For Signature */}
+            <div className="w-1/2 flex flex-col justify-between">
+              {/* Terms */}
+              <div className="border-b p-2" style={{ borderColor: border }}>
+                <div className="font-bold text-[8.5px] uppercase text-slate-500 mb-0.5">Terms & Conditions:</div>
+                <div className="text-slate-650 leading-relaxed font-semibold">Thanks for doing business with us!</div>
+              </div>
+              {/* For signature */}
+              <div className="p-2 flex flex-col justify-between h-20 bg-slate-50/30">
+                <div className="font-bold text-[8px] text-right text-slate-700">For: {s.companyName || 'My Company'}</div>
+                <div className="flex justify-end pr-3">
+                  {/* Signature mockup image */}
+                  <div className="w-16 h-6 border border-dashed border-slate-300 bg-white/70 flex items-center justify-center text-[8px] text-slate-400 italic">
+                    Image
+                  </div>
+                </div>
+                <div className="text-right font-bold text-[8px] text-slate-700">Authorized Signatory</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
   const pc = s.primaryColor || '#2563EB';
   const border = s.borderColor || '#D1D5DB';
   const headerBg = s.headerBg || '#FFFFFF';
@@ -1913,7 +2794,6 @@ export default function PrintSettings() {
   const [activeTab, setActiveTab] = useState('regular');
   const [regular, setRegular] = useState(() => loadLS(LS_KEY_REGULAR, DEFAULT_REGULAR));
   const [thermal, setThermal] = useState(() => loadLS(LS_KEY_THERMAL, DEFAULT_THERMAL));
-  const [saved, setSaved] = useState(false);
   const debounceRef = useRef(null);
 
   // Auto-save with debounce
@@ -1925,42 +2805,6 @@ export default function PrintSettings() {
     }, 800);
     return () => clearTimeout(debounceRef.current);
   }, [regular, thermal]);
-
-  const handleSave = () => {
-    localStorage.setItem(LS_KEY_REGULAR, JSON.stringify(regular));
-    localStorage.setItem(LS_KEY_THERMAL, JSON.stringify(thermal));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
-
-  const handleReset = () => {
-    if (activeTab === 'regular') setRegular(DEFAULT_REGULAR);
-    else setThermal(DEFAULT_THERMAL);
-  };
-
-  const handleExport = () => {
-    const data = { regular, thermal };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'print-settings.json';
-    a.click();
-  };
-
-  const handleImport = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      try {
-        const data = JSON.parse(ev.target.result);
-        if (data.regular) setRegular(p => ({ ...p, ...data.regular }));
-        if (data.thermal) setThermal(p => ({ ...p, ...data.thermal }));
-      } catch { alert('Invalid settings file'); }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  };
 
   return (
     <div className="bg-white" style={{ fontFamily: "'Inter', sans-serif", maxWidth: 1400 }}>
@@ -1986,8 +2830,6 @@ export default function PrintSettings() {
         ))}
       </div>
 
-      {/* Toolbar */}
-      <PrintToolbar onSave={handleSave} onReset={handleReset} onExport={handleExport} onImport={handleImport} saved={saved} />
 
       {/* Split layout: settings left | preview right */}
       <div className="flex" style={{ height: 'calc(100vh - 118px)' }}>
