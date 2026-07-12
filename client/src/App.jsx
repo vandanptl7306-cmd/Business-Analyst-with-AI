@@ -23,6 +23,7 @@ import DemandForecast from './pages/DemandForecast';
 import StockManagement from './pages/StockManagement';
 import Profile from './pages/Profile';
 import AddSale from './pages/AddSale';
+import AddPurchase from './pages/AddPurchase';
 
 function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();
@@ -80,6 +81,7 @@ function AppRoutes() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/invoices/create" element={<CreateInvoice />} />
           <Route path="/sales/create" element={<AddSale />} />
+          <Route path="/purchases/create" element={<AddPurchase />} />
           <Route path="/invoices/:id" element={<InvoiceDetail />} />
           <Route path="/customers" element={<CustomerLedger />} />
           <Route path="/stock" element={<StockManagement />} />
