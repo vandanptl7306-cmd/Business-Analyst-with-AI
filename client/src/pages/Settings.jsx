@@ -516,6 +516,7 @@ export default function SettingsPage() {
                     </div>
                   )}
                 </div>
+              </div>
 
               {/* ── Column 3: Customize View ── */}
               <div>
