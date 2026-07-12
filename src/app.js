@@ -62,6 +62,9 @@ app.use('/api/ml', require('./routes/ml'));
 // Mount ai routes (Compliance Audit Bot)
 app.use('/api/ai', require('./routes/ai'));
 
+// Mount purchases routes
+app.use('/api/purchases', require('./routes/purchase'));
+
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {

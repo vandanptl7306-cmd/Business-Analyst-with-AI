@@ -5,12 +5,14 @@ import {
   Plus, X, ChevronDown, Trash2, Phone, Printer, Download, MessageSquare
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { createInvoice } from '../services/invoice';
 
 const UNIT_OPTIONS = ['NONE', 'Bag', 'Box', 'Btl', 'Can', 'Ctn', 'Doz', 'Gm', 'Kg', 'Ltr', 'Meter', 'Nos', 'Pcs', 'Pkt', 'Roll', 'Ton'];
 const TAX_OPTIONS = ['NONE', 'IGST@0%', 'GST@0%', 'GST@0.25%', 'IGST@3%', 'GST@3%', 'IGST@5%', 'GST@5%', 'IGST@12%', 'GST@12%', 'IGST@18%', 'GST@18%', 'IGST@28%', 'GST@28%'];
 
 export default function AddSale() {
   const navigate = useNavigate();
+  const [submitting, setSubmitting] = useState(false);
 
   // Header State
   const [isFullMode, setIsFullMode] = useState(false);
@@ -80,6 +82,51 @@ export default function AddSale() {
 
   const receivedAmt = parseFloat(received) || 0;
   const balance = totalAmount - receivedAmt;
+
+  const handleSave = async () => {
+    try {
+      setSubmitting(true);
+      
+      const payload = {
+        sellerName: 'My Company', // Can be fetched from settings if needed
+        buyerName: customerName,
+        buyerBillingAddress: 'Idgar', // Default from UI mock
+        items: items.filter(it => it.name).map(it => {
+          let rate = 0;
+          if (it.tax && it.tax !== 'NONE') {
+            const match = it.tax.match(/@([\d.]+)%/);
+            if (match) rate = parseFloat(match[1]);
+          }
+          return {
+            description: it.name,
+            hsnCode: '0000', // Default
+            quantity: parseFloat(it.qty) || 1,
+            price: parseFloat(it.price) || 0,
+            gstRate: rate,
+            isTaxInclusive: false,
+            mrp: 0
+          };
+        })
+      };
+
+      if (payload.items.length === 0) {
+        alert("Please add at least one valid item.");
+        setSubmitting(false);
+        return;
+      }
+
+      const res = await createInvoice(payload);
+      if (res.success) {
+        alert('Sale saved successfully!');
+        navigate(`/invoices/${res.invoice._id}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save sale: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-screen bg-[#F4F6F8]" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -318,8 +365,12 @@ export default function AddSale() {
 
       {/* ── BOTTOM ACTION BAR ── */}
       <div className="fixed bottom-0 left-[56px] right-0 h-[60px] bg-white border-t border-gray-200 flex items-center justify-center gap-4 z-20 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
-        <button className="bg-[#E91E63] text-white px-10 py-2 rounded-full text-[13px] font-bold hover:bg-[#D81B60] transition-colors shadow-sm cursor-pointer">
-          Save & New
+        <button 
+          onClick={handleSave}
+          disabled={submitting}
+          className="bg-[#E91E63] text-white px-10 py-2 rounded-full text-[13px] font-bold hover:bg-[#D81B60] transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+        >
+          {submitting ? 'Saving...' : 'Save & New'}
         </button>
         
         <div className="flex items-center gap-3 absolute right-6">

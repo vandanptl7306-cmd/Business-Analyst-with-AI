@@ -6,6 +6,7 @@ import {
   Trash2, GripVertical, PlusCircle, MinusCircle, Check
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { createPurchase } from '../services/purchase';
 
 const STATE_OPTIONS = [
   'None',
@@ -109,6 +110,7 @@ function FloatingDropdown({ value, options, onChange, placeholder, width = 'w-fu
 
 export default function AddPurchase() {
   const navigate = useNavigate();
+  const [submitting, setSubmitting] = useState(false);
 
   // Header State
   const [party, setParty] = useState('');
@@ -197,8 +199,65 @@ export default function AddPurchase() {
   const subTotalAmount = items.reduce((sum, it) => sum + (parseFloat(it.amount) || 0), 0);
   
   const grandTotal = roundOff ? Math.round(subTotalAmount) : subTotalAmount;
+  const parsedPaid = parseFloat(paidAmount) || 0;
+  const balanceDue = grandTotal - (isPaid ? parsedPaid : 0);
   const calculatedRoundOff = roundOff ? (grandTotal - subTotalAmount).toFixed(2) : '0.00';
-  const balanceDue = grandTotal - (isPaid ? (parseFloat(paidAmount) || 0) : 0);
+
+  const handleSave = async () => {
+    try {
+      setSubmitting(true);
+      
+      const payload = {
+        party,
+        phone,
+        billNumber,
+        billDate,
+        stateOfSupply,
+        items: items.filter(it => it.name).map(it => {
+          let rate = 0;
+          if (it.tax && it.tax !== 'NONE') {
+            const match = it.tax.match(/@([\d.]+)%/);
+            if (match) rate = parseFloat(match[1]);
+          }
+          return {
+            description: it.name,
+            hsnCode: '0000',
+            quantity: parseFloat(it.qty) || 1,
+            price: parseFloat(it.price) || 0,
+            gstRate: rate,
+            discountAmt: parseFloat(it.discountAmt) || 0,
+            taxAmt: parseFloat(it.taxAmt) || 0,
+            amount: parseFloat(it.amount) || 0
+          };
+        }),
+        paymentType,
+        description,
+        subTotalAmount,
+        totalTaxAmt,
+        grandTotal,
+        isPaid,
+        paidAmount: parsedPaid,
+        balanceDue
+      };
+
+      if (payload.items.length === 0) {
+        alert("Please add at least one valid item.");
+        setSubmitting(false);
+        return;
+      }
+
+      const res = await createPurchase(payload);
+      if (res.success) {
+        alert('Purchase saved successfully!');
+        navigate('/dashboard'); // Or navigate to a purchase detail page if it existed
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save purchase: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   // Synchronize round off display
   useEffect(() => {
@@ -435,10 +494,14 @@ export default function AddPurchase() {
         </div>
       </div>
 
-      {/* ── FOOTER ACTION BAR ── */}
-      <div className="fixed bottom-0 left-0 right-0 h-[60px] bg-white border-t border-gray-200 shadow-[0_-2px_10px_rgba(0,0,0,0.03)] flex items-center justify-between px-6 z-20" style={{ left: '56px' }}>
-        <button className="flex items-center gap-2 border border-blue-200 text-blue-600 bg-white px-4 py-2 rounded-[6px] text-[13px] font-bold hover:bg-blue-50 transition-colors">
-          <Upload className="w-4 h-4" /> Upload Bill
+      {/* ── BOTTOM ACTION BAR ── */}
+      <div className="fixed bottom-0 left-[56px] right-0 h-[60px] bg-white border-t border-gray-200 flex items-center justify-center gap-4 z-20 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
+        <button 
+          onClick={handleSave}
+          disabled={submitting}
+          className="bg-[#E91E63] text-white px-10 py-2 rounded-full text-[13px] font-bold hover:bg-[#D81B60] transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+        >
+          {submitting ? 'Saving...' : 'Save & New'}
         </button>
         
         <div className="flex items-center gap-3">
