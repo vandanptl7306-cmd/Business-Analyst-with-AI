@@ -3,13 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getInvoiceById, updateInvoiceStatus, sendInvoiceWhatsApp } from '../services/invoice';
-import { getInvoicePayments } from '../services/payment';
-import { getStoreSettings } from '../services/settings';
-import InvoiceComplianceForm from '../components/InvoiceComplianceForm';
+import { getInvoiceById, sendInvoiceWhatsApp } from '../services/invoice';
 import InvoiceStatusBadge from '../components/InvoiceStatusBadge';
-import CheckoutModal from '../components/CheckoutModal';
-import { ArrowLeft, Loader2, FileText, Calendar, Building, Landmark, Percent, Edit3, MessageSquare, Check, Share2, Printer, DollarSign } from 'lucide-react';
+import { ArrowLeft, Loader2, FileText, Calendar, Building, Landmark, Percent, MessageSquare, Check, Share2, Printer } from 'lucide-react';
 
 export default function InvoiceDetail() {
   const { id } = useParams();
@@ -19,27 +15,14 @@ export default function InvoiceDetail() {
   const [error, setError] = useState('');
   const [recipientPhone, setRecipientPhone] = useState('+919876543210');
   const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState('Standard');
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [payments, setPayments] = useState([]);
-  const [loadingPayments, setLoadingPayments] = useState(true);
   const [printSrc, setPrintSrc] = useState(null);
 
   useEffect(() => {
     const fetchInvoice = async () => {
       try {
-        const [data, settingsData] = await Promise.all([
-          getInvoiceById(id),
-          getStoreSettings()
-        ]);
+        const data = await getInvoiceById(id);
         if (data.success) {
           setInvoice(data.invoice);
-          let defaultTemp = 'Standard';
-          if (settingsData.success && settingsData.settings) {
-            const s = settingsData.settings;
-            defaultTemp = s.printerType === 'Thermal' ? 'Thermal' : (s.regularLayoutTheme || 'Standard');
-          }
-          setSelectedTemplate(defaultTemp);
         }
       } catch (err) {
         setError(err.response?.data?.error || 'Failed to retrieve invoice details.');
@@ -48,35 +31,10 @@ export default function InvoiceDetail() {
       }
     };
 
-    const fetchPayments = async () => {
-      try {
-        const payData = await getInvoicePayments(id);
-        if (payData.success) {
-          setPayments(payData.transactions);
-        }
-      } catch (err) {
-        console.error('Failed to load payments history:', err.message);
-      } finally {
-        setLoadingPayments(false);
-      }
-    };
-
     fetchInvoice();
-    fetchPayments();
   }, [id]);
 
-  const handleComplianceGenerated = (updatedInvoice) => {
-    setInvoice(updatedInvoice);
-  };
 
-  const handlePaymentProcessed = (updatedInvoice) => {
-    setInvoice(updatedInvoice);
-    getInvoicePayments(id).then((payData) => {
-      if (payData.success) {
-        setPayments(payData.transactions);
-      }
-    });
-  };
 
   const handleSendWhatsApp = async () => {
     setSendingWhatsApp(true);
@@ -93,17 +51,7 @@ export default function InvoiceDetail() {
     }
   };
 
-  const handleStatusChange = async (e) => {
-    const newStatus = e.target.value;
-    try {
-      const data = await updateInvoiceStatus(id, newStatus);
-      if (data.success) {
-        setInvoice(data.invoice);
-      }
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to update invoice status.');
-    }
-  };
+
 
   if (loading) {
     return (
@@ -163,44 +111,12 @@ export default function InvoiceDetail() {
               <Calendar className="h-4 w-4 text-slate-500" />
               <span className="text-slate-600">Date: {new Date(invoice.invoiceDate).toLocaleDateString()}</span>
             </div>
-
-            <div className="flex items-center space-x-2 bg-white border border-slate-200 px-3 py-1.5 rounded-xl">
-              <span className="text-slate-500 font-medium pl-1">Format Template:</span>
-              <select
-                value={selectedTemplate}
-                onChange={(e) => setSelectedTemplate(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-slate-800 rounded-lg py-1 px-2.5 outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
-              >
-                <option value="Standard">Standard</option>
-                <option value="Modern">Modern Gradient</option>
-                <option value="Thermal">Thermal Receipt</option>
-                <option value="TaxInvoice">GST Tax Invoice</option>
-                <option value="Minimalist">Minimal Corporate</option>
-                <option value="Commercial">Commercial Invoice</option>
-                <option value="Proforma">Proforma Purple Layout</option>
-              </select>
-            </div>
-
-            <div className="flex items-center space-x-2 bg-white border border-slate-200 px-3 py-1.5 rounded-xl">
-              <span className="text-slate-500 font-medium pl-1">Update Status:</span>
-              <select
-                value={invoice.status}
-                onChange={handleStatusChange}
-                className="bg-slate-50 border border-slate-200 text-slate-800 rounded-lg py-1 px-2.5 outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
-              >
-                <option value="Draft">Draft</option>
-                <option value="Unpaid">Unpaid</option>
-                <option value="Partially Paid">Partially Paid</option>
-                <option value="Paid">Paid</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-            </div>
             <button
               type="button"
               onClick={() => {
                 const token = localStorage.getItem('token');
                 const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-                const printUrl = `${apiBase}/invoices/${invoice._id}/print?template=${selectedTemplate}&token=${token}`;
+                const printUrl = `${apiBase}/invoices/${invoice._id}/print?template=Standard&token=${token}`;
                 setPrintSrc(printUrl);
               }}
               className="flex items-center justify-center space-x-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-[0.98]"
@@ -208,25 +124,14 @@ export default function InvoiceDetail() {
               <Printer className="h-4 w-4" />
               <span>Print / Export PDF</span>
             </button>
-
-            {invoice.status !== 'Paid' && invoice.status !== 'Cancelled' && (
-              <button
-                type="button"
-                onClick={() => setIsCheckoutOpen(true)}
-                className="flex items-center justify-center space-x-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-[0.98]"
-              >
-                <DollarSign className="h-4 w-4" />
-                <span>Collect Payment</span>
-              </button>
-            )}
           </div>
         </div>
 
         {/* Invoice details body */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="space-y-8">
           
           {/* Main invoice sheet */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6">
             
             <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-6">
               
@@ -346,57 +251,6 @@ export default function InvoiceDetail() {
 
             </div>
 
-            {/* Payment Transactions Ledger History */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-                <div className="flex items-center space-x-2">
-                  <Landmark className="h-5 w-5 text-emerald-700" />
-                  <h3 className="text-lg font-bold text-slate-800">Transaction Payments Ledger</h3>
-                </div>
-                <div className="text-xs bg-slate-50 px-3 py-1.5 rounded-lg text-slate-500 font-mono">
-                  Paid: ₹{invoice.amountPaid ? invoice.amountPaid.toFixed(2) : '0.00'} | Outstanding: ₹{invoice.outstandingAmount !== undefined ? invoice.outstandingAmount.toFixed(2) : invoice.grandTotal.toFixed(2)}
-                </div>
-              </div>
-
-              {loadingPayments ? (
-                <div className="py-6 flex justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin text-brand-500" />
-                </div>
-              ) : payments.length === 0 ? (
-                <p className="text-xs text-slate-500 text-center py-4">No payments recorded for this invoice yet.</p>
-              ) : (
-                <div className="space-y-3.5">
-                  {payments.map((tx) => (
-                    <div key={tx._id} className="flex justify-between items-center bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs font-bold text-slate-800">{tx.paymentMethod}</span>
-                          {tx.isAdvance && (
-                            <span className="bg-blue-50 text-blue-700 border border-blue-100 text-[9px] font-bold px-1.5 py-0.5 rounded">
-                              ADVANCE
-                            </span>
-                          )}
-                        </div>
-                        {tx.transactionReference && (
-                          <div className="text-[10px] text-slate-500 font-mono">Ref: {tx.transactionReference}</div>
-                        )}
-                      </div>
-                      <div className="text-right space-y-1">
-                        <div className="font-mono font-bold text-emerald-700">+₹{tx.amountReceived.toFixed(2)}</div>
-                        <div className="text-[9px] text-slate-500">{new Date(tx.receivedAt).toLocaleString()}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-          </div>
-
-          {/* Compliance Sidebar */}
-          <div className="space-y-6">
-            <InvoiceComplianceForm invoice={invoice} onComplianceGenerated={handleComplianceGenerated} />
-            
             {/* WhatsApp Invoicing */}
             <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-4">
               <div className="flex items-center space-x-3 pb-3 border-b border-slate-200">
@@ -497,13 +351,6 @@ export default function InvoiceDetail() {
         </div>
 
       </div>
-      
-      <CheckoutModal
-        isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
-        invoice={invoice}
-        onPaymentProcessed={handlePaymentProcessed}
-      />
 
       {/* ── Print Preview Modal Overlay ────────────────── */}
       {printSrc && (
@@ -523,7 +370,7 @@ export default function InvoiceDetail() {
             padding: '10px 16px', background: '#1e293b', borderRadius: '0 0 12px 12px',
           }}>
             <span style={{ color: '#94a3b8', fontSize: '13px', fontFamily: 'sans-serif' }}>
-              Invoice Print Preview — {selectedTemplate} Template
+              Invoice Print Preview — Standard Template
             </span>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button

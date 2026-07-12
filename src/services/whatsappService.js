@@ -24,6 +24,10 @@ class WhatsAppService {
       throw new Error(`Phone number '${phoneNumber}' must be in standard E.164 format (e.g. +919876543210).`);
     }
 
+    if (!process.env.WHATSAPP_API_KEY) {
+      throw new Error('WhatsApp API key is not configured in the environment variables.');
+    }
+
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1500));
 

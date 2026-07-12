@@ -3,6 +3,7 @@ const Invoice = require('../models/Invoice');
 const Counter = require('../models/Counter');
 const Party = require('../models/Party');
 const Product = require('../models/Product');
+const StoreSettings = require('../models/StoreSettings');
 const gspService = require('../services/gspService');
 const whatsappService = require('../services/whatsappService');
 
@@ -11,24 +12,8 @@ const whatsappService = require('../services/whatsappService');
  * In India, the financial year runs from April 1st to March 31st.
  * Example: Date = July 5, 2026 => FY 2026-2027 => INV-26-27-0001
  */
-const formatInvoiceNumber = (seqNumber, date = new Date()) => {
-  const year = date.getFullYear();
-  const month = date.getMonth(); // 0 is January, 3 is April
-  
-  let startYear, endYear;
-  if (month >= 3) { // April (3) to December (11)
-    startYear = year;
-    endYear = year + 1;
-  } else { // January (0) to March (2)
-    startYear = year - 1;
-    endYear = year;
-  }
-  
-  const fyStart = startYear.toString().slice(-2);
-  const fyEnd = endYear.toString().slice(-2);
-  const formattedSeq = seqNumber.toString().padStart(4, '0');
-  
-  return `INV-${fyStart}-${fyEnd}-${formattedSeq}`;
+const formatInvoiceNumber = (seqNumber) => {
+  return seqNumber.toString().padStart(3, '0');
 };
 
 // Helper to validate Indian GSTIN format
@@ -251,137 +236,56 @@ const createInvoice = async (req, res) => {
       distance: 120,
     });
 
-    res.status(201).json({ success: true, invoice });
+    let whatsappDelivery = { status: 'NotSent', message: 'WhatsApp delivery not evaluated' };
+    
+    // Auto-send WhatsApp Logic
+    try {
+      const settings = await StoreSettings.findOne();
+      if (settings && settings.autoSendWhatsApp) {
+        const party = await Party.findOne({ name: buyerName });
+        if (party && party.phoneNumber) {
+          try {
+            // Get token from auth header
+            const token = req.headers.authorization?.split(' ')[1];
+            
+            // Construct the PDF link
+            const invoiceUrl = `${req.protocol}://${req.get('host')}/api/invoices/${invoice._id}/print?template=Standard${token ? `&token=${token}` : ''}`;
+            
+            await whatsappService.sendInvoiceNotification(party.phoneNumber, {
+              name: buyerName,
+              invoiceNumber: invoice.invoiceNumber,
+              grandTotal: invoice.grandTotal,
+              invoiceUrl
+            });
+            
+            invoice.whatsappSentStatus = 'Sent';
+            invoice.lastReminderSentAt = new Date();
+            await invoice.save();
+            
+            whatsappDelivery = { status: 'Sent', message: 'WhatsApp notification sent successfully.' };
+          } catch (waErr) {
+            invoice.whatsappSentStatus = 'Failed';
+            await invoice.save();
+            whatsappDelivery = { status: 'Failed', message: waErr.message || 'Failed to send WhatsApp notification.' };
+          }
+        } else {
+          whatsappDelivery = { status: 'Skipped', message: 'Customer phone number not found in profile.' };
+        }
+      } else {
+         whatsappDelivery = { status: 'Skipped', message: 'Auto-send WhatsApp is disabled in settings.' };
+      }
+    } catch (err) {
+      console.error('Auto-WhatsApp delivery error:', err.message);
+      whatsappDelivery = { status: 'Failed', message: 'Internal error checking WhatsApp settings.' };
+    }
+
+    res.status(201).json({ success: true, invoice, whatsappDelivery });
   } catch (error) {
     console.error('Invoice creation error:', error.message);
     res.status(500).json({ success: false, error: 'Server error during invoice creation' });
   }
 };
 
-/**
- * @desc    Generate E-Invoice & E-way Bill for an existing invoice
- * @route   POST /api/invoices/:id/compliance
- * @access  Private
- */
-const generateComplianceData = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const {
-      transporterId,
-      transporterName,
-      transportMode,
-      vehicleNo,
-      vehicleType,
-      distance,
-    } = req.body;
-
-    // 1. Fetch the invoice
-    const invoice = await Invoice.findById(id);
-    if (!invoice) {
-      return res.status(404).json({ success: false, error: 'Invoice not found' });
-    }
-
-    // 2. BACKEND COMPLIANCE VALIDATIONS
-    const validationErrors = [];
-
-    // Buyer & Seller GSTIN Validation
-    if (!invoice.buyerGSTIN) {
-      validationErrors.push('Buyer GSTIN is missing.');
-    } else if (!isValidGSTIN(invoice.buyerGSTIN)) {
-      validationErrors.push(`Buyer GSTIN '${invoice.buyerGSTIN}' format is invalid.`);
-    }
-
-    if (!invoice.sellerGSTIN) {
-      validationErrors.push('Seller GSTIN is missing.');
-    } else if (!isValidGSTIN(invoice.sellerGSTIN)) {
-      validationErrors.push(`Seller GSTIN '${invoice.sellerGSTIN}' format is invalid.`);
-    }
-
-    // PIN Codes Validation
-    if (!invoice.buyerPIN) {
-      validationErrors.push('Buyer PIN Code is missing.');
-    } else if (!isValidPIN(invoice.buyerPIN)) {
-      validationErrors.push(`Buyer PIN Code '${invoice.buyerPIN}' must be a valid 6-digit number.`);
-    }
-
-    if (!invoice.sellerPIN) {
-      validationErrors.push('Seller PIN Code is missing.');
-    } else if (!isValidPIN(invoice.sellerPIN)) {
-      validationErrors.push(`Seller PIN Code '${invoice.sellerPIN}' must be a valid 6-digit number.`);
-    }
-
-    // Item-level validations (HSN Code validation)
-    if (!invoice.items || invoice.items.length === 0) {
-      validationErrors.push('Invoice must contain at least one item.');
-    } else {
-      invoice.items.forEach((item, index) => {
-        if (!item.hsnCode) {
-          validationErrors.push(`Item ${index + 1}: HSN Code is missing.`);
-        } else if (!/^[0-9]{4,8}$/.test(item.hsnCode)) {
-          validationErrors.push(`Item ${index + 1}: HSN Code '${item.hsnCode}' must be a numeric value of 4 to 8 digits.`);
-        }
-      });
-    }
-
-    // Shipping & Transporter validations if E-Way bill parameters are provided
-    if (transporterId && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(transporterId)) {
-      validationErrors.push("Transporter ID must match a valid GSTIN/TRANSIN format.");
-    }
-    if (transportMode === 'Road' && !vehicleNo) {
-      validationErrors.push("Vehicle number is required for Road transport mode.");
-    }
-    if (vehicleNo && !/^[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{4}$/.test(vehicleNo.replace(/\s+/g, ''))) {
-      validationErrors.push(`Vehicle Number '${vehicleNo}' format is invalid (Format e.g., DL01CA1234).`);
-    }
-
-    // If there are validation failures, return list
-    if (validationErrors.length > 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Compliance validations failed',
-        details: validationErrors,
-      });
-    }
-
-    // 3. TRIGGER E-INVOICE GENERATION (NIC Mock)
-    console.log(`Generating E-Invoice for Invoice ID: ${id}`);
-    const eInvoiceResponse = await gspService.generateEInvoice(invoice);
-    
-    invoice.irn = eInvoiceResponse.irn;
-    invoice.qrCodeData = eInvoiceResponse.qrCodeData;
-    invoice.eInvoiceStatus = eInvoiceResponse.status;
-    invoice.eInvoiceGeneratedAt = eInvoiceResponse.generatedAt;
-
-    // 4. TRIGGER E-WAY BILL GENERATION (If transporter info is provided)
-    if (transporterId || vehicleNo) {
-      console.log(`Generating E-Way Bill for Invoice ID: ${id}`);
-      const transportData = { transporterId, transporterName, transportMode, vehicleNo, vehicleType, distance };
-      const eWayResponse = await gspService.generateEWayBill(transportData, invoice);
-
-      invoice.eWayBillNo = eWayResponse.eWayBillNo;
-      invoice.transporterId = transporterId;
-      invoice.transporterName = transporterName;
-      invoice.transportMode = transportMode;
-      invoice.vehicleNo = vehicleNo;
-      invoice.vehicleType = vehicleType;
-      invoice.distance = distance;
-      invoice.eWayBillStatus = eWayResponse.status;
-      invoice.eWayBillGeneratedAt = eWayResponse.generatedAt;
-    }
-
-    // Save changes to database
-    await invoice.save();
-
-    res.status(200).json({
-      success: true,
-      message: 'Compliance E-Invoice and E-Way Bill successfully generated.',
-      invoice,
-    });
-  } catch (error) {
-    console.error('Compliance generation error:', error.message);
-    res.status(500).json({ success: false, error: 'Server error during compliance generation' });
-  }
-};
 
 /**
  * @desc    Get Invoice details
@@ -473,36 +377,7 @@ const getUpcomingInvoiceNumber = async (req, res) => {
   }
 };
 
-/**
- * @desc    Update an invoice's billing status
- * @route   PATCH /api/invoices/:id/status
- * @access  Private
- */
-const updateInvoiceStatus = async (req, res) => {
-  try {
-    const { status } = req.body;
-    const validStatuses = ['Draft', 'Unpaid', 'Partially Paid', 'Paid', 'Cancelled'];
 
-    if (!status || !validStatuses.includes(status)) {
-      return res.status(400).json({ success: false, error: 'Please provide a valid status option' });
-    }
-
-    const invoice = await Invoice.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true, runValidators: true }
-    );
-
-    if (!invoice) {
-      return res.status(404).json({ success: false, error: 'Invoice not found' });
-    }
-
-    res.status(200).json({ success: true, invoice });
-  } catch (error) {
-    console.error('Update status error:', error.message);
-    res.status(500).json({ success: false, error: 'Server error updating invoice status' });
-  }
-};
 
 /**
  * @desc    Send PDF invoice link to a buyer via WhatsApp
@@ -635,11 +510,9 @@ const getProfitAnalytics = async (req, res) => {
 
 module.exports = {
   createInvoice,
-  generateComplianceData,
   getInvoice,
   getInvoices,
   getUpcomingInvoiceNumber,
-  updateInvoiceStatus,
   sendInvoiceWhatsApp,
   getProfitAnalytics,
 };

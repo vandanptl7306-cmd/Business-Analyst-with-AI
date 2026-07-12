@@ -120,6 +120,10 @@ const storeSettingsSchema = new mongoose.Schema(
       type: String,
       default: ''
     },
+    autoSendWhatsApp: {
+      type: Boolean,
+      default: false
+    },
 
     // Paper size, layout sizes
     paperSize: {

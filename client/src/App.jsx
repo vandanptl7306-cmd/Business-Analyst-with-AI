@@ -16,8 +16,6 @@ import SettingsPage from './pages/Settings';
 import Unauthorized from './pages/Unauthorized';
 import InvoiceDetail from './pages/InvoiceDetail';
 import CustomerLedger from './pages/CustomerLedger';
-import CreateInvoice from './pages/CreateInvoice';
-import TallySync from './pages/TallySync';
 import Reports from './pages/Reports';
 import DemandForecast from './pages/DemandForecast';
 import StockManagement from './pages/StockManagement';
@@ -79,13 +77,11 @@ function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/invoices/create" element={<CreateInvoice />} />
           <Route path="/sales/create" element={<AddSale />} />
           <Route path="/purchases/create" element={<AddPurchase />} />
           <Route path="/invoices/:id" element={<InvoiceDetail />} />
           <Route path="/customers" element={<CustomerLedger />} />
           <Route path="/stock" element={<StockManagement />} />
-          <Route path="/tally" element={<TallySync />} />
           <Route path="/forecast" element={<DemandForecast />} />
           <Route path="/profile" element={<Navigate to="/settings" replace />} />
           <Route path="/unauthorized" element={<Unauthorized />} />

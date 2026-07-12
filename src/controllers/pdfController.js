@@ -523,7 +523,7 @@ const getInvoiceHTML = (invoice, store, template) => {
               <div class="tally-section-title">Bill To:</div>
               <strong style="font-size: 12px; color: #000000;">${invoice.buyerName}</strong><br/>
               ${invoice.buyerBillingAddress}<br/>
-              ${invoice.buyerGSTIN ? `GSTIN/UIN: <strong>${invoice.buyerGSTIN}</strong><br/>` : ''}
+              ${invoice.buyerGSTIN && invoice.buyerGSTIN !== '27BBBBB0000B1Z5' ? `GSTIN/UIN: <strong>${invoice.buyerGSTIN}</strong><br/>` : ''}
               ${invoice.buyerPIN ? `PIN Code: ${invoice.buyerPIN}` : ''}
             </div>
             
@@ -1682,7 +1682,7 @@ const getInvoiceHTML = (invoice, store, template) => {
             <h3>BILL TO</h3>
             <p><strong>${invoice.buyerName}</strong></p>
             <p>${invoice.buyerBillingAddress}</p>
-            <p style="font-family: monospace; font-size: 10px; color: #64748b; margin-top: 6px;">GST: ${invoice.buyerGSTIN}</p>
+            ${invoice.buyerGSTIN && invoice.buyerGSTIN !== '27BBBBB0000B1Z5' ? `<p style="font-family: monospace; font-size: 10px; color: #64748b; margin-top: 6px;">GST: ${invoice.buyerGSTIN}</p>` : ''}
           </div>
           <div class="dates-area">
             <div class="date-row">
@@ -1841,7 +1841,7 @@ const getInvoiceHTML = (invoice, store, template) => {
               <h4>For</h4>
               <p><strong>${invoice.buyerName}</strong></p>
               <p>${invoice.buyerBillingAddress}</p>
-              ${invoice.buyerGSTIN ? `<p style="font-family: monospace; font-size: 10px; color: #64748b;">GSTIN: ${invoice.buyerGSTIN}</p>` : ''}
+              ${invoice.buyerGSTIN && invoice.buyerGSTIN !== '27BBBBB0000B1Z5' ? `<p style="font-family: monospace; font-size: 10px; color: #64748b;">GSTIN: ${invoice.buyerGSTIN}</p>` : ''}
             </div>
             
             <div class="address-col">
@@ -2373,7 +2373,7 @@ const getInvoiceHTML = (invoice, store, template) => {
 
         <div class="bill-info">
           <div><strong>Bill To:</strong> ${invoice.buyerName}</div>
-          <div><strong>GSTIN:</strong> ${invoice.buyerGSTIN}</div>
+          ${invoice.buyerGSTIN && invoice.buyerGSTIN !== '27BBBBB0000B1Z5' ? `<div><strong>GSTIN:</strong> ${invoice.buyerGSTIN}</div>` : ''}
           <div><strong>Address:</strong> ${invoice.buyerBillingAddress}</div>
         </div>
 
@@ -2481,7 +2481,7 @@ const getInvoiceHTML = (invoice, store, template) => {
             <h4 style="margin: 0 0 8px 0; text-transform: uppercase; font-size: 11px; color: #64748b;">Bill To</h4>
             <p style="margin: 0; font-weight: 600; font-size: 13px;">${invoice.buyerName}</p>
             <p style="margin: 4px 0; font-size: 12px; color: #475569;">${invoice.buyerBillingAddress}</p>
-            <p style="margin: 2px 0; font-size: 12px; color: #475569;">GSTIN: <span style="font-family: monospace;">${invoice.buyerGSTIN}</span></p>
+            ${invoice.buyerGSTIN && invoice.buyerGSTIN !== '27BBBBB0000B1Z5' ? `<p style="margin: 2px 0; font-size: 12px; color: #475569;">GSTIN: <span style="font-family: monospace;">${invoice.buyerGSTIN}</span></p>` : ''}
             <p style="margin: 2px 0; font-size: 12px; color: #475569;">PIN Code: <span style="font-family: monospace;">${invoice.buyerPIN}</span></p>
           </div>
         </div>

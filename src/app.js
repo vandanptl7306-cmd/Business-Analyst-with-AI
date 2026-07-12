@@ -44,11 +44,8 @@ app.use('/api/parties', require('./routes/party'));
 // Mount settings routes
 app.use('/api/settings', require('./routes/settings'));
 
-// Mount tally routes
-app.use('/api/tally', require('./routes/tally'));
 
-// Mount payments routes
-app.use('/api/payments', require('./routes/payment'));
+
 
 // Mount reports routes
 app.use('/api/reports', require('./routes/report'));

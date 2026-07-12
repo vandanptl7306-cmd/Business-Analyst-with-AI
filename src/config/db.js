@@ -137,7 +137,7 @@ const setupMockDB = () => {
     ],
     datasynclogs: [],
     counters: [
-      { _id: 'invoiceNumber', seq: 15 }
+      { _id: 'invoiceNumber', seq: 0 }
     ]
   };
 

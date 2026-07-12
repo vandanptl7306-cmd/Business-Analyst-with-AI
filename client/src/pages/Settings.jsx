@@ -111,6 +111,7 @@ export default function SettingsPage() {
   const [stopSaleOnNegativeStock, setStopSaleOnNegativeStock] = useState(false);
   const [blockNewItemsFromTxn, setBlockNewItemsFromTxn] = useState(false);
   const [blockNewPartiesFromTxn, setBlockNewPartiesFromTxn] = useState(false);
+  const [autoSendWhatsApp, setAutoSendWhatsApp] = useState(false);
 
   // Multi Firm
   const [multiFirm, setMultiFirm] = useState(false);
@@ -230,6 +231,7 @@ export default function SettingsPage() {
           setThermalCopies(s.thermalCopies ?? 1);
           setThermalPrintCompanyName(s.thermalPrintCompanyName ?? true);
           setThermalCompanyName(s.thermalCompanyName || s.shopName || '');
+          setAutoSendWhatsApp(s.autoSendWhatsApp ?? false);
         }
       } catch (e) {
         setApiError('Failed to load settings.');
@@ -257,6 +259,7 @@ export default function SettingsPage() {
         printBankDetails, bankAccountHolderName, bankName, bankAccountNumber, bankIfscCode, bankBranchName,
         thermalPrintingType, thermalUseTextStylingBold, thermalAutoCut, thermalOpenCashDrawer,
         thermalExtraLines, thermalCopies, thermalPrintCompanyName, thermalCompanyName,
+        autoSendWhatsApp,
       };
       const [pRes, sRes] = await Promise.all([
         updateStoreProfile(businessType),
@@ -493,6 +496,7 @@ export default function SettingsPage() {
                     <SettingRow checked={stopSaleOnNegativeStock} onChange={setStopSaleOnNegativeStock} label="Stop Sale on Negative Stock" info />
                     <SettingRow checked={blockNewItemsFromTxn} onChange={setBlockNewItemsFromTxn} label="Block New Items from Txn Form" info />
                     <SettingRow checked={blockNewPartiesFromTxn} onChange={setBlockNewPartiesFromTxn} label="Block New Parties from Txn Form" info />
+                    <SettingRow checked={autoSendWhatsApp} onChange={setAutoSendWhatsApp} label="Auto-send WhatsApp" info />
                   </div>
                 </div>
 

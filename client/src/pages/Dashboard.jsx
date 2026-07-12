@@ -387,14 +387,6 @@ export default function Dashboard() {
                 className="bg-transparent text-xs font-mono text-indigo-600 font-bold border-none outline-none w-28 select-all cursor-default"
               />
             </div>
-
-            <Link
-              to="/invoices/create"
-              className="flex items-center justify-center space-x-2 text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-100 px-4 py-2.5 rounded-xl transition-all"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>Create Custom Bill</span>
-            </Link>
           </div>
         </div>
 

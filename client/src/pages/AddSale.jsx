@@ -20,6 +20,7 @@ export default function AddSale() {
   // Customer State
   const [customerName, setCustomerName] = useState('pratik');
   const [customerPhone, setCustomerPhone] = useState('9948946494');
+  const [customerGSTIN, setCustomerGSTIN] = useState('');
 
   // Items State
   const [items, setItems] = useState([
@@ -92,7 +93,7 @@ export default function AddSale() {
         sellerGSTIN: '27AAAAA0000A1Z5', // Required by Invoice model
         sellerPIN: '400001',            // Required by Invoice model
         buyerName: customerName || 'Walk-in Customer',
-        buyerGSTIN: '27BBBBB0000B1Z5',  // Required by Invoice model
+        buyerGSTIN: customerGSTIN || '27BBBBB0000B1Z5',  // Required by Invoice model, uses entered GSTIN if available
         buyerBillingAddress: 'Idgar', 
         buyerPIN: '400001',             // Required by Invoice model
         items: items.filter(it => it.name).map(it => {
@@ -121,7 +122,15 @@ export default function AddSale() {
 
       const res = await createInvoice(payload);
       if (res.success) {
-        alert('Sale saved successfully!');
+        let msg = 'Sale saved successfully!';
+        if (res.whatsappDelivery) {
+          if (res.whatsappDelivery.status === 'Sent') {
+            msg += '\n\nWhatsApp notification sent successfully!';
+          } else if (res.whatsappDelivery.status === 'Skipped' || res.whatsappDelivery.status === 'Failed') {
+            msg += `\n\nWhatsApp Notice: ${res.whatsappDelivery.message}`;
+          }
+        }
+        alert(msg);
         navigate(`/invoices/${res.invoice._id}`);
       }
     } catch (err) {
@@ -140,12 +149,7 @@ export default function AddSale() {
         <div className="flex items-center gap-6">
           <h1 className="text-[18px] font-bold text-gray-800">Sale</h1>
           <div className="h-4 border-l border-gray-300"></div>
-          <label className="flex items-center gap-2 text-[12px] text-gray-600 font-semibold cursor-pointer">
-            Switch to Full Mode
-            <div className={`relative inline-block w-8 h-4 rounded-full transition-colors ${isFullMode ? 'bg-blue-500' : 'bg-gray-300'}`}>
-              <div className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform ${isFullMode ? 'translate-x-4' : 'translate-x-0'}`}></div>
-            </div>
-          </label>
+
         </div>
         <button onClick={() => navigate(-1)} className="p-1 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-red-500">
           <X className="w-5 h-5" />
@@ -181,6 +185,14 @@ export default function AddSale() {
                     className="flex-1 px-3 py-2 border border-gray-200 rounded-r-[6px] text-[13px] text-gray-800 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-shadow" 
                   />
                 </div>
+              </div>
+              <div className="w-[300px]">
+                <label className="block text-[11px] text-gray-600 font-semibold mb-1">Customer GSTIN (Optional)</label>
+                <input 
+                  type="text" value={customerGSTIN} onChange={e => setCustomerGSTIN(e.target.value)}
+                  placeholder="GSTIN"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-[6px] text-[13px] text-gray-800 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-shadow" 
+                />
               </div>
             </div>
 

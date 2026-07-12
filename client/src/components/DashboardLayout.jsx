@@ -107,10 +107,6 @@ export default function DashboardLayout() {
             {sidebarOpen && <span>Stock</span>}
           </Link>
 
-          <Link to="/tally" className={navItemClass('/tally')} title={!sidebarOpen ? 'Tally Sync' : ''}>
-            <RefreshCw className={`h-4 w-4 flex-shrink-0 ${iconColor('/tally')}`} />
-            {sidebarOpen && <span>Tally Sync</span>}
-          </Link>
 
           <Link to="/forecast" className={navItemClass('/forecast')} title={!sidebarOpen ? 'Demand Forecast' : ''}>
             <BarChart2 className={`h-4 w-4 flex-shrink-0 ${iconColor('/forecast')}`} />
