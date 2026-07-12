@@ -88,9 +88,13 @@ export default function AddSale() {
       setSubmitting(true);
       
       const payload = {
-        sellerName: 'My Company', // Can be fetched from settings if needed
-        buyerName: customerName,
-        buyerBillingAddress: 'Idgar', // Default from UI mock
+        sellerName: 'My Company', 
+        sellerGSTIN: '27AAAAA0000A1Z5', // Required by Invoice model
+        sellerPIN: '400001',            // Required by Invoice model
+        buyerName: customerName || 'Walk-in Customer',
+        buyerGSTIN: '27BBBBB0000B1Z5',  // Required by Invoice model
+        buyerBillingAddress: 'Idgar', 
+        buyerPIN: '400001',             // Required by Invoice model
         items: items.filter(it => it.name).map(it => {
           let rate = 0;
           if (it.tax && it.tax !== 'NONE') {

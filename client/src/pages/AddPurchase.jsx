@@ -208,7 +208,7 @@ export default function AddPurchase() {
       setSubmitting(true);
       
       const payload = {
-        party,
+        party: party || 'Walk-in Vendor',
         phone,
         billNumber,
         billDate,
