@@ -41,7 +41,7 @@ const updateStoreSettings = async (req, res) => {
   try {
     const fields = [
       'shopName', 'address', 'phoneNumber', 'email', 'gstin', 'logoUrl',
-      'defaultInvoiceTemplate', 'invoiceThemeColor', 'businessType',
+      'defaultInvoiceTemplate', 'invoiceThemeColor', 'businessType', 'businessCurrency',
       'printerType', 'regularLayoutTheme', 'regularThemeColor',
       'printRepeatHeader', 'printCompanyName', 'customCompanyName',
       'printCompanyLogo', 'customLogoUrl', 'printAddress', 'customAddress',

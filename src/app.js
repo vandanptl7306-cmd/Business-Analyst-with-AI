@@ -62,6 +62,9 @@ app.use('/api/ai', require('./routes/ai'));
 // Mount purchases routes
 app.use('/api/purchases', require('./routes/purchase'));
 
+// Mount firms routes
+app.use('/api/firms', require('./routes/firm'));
+
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {

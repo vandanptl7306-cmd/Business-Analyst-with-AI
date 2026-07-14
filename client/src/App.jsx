@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-route
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { CurrencyProvider } from './context/CurrencyContext';
 import Login from './components/Login';
 import Register from './components/Register';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -88,7 +89,8 @@ function AppRoutes() {
 
           {/* Protected + Admin Routes */}
           <Route element={<AdminRoute />}>
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings" element={<Navigate to="/settings/general" replace />} />
+            <Route path="/settings/:tab" element={<SettingsPage />} />
             <Route path="/reports" element={<Reports />} />
           </Route>
         </Route>
@@ -109,9 +111,11 @@ export default function App() {
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
       <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
+        <CurrencyProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </CurrencyProvider>
       </AuthProvider>
     </GoogleOAuthProvider>
   );

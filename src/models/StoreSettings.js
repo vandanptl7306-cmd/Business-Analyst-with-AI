@@ -49,6 +49,10 @@ const storeSettingsSchema = new mongoose.Schema(
       enum: ['Retail', 'Wholesale', 'Manufacturing'],
       default: 'Retail',
     },
+    businessCurrency: {
+      type: String,
+      default: '₹'
+    },
     
     // Printer Type
     printerType: {

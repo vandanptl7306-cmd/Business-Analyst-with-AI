@@ -1,7 +1,9 @@
 // client/src/pages/Settings.jsx
 import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { getStoreSettings, updateStoreSettings, updateStoreProfile } from '../services/settings';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 import {
   Search, CheckCircle, Loader2, X, HelpCircle, Edit2,
   User, Building2, Phone, Mail, Lock, Eye, EyeOff,
@@ -10,6 +12,7 @@ import {
 } from 'lucide-react';
 import PrintSettings from '../components/PrintSettings';
 import EditProfile from '../components/EditProfile';
+import MultiFirmManager from '../components/MultiFirmManager';
 
 const SIDEBAR_ITEMS = ['GENERAL', 'PRINT', 'PROFILE'];
 
@@ -38,13 +41,14 @@ function SettingRow({ checked, onChange, label, info }) {
 
 export default function SettingsPage() {
   const { user, updateUser, changePassword } = useAuth();
+  const { setCurrency: setGlobalCurrency } = useCurrency();
 
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [apiError, setApiError] = useState('');
-  const [activeSection, setActiveSection] = useState('GENERAL');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { tab } = useParams();
+  const activeSection = (tab || 'general').toUpperCase();
 
   // â”€â”€ Profile section state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [profileName, setProfileName] = useState('');
@@ -105,7 +109,7 @@ export default function SettingsPage() {
 
   // â”€â”€ General settings state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [enablePasscode, setEnablePasscode] = useState(false);
-  const [businessCurrency, setBusinessCurrency] = useState('â‚¹');
+  const [businessCurrency, setBusinessCurrency] = useState('₹');
   const [decimalPlaces, setDecimalPlaces] = useState(2);
   const [gstinNumber, setGstinNumber] = useState(true);
   const [stopSaleOnNegativeStock, setStopSaleOnNegativeStock] = useState(false);
@@ -232,6 +236,7 @@ export default function SettingsPage() {
           setThermalPrintCompanyName(s.thermalPrintCompanyName ?? true);
           setThermalCompanyName(s.thermalCompanyName || s.shopName || '');
           setAutoSendWhatsApp(s.autoSendWhatsApp ?? false);
+          setBusinessCurrency(s.businessCurrency || '₹');
         }
       } catch (e) {
         setApiError('Failed to load settings.');
@@ -305,7 +310,7 @@ export default function SettingsPage() {
         printBankDetails, bankAccountHolderName, bankName, bankAccountNumber, bankIfscCode, bankBranchName,
         thermalPrintingType, thermalUseTextStylingBold, thermalAutoCut, thermalOpenCashDrawer,
         thermalExtraLines, thermalCopies, thermalPrintCompanyName, thermalCompanyName,
-        autoSendWhatsApp,
+        autoSendWhatsApp, businessCurrency,
         ...printSettingsPayload
       };
       const [pRes, sRes] = await Promise.all([
@@ -314,6 +319,7 @@ export default function SettingsPage() {
       ]);
       if (pRes.success && sRes.success) {
         setSuccessMsg('Settings saved successfully.');
+        setGlobalCurrency(businessCurrency); // propagate globally
         setTimeout(() => setSuccessMsg(''), 3000);
       }
     } catch (e) {
@@ -342,135 +348,6 @@ export default function SettingsPage() {
         minHeight: 'calc(100vh)',
       }}
     >
-
-      {/* ── LEFT SIDEBAR (matches DashboardLayout style) ─────────────────── */}
-      <aside style={{
-        width: sidebarOpen ? 260 : 56,
-        minWidth: sidebarOpen ? 260 : 56,
-        background: '#0b0f24',
-        borderRight: '1px solid rgba(255,255,255,0.08)',
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100vh',
-        position: 'sticky',
-        top: 0,
-        zIndex: 40,
-        transition: 'width 0.25s cubic-bezier(.4,0,.2,1), min-width 0.25s cubic-bezier(.4,0,.2,1)',
-        overflow: 'hidden',
-        flexShrink: 0,
-      }}>
-
-        {/* Brand header — identical to DashboardLayout */}
-        <div style={{ padding: '0 24px', height: 65, display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0, overflow: 'hidden' }}>
-          <div style={{ height: 36, width: 36, background: '#4F46E5', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 13, flexShrink: 0, boxShadow: '0 4px 14px rgba(79,70,229,0.35)' }}>
-            <SettingsIcon style={{ width: 16, height: 16 }} />
-          </div>
-          {sidebarOpen && (
-            <span style={{ color: '#fff', fontWeight: 700, fontSize: 17, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>Settings</span>
-          )}
-          {/* Collapse toggle — floats to the far right */}
-          {sidebarOpen && (
-            <button
-              type="button"
-              onClick={() => setSidebarOpen(false)}
-              title="Close sidebar"
-              style={{
-                marginLeft: 'auto',
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 8,
-                width: 28,
-                height: 28,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                color: 'rgba(255,255,255,0.55)',
-                flexShrink: 0,
-                transition: 'background 0.15s, color 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = '#fff'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.55)'; }}
-            >
-              <ChevronLeft style={{ width: 14, height: 14 }} />
-            </button>
-          )}
-        </div>
-
-        {/* When collapsed: show open button centered in header area */}
-        {!sidebarOpen && (
-          <div style={{ padding: '12px 0', display: 'flex', justifyContent: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-            <button
-              type="button"
-              onClick={() => setSidebarOpen(true)}
-              title="Open sidebar"
-              style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 8,
-                width: 32,
-                height: 32,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                color: 'rgba(255,255,255,0.6)',
-                transition: 'background 0.15s, color 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = '#fff'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
-            >
-              <ChevronRight style={{ width: 14, height: 14 }} />
-            </button>
-          </div>
-        )}
-
-        {/* Nav items — same rounded-xl style as DashboardLayout */}
-        <nav style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {!sidebarOpen ? null : (
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(148,163,184,0.8)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '0 8px', marginBottom: 6 }}>Settings</div>
-          )}
-          {[
-            { id: 'GENERAL', label: 'General', icon: <Sliders style={{ width: 16, height: 16, flexShrink: 0 }} /> },
-            { id: 'PRINT',   label: 'Print',   icon: <Printer  style={{ width: 16, height: 16, flexShrink: 0 }} /> },
-            { id: 'PROFILE', label: 'Profile', icon: <UserCircle style={{ width: 16, height: 16, flexShrink: 0 }} /> },
-          ].map(({ id, label, icon }) => {
-            const isActive = activeSection === id;
-            return (
-              <button
-                key={id}
-                onClick={() => setActiveSection(id)}
-                title={!sidebarOpen ? label : ''}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  width: '100%',
-                  padding: sidebarOpen ? '10px 12px' : '10px 0',
-                  justifyContent: sidebarOpen ? 'flex-start' : 'center',
-                  borderRadius: 12,
-                  background: isActive ? '#1a1f35' : 'transparent',
-                  border: isActive ? '1px solid rgba(99,102,241,0.25)' : '1px solid transparent',
-                  color: isActive ? '#fff' : 'rgba(148,163,184,0.85)',
-                  fontWeight: isActive ? 600 : 500,
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  transition: 'background 0.15s, color 0.15s, border-color 0.15s',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  boxSizing: 'border-box',
-                }}
-                onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(15,23,46,0.6)'; e.currentTarget.style.color = '#e2e8f0'; } }}
-                onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(148,163,184,0.85)'; } }}
-              >
-                <span style={{ color: isActive ? '#818CF8' : 'rgba(100,116,139,0.9)', display: 'flex', flexShrink: 0 }}>{icon}</span>
-                {sidebarOpen && <span>{label}</span>}
-              </button>
-            );
-          })}
-        </nav>
-      </aside>
-      {/* â”€â”€ MAIN CONTENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 0 }}>
 
         {/* Top bar */}
@@ -514,12 +391,12 @@ export default function SettingsPage() {
                     <span style={{ fontSize: 13, color: '#374151' }}>Business Currency</span>
                     <HelpCircle style={{ width: 13, height: 13, color: '#9CA3AF' }} />
                     <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 14, color: '#111827', fontWeight: 600 }}>â‚¹</span>
+                      <span style={{ fontSize: 14, color: '#111827', fontWeight: 600 }}>{businessCurrency}</span>
                       <select value={businessCurrency} onChange={e => setBusinessCurrency(e.target.value)}
                         style={{ border: 'none', background: 'transparent', fontSize: 13, color: '#6B7280', cursor: 'pointer', outline: 'none' }}>
-                        <option value="â‚¹">INR (â‚¹)</option>
+                        <option value="₹">INR (₹)</option>
                         <option value="$">USD ($)</option>
-                        <option value="â‚¬">EUR (â‚¬)</option>
+                        <option value="€">EUR (€)</option>
                       </select>
                     </div>
                   </div>
@@ -549,21 +426,14 @@ export default function SettingsPage() {
 
               </div>
 
-              {/* ── Column 2: Multi Firm + Bank Details ── */}
+              {/* ── Column 2: Multi Firm ── */}
               <div>
                 <div style={{ fontWeight: 700, fontSize: 14, color: '#111827', marginBottom: 16 }}>Multi Firm</div>
                 <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, padding: '16px 18px', minHeight: 120 }}>
-                  <SettingRow checked={multiFirm} onChange={setMultiFirm} label="Multi Firm" />
+                  <SettingRow checked={multiFirm} onChange={setMultiFirm} label="Enable Multi Firm" />
                   {multiFirm && (
-                    <div style={{ marginTop: 10 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', background: '#F9FAFB', borderRadius: 6, border: '1px solid #E5E7EB' }}>
-                        <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid #3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#3B82F6' }} />
-                        </div>
-                        <span style={{ fontSize: 13, color: '#374151', flex: 1 }}>My Company</span>
-                        <span style={{ fontSize: 10, color: '#6B7280', background: '#E5E7EB', borderRadius: 4, padding: '2px 6px' }}>DEFAULT</span>
-                        <Edit2 style={{ width: 13, height: 13, color: '#3B82F6', cursor: 'pointer' }} />
-                      </div>
+                    <div style={{ marginTop: 14, borderTop: '1px solid #F3F4F6', paddingTop: 14 }}>
+                      <MultiFirmManager />
                     </div>
                   )}
                 </div>

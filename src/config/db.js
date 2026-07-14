@@ -136,6 +136,20 @@ const setupMockDB = () => {
     ],
     counters: [
       { _id: 'invoiceNumber', seq: 0 }
+    ],
+    firms: [
+      {
+        _id: new mongoose.Types.ObjectId('60c72b2f9b1d8b2c77777701'),
+        name: 'My Company',
+        address: '101, Business Enclave, Cyber City, Sector 45, Gurgaon, Haryana',
+        phoneNumber: '+919876543210',
+        email: 'billing@intellectbill.ai',
+        gstin: '27AAAAA1111A1Z1',
+        logoUrl: '',
+        isDefault: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
     ]
   };
 
@@ -378,6 +392,17 @@ const setupMockDB = () => {
       store[collectionKey] = collection.filter(item => !ids.includes(item._id.toString()));
       return { deletedCount: items.length };
     }
+
+    if (op === 'updateMany') {
+      const items = findItems();
+      for (const item of items) {
+        if (update.$set) {
+          Object.assign(item, update.$set);
+        }
+        item.updatedAt = new Date();
+      }
+      return { modifiedCount: items.length };
+    }
     
     return null;
   };
@@ -496,6 +521,28 @@ const setupMockDB = () => {
   mongoose.Query.prototype.limit = function() { return this; };
   mongoose.Query.prototype.skip = function() { return this; };
   mongoose.Query.prototype.populate = function() { return this; };
+
+  // Mock Model.findByIdAndDelete
+  mongoose.Model.findByIdAndDelete = async function(id) {
+    const modelName = this.modelName;
+    const collectionKey = getCollectionKey(modelName);
+    const collection = store[collectionKey] || [];
+    const idx = collection.findIndex(item => item._id.toString() === id.toString());
+    if (idx === -1) return null;
+    const [removed] = collection.splice(idx, 1);
+    return new this(removed);
+  };
+
+  // Mock Model.countDocuments
+  mongoose.Model.countDocuments = async function(filter) {
+    const modelName = this.modelName;
+    const collectionKey = getCollectionKey(modelName);
+    const collection = store[collectionKey] || [];
+    if (!filter || Object.keys(filter).length === 0) return collection.length;
+    return collection.filter(item => {
+      return Object.keys(filter).every(key => String(item[key]) === String(filter[key]));
+    }).length;
+  };
 
   // Mock Model Saving and Creating
   mongoose.Model.create = async function(doc) {

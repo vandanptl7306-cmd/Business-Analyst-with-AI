@@ -3,16 +3,20 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { getInvoiceById, sendInvoiceWhatsApp } from '../services/invoice';
+import { getStoreSettings } from '../services/settings';
 import InvoiceStatusBadge from '../components/InvoiceStatusBadge';
 import { ArrowLeft, Loader2, FileText, Calendar, Building, Landmark, Percent, MessageSquare, Check, Share2, Printer } from 'lucide-react';
 
 export default function InvoiceDetail() {
   const { id } = useParams();
   const { user } = useAuth();
+  const { currency } = useCurrency();
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [storeProfile, setStoreProfile] = useState(null);
   const [recipientPhone, setRecipientPhone] = useState('+919876543210');
   const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
   const [printSrc, setPrintSrc] = useState(null);
@@ -32,6 +36,11 @@ export default function InvoiceDetail() {
     };
 
     fetchInvoice();
+
+    // Fetch store profile for seller details
+    getStoreSettings()
+      .then(res => { if (res?.success && res.settings) setStoreProfile(res.settings); })
+      .catch(() => {});
   }, [id]);
 
 
@@ -145,9 +154,19 @@ export default function InvoiceDetail() {
                     <span className="text-xs font-bold uppercase tracking-wider">Seller Details</span>
                   </div>
                   <div className="text-sm space-y-1">
-                    <p className="font-semibold text-slate-800">{invoice.sellerName}</p>
-                    <p className="text-slate-500">GSTIN: <span className="font-mono text-slate-700">{invoice.sellerGSTIN}</span></p>
-                    <p className="text-slate-500">PIN Code: <span className="font-mono text-slate-700">{invoice.sellerPIN}</span></p>
+                    <p className="font-semibold text-slate-800">{invoice.sellerName || storeProfile?.shopName || 'My Company'}</p>
+                    {(invoice.sellerAddress || storeProfile?.address) && (
+                      <p className="text-slate-500 text-xs">{invoice.sellerAddress || storeProfile?.address}</p>
+                    )}
+                    {(invoice.sellerPhone || storeProfile?.phoneNumber) && (
+                      <p className="text-slate-500">Phone: <span className="font-mono text-slate-700">{invoice.sellerPhone || storeProfile?.phoneNumber}</span></p>
+                    )}
+                    {(invoice.sellerEmail || storeProfile?.email) && (
+                      <p className="text-slate-500">Email: <span className="text-slate-700">{invoice.sellerEmail || storeProfile?.email}</span></p>
+                    )}
+                    {(invoice.sellerGSTIN || storeProfile?.gstin) && (
+                      <p className="text-slate-500">GSTIN: <span className="font-mono text-slate-700">{invoice.sellerGSTIN || storeProfile?.gstin}</span></p>
+                    )}
                   </div>
                 </div>
 

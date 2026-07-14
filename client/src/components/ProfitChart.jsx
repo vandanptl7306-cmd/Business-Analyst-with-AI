@@ -2,8 +2,10 @@
 
 import React, { useState } from 'react';
 import { BarChart3, TrendingUp, DollarSign } from 'lucide-react';
+import { useCurrency } from '../context/CurrencyContext';
 
 export default function ProfitChart({ invoices }) {
+  const { currency } = useCurrency();
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
   // Use Dummy premium data for ProfitChart

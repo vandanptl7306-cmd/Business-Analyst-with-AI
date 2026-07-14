@@ -8,6 +8,7 @@ import {
 import {
   getProductsList, createProduct, updateProduct, deleteProduct,
 } from '../services/product';
+import { useCurrency } from '../context/CurrencyContext';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const today = () => new Date();
@@ -53,6 +54,7 @@ const blankForm = () => ({
 
 // ── component ─────────────────────────────────────────────────────────────────
 export default function StockManagement() {
+  const { currency } = useCurrency();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

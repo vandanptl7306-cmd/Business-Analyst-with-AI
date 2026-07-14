@@ -1,26 +1,39 @@
 // client/src/pages/AddSale.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, X, ChevronDown, Trash2, Phone, Printer, Download, MessageSquare
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createInvoice } from '../services/invoice';
+import { useCurrency } from '../context/CurrencyContext';
+import { getStoreSettings } from '../services/settings';
 
 const UNIT_OPTIONS = ['NONE', 'Bag', 'Box', 'Btl', 'Can', 'Ctn', 'Doz', 'Gm', 'Kg', 'Ltr', 'Meter', 'Nos', 'Pcs', 'Pkt', 'Roll', 'Ton'];
 const TAX_OPTIONS = ['NONE', 'IGST@0%', 'GST@0%', 'GST@0.25%', 'IGST@3%', 'GST@3%', 'IGST@5%', 'GST@5%', 'IGST@12%', 'GST@12%', 'IGST@18%', 'GST@18%', 'IGST@28%', 'GST@28%'];
 
 export default function AddSale() {
   const navigate = useNavigate();
+  const { currency } = useCurrency();
   const [submitting, setSubmitting] = useState(false);
+  const [storeProfile, setStoreProfile] = useState(null);
+
+  // Fetch store profile (seller info) on mount
+  useEffect(() => {
+    getStoreSettings()
+      .then(res => { if (res?.success && res.settings) setStoreProfile(res.settings); })
+      .catch(() => {});
+  }, []);
 
   // Header State
   const [isFullMode, setIsFullMode] = useState(false);
 
   // Customer State
-  const [customerName, setCustomerName] = useState('pratik');
-  const [customerPhone, setCustomerPhone] = useState('9948946494');
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
   const [customerGSTIN, setCustomerGSTIN] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+  const [customerPIN, setCustomerPIN] = useState('');
 
   // Items State
   const [items, setItems] = useState([
@@ -89,13 +102,16 @@ export default function AddSale() {
       setSubmitting(true);
       
       const payload = {
-        sellerName: 'My Company', 
-        sellerGSTIN: '27AAAAA0000A1Z5', // Required by Invoice model
-        sellerPIN: '400001',            // Required by Invoice model
+        sellerName: storeProfile?.shopName || storeProfile?.customCompanyName || 'My Company',
+        sellerGSTIN: storeProfile?.gstin || '27AAAAA0000A1Z5',
+        sellerPIN: storeProfile?.address?.match(/\d{6}/)?.[0] || '000000',
+        sellerAddress: storeProfile?.address || '',
+        sellerPhone: storeProfile?.phoneNumber || '',
+        sellerEmail: storeProfile?.email || '',
         buyerName: customerName || 'Walk-in Customer',
-        buyerGSTIN: customerGSTIN || '27BBBBB0000B1Z5',  // Required by Invoice model, uses entered GSTIN if available
-        buyerBillingAddress: 'Idgar', 
-        buyerPIN: '400001',             // Required by Invoice model
+        buyerGSTIN: customerGSTIN || 'CONSUMER',
+        buyerBillingAddress: customerAddress || '',
+        buyerPIN: customerPIN || '000000',
         items: items.filter(it => it.name).map(it => {
           let rate = 0;
           if (it.tax && it.tax !== 'NONE') {
@@ -191,6 +207,22 @@ export default function AddSale() {
                 <input 
                   type="text" value={customerGSTIN} onChange={e => setCustomerGSTIN(e.target.value)}
                   placeholder="GSTIN"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-[6px] text-[13px] text-gray-800 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-shadow" 
+                />
+              </div>
+              <div className="w-[300px]">
+                <label className="block text-[11px] text-gray-600 font-semibold mb-1">Customer Address (Optional)</label>
+                <input 
+                  type="text" value={customerAddress} onChange={e => setCustomerAddress(e.target.value)}
+                  placeholder="Billing Address"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-[6px] text-[13px] text-gray-800 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-shadow" 
+                />
+              </div>
+              <div className="w-[150px]">
+                <label className="block text-[11px] text-gray-600 font-semibold mb-1">PIN Code (Optional)</label>
+                <input 
+                  type="text" value={customerPIN} onChange={e => setCustomerPIN(e.target.value)}
+                  placeholder="400001"
                   className="w-full px-3 py-2 border border-gray-200 rounded-[6px] text-[13px] text-gray-800 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-shadow" 
                 />
               </div>

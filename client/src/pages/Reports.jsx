@@ -3,9 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getSalesReport, getProfitLossReport, getGSTLiabilityReport } from '../services/report';
+import { useCurrency } from '../context/CurrencyContext';
 import { ArrowLeft, Calendar, FileDown, TrendingUp, BarChart3, Receipt, Percent, Loader2, Landmark, CheckCircle } from 'lucide-react';
 
 export default function Reports() {
+  const { currency } = useCurrency();
   const [activeTab, setActiveTab] = useState('sales'); // sales, profit, gst
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');

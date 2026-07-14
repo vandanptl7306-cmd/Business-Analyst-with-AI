@@ -127,10 +127,25 @@ export default function DashboardLayout() {
                 {sidebarOpen && <span>Reports</span>}
               </Link>
 
-              <Link to="/settings" className={navItemClass('/settings')} title={!sidebarOpen ? 'Settings' : ''}>
-                <Settings className={`h-4 w-4 flex-shrink-0 ${iconColor('/settings')}`} />
-                {sidebarOpen && <span>Settings</span>}
-              </Link>
+              <div className="flex flex-col">
+                <Link to="/settings/general" className={`flex items-center rounded-xl font-medium transition-all text-sm ${
+                  sidebarOpen ? 'space-x-3 px-3 py-2.5' : 'justify-center px-0 py-2.5 w-full'
+                } ${
+                  location.pathname.startsWith('/settings')
+                    ? 'bg-slate-800 text-white border border-slate-700/50'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                }`} title={!sidebarOpen ? 'Settings' : ''}>
+                  <Settings className={`h-4 w-4 flex-shrink-0 ${location.pathname.startsWith('/settings') ? 'text-indigo-400' : 'text-slate-500'}`} />
+                  {sidebarOpen && <span>Settings</span>}
+                </Link>
+                {sidebarOpen && location.pathname.startsWith('/settings') && (
+                  <div className="ml-8 mt-1 flex flex-col gap-1">
+                    <Link to="/settings/general" className={`text-xs px-3 py-2 rounded-lg transition-colors ${location.pathname === '/settings/general' ? 'text-white bg-slate-700/50' : 'text-slate-400 hover:text-slate-200'}`}>General</Link>
+                    <Link to="/settings/print" className={`text-xs px-3 py-2 rounded-lg transition-colors ${location.pathname === '/settings/print' ? 'text-white bg-slate-700/50' : 'text-slate-400 hover:text-slate-200'}`}>Print</Link>
+                    <Link to="/settings/profile" className={`text-xs px-3 py-2 rounded-lg transition-colors ${location.pathname === '/settings/profile' ? 'text-white bg-slate-700/50' : 'text-slate-400 hover:text-slate-200'}`}>Profile</Link>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
