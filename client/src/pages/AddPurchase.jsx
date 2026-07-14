@@ -406,25 +406,8 @@ export default function AddPurchase() {
 
           {/* Bottom Details Section */}
           <div className="flex px-4 py-4 gap-8 bg-white pb-8">
-            {/* Bottom Left */}
+            {/* Bottom Left - Removed Terms & Conditions */}
             <div className="w-[45%] flex flex-col gap-4">
-              {/* Terms */}
-              <div className="border border-gray-200 rounded-[4px] p-4 bg-white shadow-sm flex flex-col h-full min-h-[140px]">
-                <h3 className="text-[13px] font-bold text-gray-700 mb-3">Terms & Conditions</h3>
-                <div className="relative mb-2">
-                  <select className="w-full border border-gray-300 rounded-[4px] px-2 py-1.5 text-[12px] text-gray-600 appearance-none bg-white focus:outline-none focus:border-blue-400">
-                    <option>Select Title</option>
-                  </select>
-                  <ChevronDown className="absolute right-2 top-2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-                </div>
-                <div className="flex-1 bg-white border border-gray-100 p-2 text-[11px] text-gray-400 italic rounded">
-                  Selected terms and conditions appear here
-                </div>
-              </div>
-              
-              <div className="mt-2 text-center text-gray-400 text-[11px] cursor-pointer hover:text-gray-600 font-semibold border border-dashed border-gray-300 py-2.5 rounded hover:bg-gray-50 transition-colors">
-                ≡ ADD TERMS & CONDITIONS
-              </div>
             </div>
 
             {/* Bottom Center */}
@@ -444,20 +427,7 @@ export default function AddPurchase() {
                 <div className="text-blue-500 text-[11px] font-bold mt-1.5 cursor-pointer">+ Add Payment type</div>
               </div>
               
-              <div className="w-[200px] mt-2">
-                <button className="flex items-center gap-1.5 text-gray-400 text-[11px] font-bold hover:text-gray-600 mb-2 border border-gray-200 px-3 py-1.5 rounded-[4px]">
-                  <FileText className="w-3.5 h-3.5" /> ADD DESCRIPTION
-                </button>
-              </div>
 
-              <div className="flex flex-col gap-2 w-[160px]">
-                <button className="flex items-center justify-center gap-2 border border-gray-200 rounded-[4px] py-1.5 text-[11px] font-bold text-gray-500 bg-gray-50 hover:bg-gray-100 transition-colors">
-                  <Upload className="w-3.5 h-3.5" /> ADD IMAGE
-                </button>
-                <button className="flex items-center justify-center gap-2 border border-gray-200 rounded-[4px] py-1.5 text-[11px] font-bold text-gray-500 bg-gray-50 hover:bg-gray-100 transition-colors">
-                  <FileText className="w-3.5 h-3.5" /> ADD DOCUMENT
-                </button>
-              </div>
             </div>
 
             {/* Bottom Right: Financial Summary */}

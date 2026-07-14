@@ -116,7 +116,7 @@ export default function InvoiceDetail() {
               onClick={() => {
                 const token = localStorage.getItem('token');
                 const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-                const printUrl = `${apiBase}/invoices/${invoice._id}/print?template=Standard&token=${token}`;
+                const printUrl = `${apiBase}/invoices/${invoice._id}/print?token=${token}`;
                 setPrintSrc(printUrl);
               }}
               className="flex items-center justify-center space-x-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-[0.98]"
@@ -370,7 +370,7 @@ export default function InvoiceDetail() {
             padding: '10px 16px', background: '#1e293b', borderRadius: '0 0 12px 12px',
           }}>
             <span style={{ color: '#94a3b8', fontSize: '13px', fontFamily: 'sans-serif' }}>
-              Invoice Print Preview — Standard Template
+              Invoice Print Preview
             </span>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button

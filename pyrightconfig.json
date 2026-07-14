@@ -1,0 +1,8 @@
+{
+  "venvPath": ".",
+  "venv": ".venv_django",
+  "pythonPath": ".venv_django/Scripts/python.exe",
+  "extraPaths": [
+    ".venv_django/Lib/site-packages"
+  ]
+}

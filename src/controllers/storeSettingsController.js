@@ -55,7 +55,7 @@ const updateStoreSettings = async (req, res) => {
       'thermalOpenCashDrawer', 'thermalExtraLines', 'thermalCopies',
       'thermalPrintCompanyName', 'thermalCompanyName',
       'printBankDetails', 'bankAccountHolderName', 'bankName',
-      'bankAccountNumber', 'bankIfscCode', 'bankBranchName',
+      'bankAccountNumber', 'bankIfscCode', 'bankBranchName', 'bankQrCodeUrl',
       'companyTagline', 'poReference', 'invoiceNotes'
     ];
 

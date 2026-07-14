@@ -248,8 +248,7 @@ const createInvoice = async (req, res) => {
             // Get token from auth header
             const token = req.headers.authorization?.split(' ')[1];
             
-            // Construct the PDF link
-            const invoiceUrl = `${req.protocol}://${req.get('host')}/api/invoices/${invoice._id}/print?template=Standard${token ? `&token=${token}` : ''}`;
+            const invoiceUrl = `${req.protocol}://${req.get('host')}/api/invoices/${invoice._id}/print${token ? `?token=${token}` : ''}`;
             
             await whatsappService.sendInvoiceNotification(party.phoneNumber, {
               name: buyerName,

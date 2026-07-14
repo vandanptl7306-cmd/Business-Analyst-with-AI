@@ -4,6 +4,7 @@ import {
   Info, ChevronRight, ChevronLeft, X, Upload,
   Check, Minus, Plus, ChevronDown, Camera, QrCode, Trash2,
 } from 'lucide-react';
+import { getStoreSettings, updateStoreSettings } from '../services/settings';
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Default Settings
@@ -2741,13 +2742,125 @@ export default function PrintSettings() {
   const [regular, setRegular] = useState(() => loadLS(LS_KEY_REGULAR, DEFAULT_REGULAR));
   const [thermal, setThermal] = useState(() => loadLS(LS_KEY_THERMAL, DEFAULT_THERMAL));
   const debounceRef = useRef(null);
+  // Fetch and sync settings from backend on mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await getStoreSettings();
+        if (res.success && res.settings) {
+          const s = res.settings;
+          setRegular(prev => ({
+            ...prev,
+            selectedLayout: s.regularLayoutTheme || prev.selectedLayout,
+            themeColor: s.regularThemeColor || prev.themeColor,
+            makeDefault: s.printerType === 'Regular',
+            repeatHeader: s.printRepeatHeader ?? prev.repeatHeader,
+            printCompanyName: s.printCompanyName ?? prev.printCompanyName,
+            companyName: s.customCompanyName || s.shopName || prev.companyName,
+            printLogo: s.printCompanyLogo ?? prev.printCompanyLogo,
+            logoUrl: s.customLogoUrl || s.logoUrl || prev.logoUrl,
+            printAddress: s.printAddress ?? prev.printAddress,
+            address: s.customAddress || s.address || prev.address,
+            printEmail: s.printEmail ?? prev.printEmail,
+            email: s.customEmail || s.email || prev.email,
+            printPhone: s.printPhone ?? prev.printPhone,
+            phone: s.customPhone || s.phoneNumber || prev.phone,
+            printGSTIN: s.printGSTIN ?? prev.printGSTIN,
+            gstin: s.customGSTIN || s.gstin || prev.gstin,
+            paperSize: s.paperSize || prev.paperSize,
+            orientation: s.orientation || prev.orientation,
+            companyNameTextSize: s.companyNameTextSize || prev.companyNameTextSize,
+            invoiceTextSize: s.invoiceTextSize || prev.invoiceTextSize,
+            totalItemQuantity: s.printTotalQty ?? prev.totalItemQuantity,
+            amountWithDecimal: s.amountWithDecimal ?? prev.amountWithDecimal,
+            receivedAmount: s.printReceivedAmount ?? prev.receivedAmount,
+            balanceAmount: s.printBalanceAmount ?? prev.balanceAmount,
+            currentBalanceParty: s.printCurrentBalance ?? prev.currentBalanceParty,
+            taxDetails: s.printTaxDetails ?? prev.taxDetails,
+            youSaved: s.printYouSaved ?? prev.youSaved,
+            printAmountWithGrouping: s.printAmountWithGrouping ?? prev.printAmountWithGrouping,
+            amountInWords: s.amountInWordsFormat || prev.amountInWords,
+            printDescription: s.printDescription ?? prev.printDescription,
+            invoiceNotes: s.invoiceNotes || prev.invoiceNotes,
+            printBankDetails: s.printBankDetails ?? prev.printBankDetails,
+            bankAccountHolderName: s.bankAccountHolderName || prev.bankAccountHolderName,
+            bankName: s.bankName || prev.bankName,
+            bankAccountNumber: s.bankAccountNumber || prev.bankAccountNumber,
+            bankIfscCode: s.bankIfscCode || prev.bankIfscCode,
+            bankQrCodeUrl: s.bankQrCodeUrl || prev.bankQrCodeUrl
+          }));
+          setThermal(prev => ({
+            ...prev,
+            makeDefault: s.printerType === 'Thermal',
+            printingType: s.thermalPrintingType || prev.printingType,
+            useTextStyling: s.thermalUseTextStylingBold ?? prev.useTextStyling,
+            autoCutPaper: s.thermalAutoCut ?? prev.autoCutPaper,
+            openCashDrawer: s.thermalOpenCashDrawer ?? prev.openCashDrawer,
+            extraLinesAtEnd: s.thermalExtraLines ?? prev.extraLinesAtEnd,
+            numberOfCopies: s.thermalCopies ?? prev.numberOfCopies,
+            printCompanyName: s.thermalPrintCompanyName ?? prev.printCompanyName,
+            companyName: s.thermalCompanyName || s.shopName || prev.companyName
+          }));
+        }
+      } catch (e) {
+        console.error("Failed to fetch settings in PrintSettings", e);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   // Auto-save with debounce
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
+    debounceRef.current = setTimeout(async () => {
       localStorage.setItem(LS_KEY_REGULAR, JSON.stringify(regular));
       localStorage.setItem(LS_KEY_THERMAL, JSON.stringify(thermal));
+
+      // Auto-save regular printer settings to database
+      try {
+        const payload = {
+          regularLayoutTheme: regular.selectedLayout,
+          printerType: regular.makeDefault ? 'Regular' : (thermal.makeDefault ? 'Thermal' : 'Regular'),
+          regularThemeColor: regular.themeColor,
+          printRepeatHeader: regular.repeatHeader,
+          printCompanyName: regular.printCompanyName,
+          customCompanyName: regular.companyName,
+          printCompanyLogo: regular.printLogo,
+          customLogoUrl: regular.logoUrl,
+          printAddress: regular.printAddress,
+          customAddress: regular.address,
+          printEmail: regular.printEmail,
+          customEmail: regular.email,
+          printPhone: regular.printPhone,
+          customPhone: regular.phone,
+          printGSTIN: regular.printGSTIN,
+          customGSTIN: regular.gstin,
+          paperSize: regular.paperSize,
+          orientation: regular.orientation,
+          companyNameTextSize: regular.companyNameTextSize,
+          invoiceTextSize: regular.invoiceTextSize,
+          printTotalQty: regular.totalItemQuantity,
+          amountWithDecimal: regular.amountWithDecimal,
+          printReceivedAmount: regular.receivedAmount,
+          printBalanceAmount: regular.balanceAmount,
+          printCurrentBalance: regular.currentBalanceParty,
+          printTaxDetails: regular.taxDetails,
+          printYouSaved: regular.youSaved,
+          printAmountWithGrouping: regular.printAmountWithGrouping,
+          amountInWordsFormat: regular.amountInWords,
+          printDescription: regular.printDescription,
+          invoiceNotes: regular.invoiceNotes,
+          printBankDetails: regular.printBankDetails,
+          bankAccountHolderName: regular.bankAccountHolderName,
+          bankName: regular.bankName,
+          bankAccountNumber: regular.bankAccountNumber,
+          bankIfscCode: regular.bankIfscCode,
+          bankQrCodeUrl: regular.bankQrCodeUrl
+        };
+        await updateStoreSettings(payload);
+      } catch (e) {
+        console.error("Auto-saving print settings failed", e);
+      }
     }, 800);
     return () => clearTimeout(debounceRef.current);
   }, [regular, thermal]);
@@ -2778,10 +2891,10 @@ export default function PrintSettings() {
 
 
       {/* Split layout: settings left | preview right */}
-      <div className="flex" style={{ height: 'calc(100vh - 118px)' }}>
+      <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-118px)]">
 
         {/* ── Left: scrollable settings ── */}
-        <div className="flex-1 overflow-y-auto min-w-0">
+        <div className="flex-1 overflow-y-auto min-w-[320px]">
           {activeTab === 'regular'
             ? <RegularPrinterPanel s={regular} set={setRegular} />
             : <ThermalPrinterPanel s={thermal} set={setThermal} />
@@ -2790,8 +2903,8 @@ export default function PrintSettings() {
 
         {/* ── Right: sticky live preview ── */}
         <div
-          className="flex-shrink-0 overflow-y-auto border-l border-gray-200"
-          style={{ width: 520, background: '#F3F4F6' }}
+          className="w-full lg:w-[520px] flex-shrink-0 overflow-y-auto border-t lg:border-t-0 lg:border-l border-gray-200"
+          style={{ background: '#F3F4F6' }}
         >
           {/* Preview header */}
           <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-5 py-2.5 flex items-center justify-between">

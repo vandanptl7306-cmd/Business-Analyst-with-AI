@@ -128,7 +128,7 @@ const storeSettingsSchema = new mongoose.Schema(
     // Paper size, layout sizes
     paperSize: {
       type: String,
-      enum: ['A4', 'A5', 'Letter'],
+      enum: ['A4', 'A5', 'Letter', 'Legal'],
       default: 'A4'
     },
     orientation: {
@@ -138,7 +138,7 @@ const storeSettingsSchema = new mongoose.Schema(
     },
     companyNameTextSize: {
       type: String,
-      enum: ['Small', 'Medium', 'Large'],
+      enum: ['Small', 'Medium', 'Large', 'Extra Large'],
       default: 'Large'
     },
     invoiceTextSize: {
@@ -222,6 +222,10 @@ const storeSettingsSchema = new mongoose.Schema(
       default: ''
     },
     bankBranchName: {
+      type: String,
+      default: ''
+    },
+    bankQrCodeUrl: {
       type: String,
       default: ''
     },

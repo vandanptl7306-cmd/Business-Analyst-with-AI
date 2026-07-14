@@ -708,7 +708,367 @@ const getInvoiceHTML = (invoice, store, template) => {
       </body>
       </html>
     `;
-  }  // 2. --- LANDSCAPE THEME 1 (A4 Landscape) ---
+  }
+  
+  // 3. --- GST THEME 1 (A4 Portrait) ---
+  if (template === 'GST Theme 1' || template === 'gst1') {
+    const primaryPurple = '#8D84E8';
+    
+    const gst1ItemRows = invoice.items.map((item, idx) => {
+      const rate = (item.isTaxInclusive ? item.mrp : item.price) || 0;
+      const amount = item.totalAmount || 0;
+      const hsn = item.hsnCode || 'N/A';
+      const disc = item.discount || 0;
+      const discPct = item.discountPercent || 0;
+      const gstRate = item.gstRate || 0;
+      const cgst = item.cgst || 0;
+      const sgst = item.sgst || 0;
+      const igst = item.igst || 0;
+      const totalGst = cgst + sgst + igst;
+      
+      return `
+        <tr style="background: ${idx % 2 === 1 ? '#ffffff' : '#f8fafc'}; border-bottom: 1px solid #D9D9D9;">
+          <td style="padding: 8px; text-align: left;">${idx + 1}</td>
+          <td style="padding: 8px; text-align: left; font-weight: bold; text-transform: uppercase;">${item.description}</td>
+          <td style="padding: 8px; text-align: center;">${hsn}</td>
+          <td style="padding: 8px; text-align: center;">${item.quantity}</td>
+          <td style="padding: 8px; text-align: right;">${currencySymbol} ${formatAmount(rate)}</td>
+          <td style="padding: 8px; text-align: right;">${currencySymbol} ${formatAmount(disc)} (${discPct}%)</td>
+          <td style="padding: 8px; text-align: right;">${currencySymbol} ${formatAmount(totalGst)} (${gstRate}%)</td>
+          <td style="padding: 8px; text-align: right;">${currencySymbol} ${formatAmount(amount)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const totalQty = invoice.items.reduce((acc, i) => acc + (i.quantity || 0), 0);
+    const totalDisc = invoice.items.reduce((acc, i) => acc + (i.discount || 0), 0);
+    const totalTaxAmount = invoice.items.reduce((acc, i) => acc + (i.cgst || 0) + (i.sgst || 0) + (i.igst || 0), 0);
+    const grandTotal = invoice.grandTotal || 0;
+    const received = invoice.amountPaid || 0;
+    const balance = grandTotal - received;
+    const youSaved = invoice.items.reduce((acc, item) => acc + ((item.mrp && item.mrp > item.price) ? (item.mrp - item.price) * item.quantity : 0), 0);
+    const cgstTotal = invoice.items.reduce((acc, i) => acc + (i.cgst || 0), 0);
+    const sgstTotal = invoice.items.reduce((acc, i) => acc + (i.sgst || 0), 0);
+    const igstTotal = invoice.items.reduce((acc, i) => acc + (i.igst || 0), 0);
+
+    return `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Tax Invoice #${invoice.invoiceNumber}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+        <style>
+          @page { size: A4 portrait; margin: 10mm; }
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body {
+            font-family: 'Poppins', 'Roboto', sans-serif;
+            background: #ffffff;
+            color: #000000;
+            font-size: 12px;
+            line-height: 1.4;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          
+          .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+          }
+          .company-name {
+            font-size: 18px;
+            font-weight: bold;
+          }
+          .company-phone {
+            font-size: 12px;
+            color: #333;
+            margin-top: 4px;
+          }
+          .logo-placeholder {
+            width: 70px;
+            height: 70px;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #94a3b8;
+          }
+          .logo-image {
+            max-width: 70px;
+            max-height: 70px;
+            object-fit: contain;
+          }
+          .horizontal-divider {
+            height: 1px;
+            background-color: ${primaryPurple};
+            margin-bottom: 10px;
+          }
+          .invoice-title {
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: ${primaryPurple};
+            margin-bottom: 20px;
+          }
+          
+          .info-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+          }
+          .info-col {
+            flex: 1;
+          }
+          .info-col.right-align {
+            text-align: right;
+          }
+          .info-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+          }
+          .info-text {
+            font-size: 12px;
+            margin-bottom: 4px;
+          }
+          .info-bold {
+            font-weight: bold;
+          }
+
+          .item-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+          }
+          .item-table th {
+            background-color: ${primaryPurple};
+            color: white;
+            font-weight: bold;
+            padding: 8px;
+            text-align: center;
+            font-size: 12px;
+          }
+          .item-table th:first-child { text-align: left; }
+          .item-table th:nth-child(2) { text-align: left; }
+          .item-table th:last-child { text-align: right; }
+          .item-table th:nth-last-child(2) { text-align: right; }
+          .item-table th:nth-last-child(3) { text-align: right; }
+          .item-table th:nth-last-child(4) { text-align: right; }
+          
+          .totals-row td {
+            font-weight: bold;
+            padding: 8px;
+            border-top: 1px solid #94a3b8;
+            border-bottom: 1px solid #94a3b8;
+          }
+          
+          .bottom-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+          }
+          .bottom-left {
+            width: 50%;
+            padding-right: 20px;
+          }
+          .bottom-right {
+            width: 35%;
+          }
+          
+          .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 12px;
+          }
+          .summary-row.total-box {
+            background-color: ${primaryPurple};
+            color: white;
+            font-weight: bold;
+            padding: 4px 8px;
+            margin: 8px 0;
+          }
+          
+          .footer-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+          }
+          
+          /* Hide UI elements during print */
+          @media print {
+            body { margin: 0; padding: 0; }
+            button, .no-print { display: none !important; }
+            ::-webkit-scrollbar { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header-container">
+          <div>
+            <div class="company-name">${store.customCompanyName || store.shopName || 'Company Name'}</div>
+            <div class="company-phone">Ph. no.: ${store.customPhone || store.phoneNumber || ''}</div>
+          </div>
+          <div>
+            ${(store.printCompanyLogo !== false && (store.customLogoUrl || store.logoUrl)) 
+              ? `<img src="${store.customLogoUrl || store.logoUrl}" class="logo-image" alt="logo" />` 
+              : `<div class="logo-placeholder">Image</div>`
+            }
+          </div>
+        </div>
+        
+        <div class="horizontal-divider"></div>
+        
+        <div class="invoice-title">Sale</div>
+        
+        <div class="info-section">
+          <div class="info-col">
+            <div class="info-title">Bill To:</div>
+            <div class="info-bold info-text">${invoice.buyerName || ''}</div>
+            <div class="info-text" style="max-width: 200px;">${invoice.buyerBillingAddress || ''}</div>
+            <div class="info-text">Contact No.: ${invoice.buyerPhone || ''}</div>
+          </div>
+          <div class="info-col">
+            <div class="info-title">Shipping To</div>
+            <div class="info-text" style="max-width: 200px;">${invoice.buyerShippingAddress || invoice.buyerBillingAddress || ''}</div>
+          </div>
+          <div class="info-col right-align">
+            <div class="info-title">Invoice Details</div>
+            <div class="info-text">Invoice No.: ${invoice.invoiceNumber || ''}</div>
+            <div class="info-text">Date: ${invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString('en-GB').replace(/\//g, '-') : ''}</div>
+            <div class="info-text">Time: ${invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}) : ''}</div>
+            <div class="info-text">Due Date: ${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-GB').replace(/\//g, '-') : ''}</div>
+          </div>
+        </div>
+        
+        <table class="item-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Item name</th>
+              <th>HSC/SAC</th>
+              <th>Quantity</th>
+              <th>Price/unit</th>
+              <th>Discount</th>
+              <th>GST</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${gst1ItemRows}
+            <tr class="totals-row">
+              <td></td>
+              <td>Total</td>
+              <td></td>
+              <td style="text-align: center;">${totalQty}</td>
+              <td></td>
+              <td style="text-align: right;">${currencySymbol} ${formatAmount(totalDisc)}</td>
+              <td style="text-align: right;">${currencySymbol} ${formatAmount(totalTaxAmount)}</td>
+              <td style="text-align: right;">${currencySymbol} ${formatAmount(invoice.subTotal + totalTaxAmount)}</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div class="bottom-section">
+          <div class="bottom-left">
+            <div class="info-bold info-text" style="margin-bottom: 8px;">Description</div>
+            <div class="info-text" style="margin-bottom: 20px;">Sale Description</div>
+            
+            <div class="info-bold info-text" style="margin-bottom: 8px; text-transform: uppercase;">Invoice Amount In Words</div>
+            <div class="info-text" style="margin-bottom: 20px;">${numberToWords(grandTotal)}</div>
+            
+            ${invoice.dueDate ? `<div class="info-text" style="margin-bottom: 20px;">Due Date: ${new Date(invoice.dueDate).toLocaleDateString('en-GB').replace(/\//g, '-')}</div>` : ''}
+            
+            <div class="info-bold info-text" style="margin-bottom: 8px; text-transform: uppercase;">Terms and Conditions</div>
+            <div class="info-text">${store.invoiceNotes || 'Thanks for doing business with us!'}</div>
+          </div>
+          
+          <div class="bottom-right">
+            <div class="summary-row">
+              <span>Sub Total</span>
+              <span>${currencySymbol} ${formatAmount(invoice.subTotal)}</span>
+            </div>
+            <div class="summary-row">
+              <span>Discount</span>
+              <span>${currencySymbol} ${formatAmount(totalDisc)}</span>
+            </div>
+            ${!isInterState && cgstTotal > 0 ? `
+            <div class="summary-row">
+              <span>CGST</span>
+              <span>${currencySymbol} ${formatAmount(cgstTotal)}</span>
+            </div>
+            ` : ''}
+            ${!isInterState && sgstTotal > 0 ? `
+            <div class="summary-row">
+              <span>SGST</span>
+              <span>${currencySymbol} ${formatAmount(sgstTotal)}</span>
+            </div>
+            ` : ''}
+            ${isInterState && igstTotal > 0 ? `
+            <div class="summary-row">
+              <span>IGST</span>
+              <span>${currencySymbol} ${formatAmount(igstTotal)}</span>
+            </div>
+            ` : ''}
+            
+            <div class="summary-row total-box">
+              <span>Total</span>
+              <span>${currencySymbol} ${formatAmount(grandTotal)}</span>
+            </div>
+            <div class="summary-row">
+              <span>Received</span>
+              <span>${currencySymbol} ${formatAmount(received)}</span>
+            </div>
+            <div class="summary-row">
+              <span>Balance</span>
+              <span>${currencySymbol} ${formatAmount(balance)}</span>
+            </div>
+            
+            <br/>
+            ${youSaved > 0 ? `
+            <div class="summary-row info-bold">
+              <span>You Saved</span>
+              <span>${currencySymbol} ${formatAmount(youSaved)}</span>
+            </div>
+            ` : ''}
+          </div>
+        </div>
+        
+        <div class="footer-section">
+          <div style="display: flex; gap: 15px;">
+            <div>
+              <!-- QR placeholder if no actual url -->
+              ${store.bankQrCodeUrl 
+                ? `<img src="${store.bankQrCodeUrl}" style="width: 60px; height: 60px;" alt="QR Code"/>`
+                : `<div style="width: 60px; height: 60px; background: #e2e8f0; display:flex; align-items:center; justify-content:center; font-size: 8px;">QR Code</div>`
+              }
+              <div style="margin-top: 4px; font-size: 9px; font-weight: bold; color: #10b981; border: 1px solid #10b981; padding: 2px 4px; border-radius: 2px; text-align: center;">UPI PAY NOW</div>
+            </div>
+            
+            <div>
+              <div class="info-bold info-text" style="margin-bottom: 6px;">Pay To:</div>
+              <div class="info-text">Bank Name: ${store.bankName || ''}</div>
+              <div class="info-text">Bank Account No.: ${store.bankAccountNumber || ''}</div>
+              <div class="info-text">Bank IFSC code: ${store.bankIfscCode || ''}</div>
+            </div>
+          </div>
+          
+          <div style="text-align: center; display: flex; flex-direction: column; align-items: center;">
+            <div class="info-text" style="margin-bottom: 4px;">For : ${store.customCompanyName || store.shopName || ''}</div>
+            <div style="width: 100px; height: 50px; background: #e2e8f0; display:flex; align-items:center; justify-content:center; font-size: 10px; color: #94a3b8; margin-bottom: 4px;">Image</div>
+            <div class="info-bold info-text">Authorized Signatory</div>
+          </div>
+        </div>
+        
+      </body>
+      </html>
+    `;
+  }
+
+  // 2. --- LANDSCAPE THEME 1 (A4 Landscape) ---
   if (template === 'Landscape Theme 1' || template === 'landscape1') {
     const lsItemRows = invoice.items.map((item, idx) => {
       const rate = (item.isTaxInclusive ? item.mrp : item.price) || 0;

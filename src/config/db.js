@@ -79,7 +79,7 @@ const setupMockDB = () => {
         defaultInvoiceTemplate: 'Standard',
         invoiceThemeColor: '#2563eb',
         printerType: 'Regular',
-        regularLayoutTheme: 'Standard',
+        regularLayoutTheme: 'GST Theme 1',
         regularThemeColor: '#2563eb',
         printRepeatHeader: false,
         printCompanyName: true,
@@ -129,13 +129,11 @@ const setupMockDB = () => {
         updatedAt: new Date()
       }
     ],
-    paymenttransactions: [],
     expenses: [
       { _id: new mongoose.Types.ObjectId(), category: 'Rent', amount: 1500, expenseDate: new Date() },
       { _id: new mongoose.Types.ObjectId(), category: 'Utilities', amount: 350, expenseDate: new Date() },
       { _id: new mongoose.Types.ObjectId(), category: 'Salaries', amount: 5000, expenseDate: new Date() }
     ],
-    datasynclogs: [],
     counters: [
       { _id: 'invoiceNumber', seq: 0 }
     ]

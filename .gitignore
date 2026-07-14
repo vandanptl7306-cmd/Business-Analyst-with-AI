@@ -10,6 +10,7 @@ yarn-error.log*
 venv/
 ENV/
 env/
+.venv_django/
 __pycache__/
 *.pyc
 *.pyo
@@ -33,3 +34,9 @@ htmlcov/
 dist/
 build/
 out/
+
+# Environment Variables
+.env
+
+# Database
+db.sqlite3

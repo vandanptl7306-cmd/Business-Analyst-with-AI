@@ -247,6 +247,52 @@ export default function SettingsPage() {
     setApiError('');
     setSuccessMsg('');
     try {
+      let printSettingsPayload = {};
+      try {
+        const lsReg = localStorage.getItem('print_settings_regular');
+        if (lsReg) {
+          const p = JSON.parse(lsReg);
+          if (p.selectedLayout) printSettingsPayload.regularLayoutTheme = p.selectedLayout;
+          if (p.themeColor) printSettingsPayload.regularThemeColor = p.themeColor;
+          if (p.printRepeatHeader !== undefined) printSettingsPayload.printRepeatHeader = p.printRepeatHeader;
+          if (p.printCompanyName !== undefined) printSettingsPayload.printCompanyName = p.printCompanyName;
+          if (p.companyName !== undefined) printSettingsPayload.customCompanyName = p.companyName;
+          if (p.printLogo !== undefined) printSettingsPayload.printCompanyLogo = p.printLogo;
+          if (p.logoUrl !== undefined) printSettingsPayload.customLogoUrl = p.logoUrl;
+          if (p.printAddress !== undefined) printSettingsPayload.printAddress = p.printAddress;
+          if (p.address !== undefined) printSettingsPayload.customAddress = p.address;
+          if (p.printEmail !== undefined) printSettingsPayload.printEmail = p.printEmail;
+          if (p.email !== undefined) printSettingsPayload.customEmail = p.email;
+          if (p.printPhone !== undefined) printSettingsPayload.printPhone = p.printPhone;
+          if (p.phone !== undefined) printSettingsPayload.customPhone = p.phone;
+          if (p.printGSTIN !== undefined) printSettingsPayload.printGSTIN = p.printGSTIN;
+          if (p.gstin !== undefined) printSettingsPayload.customGSTIN = p.gstin;
+          if (p.paperSize !== undefined) printSettingsPayload.paperSize = p.paperSize;
+          if (p.orientation !== undefined) printSettingsPayload.orientation = p.orientation;
+          if (p.companyNameTextSize !== undefined) printSettingsPayload.companyNameTextSize = p.companyNameTextSize;
+          if (p.invoiceTextSize !== undefined) printSettingsPayload.invoiceTextSize = p.invoiceTextSize;
+          if (p.totalItemQuantity !== undefined) printSettingsPayload.printTotalQty = p.totalItemQuantity;
+          if (p.amountWithDecimal !== undefined) printSettingsPayload.amountWithDecimal = p.amountWithDecimal;
+          if (p.receivedAmount !== undefined) printSettingsPayload.printReceivedAmount = p.receivedAmount;
+          if (p.balanceAmount !== undefined) printSettingsPayload.printBalanceAmount = p.balanceAmount;
+          if (p.currentBalanceParty !== undefined) printSettingsPayload.printCurrentBalance = p.currentBalanceParty;
+          if (p.taxDetails !== undefined) printSettingsPayload.printTaxDetails = p.taxDetails;
+          if (p.youSaved !== undefined) printSettingsPayload.printYouSaved = p.youSaved;
+          if (p.printAmountWithGrouping !== undefined) printSettingsPayload.printAmountWithGrouping = p.printAmountWithGrouping;
+          if (p.amountInWords !== undefined) printSettingsPayload.amountInWordsFormat = p.amountInWords;
+          if (p.printDescription !== undefined) printSettingsPayload.printDescription = p.printDescription;
+          if (p.invoiceNotes !== undefined) printSettingsPayload.invoiceNotes = p.invoiceNotes;
+          if (p.printBankDetails !== undefined) printSettingsPayload.printBankDetails = p.printBankDetails;
+          if (p.bankAccountHolderName !== undefined) printSettingsPayload.bankAccountHolderName = p.bankAccountHolderName;
+          if (p.bankName !== undefined) printSettingsPayload.bankName = p.bankName;
+          if (p.bankAccountNumber !== undefined) printSettingsPayload.bankAccountNumber = p.bankAccountNumber;
+          if (p.bankIfscCode !== undefined) printSettingsPayload.bankIfscCode = p.bankIfscCode;
+          if (p.bankQrCodeUrl !== undefined) printSettingsPayload.bankQrCodeUrl = p.bankQrCodeUrl;
+        }
+      } catch (e) {
+        console.error("Error parsing print_settings_regular", e);
+      }
+
       const payload = {
         regularLayoutTheme, regularThemeColor, printRepeatHeader,
         printCompanyName, customCompanyName, printCompanyLogo, customLogoUrl,
@@ -260,6 +306,7 @@ export default function SettingsPage() {
         thermalPrintingType, thermalUseTextStylingBold, thermalAutoCut, thermalOpenCashDrawer,
         thermalExtraLines, thermalCopies, thermalPrintCompanyName, thermalCompanyName,
         autoSendWhatsApp,
+        ...printSettingsPayload
       };
       const [pRes, sRes] = await Promise.all([
         updateStoreProfile(businessType),

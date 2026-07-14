@@ -292,3 +292,31 @@ textarea:focus-visible {
   stroke-dashoffset: 1000;
   animation: drawStroke 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #invoice-printable-area, #invoice-printable-area * {
+    visibility: visible;
+  }
+  #invoice-printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none !important;
+    box-shadow: none !important;
+    transform: scale(1.1) !important;
+    transform-origin: top left !important;
+    zoom: 1 !important;
+    min-height: auto !important;
+  }
+  
+  /* Hide the outline border when printing */
+  #invoice-printable-area > .absolute.inset-\[15px\] {
+    display: none !important;
+  }
+}
