@@ -35,35 +35,41 @@ const User = require('./models/User');
 // Mount auth routes
 app.use('/api/auth', require('./routes/auth'));
 
-// Mount invoice routes
-app.use('/api/invoices', require('./routes/invoice'));
+// Mount sale routes
+app.use('/api/sales', require('./routes/sale'));
 
-// Mount party routes
-app.use('/api/parties', require('./routes/party'));
+// Mount customer routes
+app.use('/api/customers', require('./routes/customer'));
+
+// Mount supplier routes
+app.use('/api/suppliers', require('./routes/supplier'));
+
+// Mount category routes
+app.use('/api/categories', require('./routes/category'));
+
+// Mount tax routes
+app.use('/api/taxes', require('./routes/tax'));
+
+// Mount payment routes
+app.use('/api/payments', require('./routes/payment'));
 
 // Mount settings routes
 app.use('/api/settings', require('./routes/settings'));
 
+// Mount products routes
+app.use('/api/products', require('./routes/product'));
 
-
+// Mount purchases routes
+app.use('/api/purchases', require('./routes/purchase'));
 
 // Mount reports routes
 app.use('/api/reports', require('./routes/report'));
-
-// Mount products routes
-app.use('/api/products', require('./routes/product'));
 
 // Mount ml routes
 app.use('/api/ml', require('./routes/ml'));
 
 // Mount ai routes (Compliance Audit Bot)
 app.use('/api/ai', require('./routes/ai'));
-
-// Mount purchases routes
-app.use('/api/purchases', require('./routes/purchase'));
-
-// Mount firms routes
-app.use('/api/firms', require('./routes/firm'));
 
 const PORT = process.env.PORT || 5000;
 

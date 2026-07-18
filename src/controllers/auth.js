@@ -1,6 +1,7 @@
 // src/controllers/auth.js
 
 const User = require('../models/User');
+const CompanySettings = require('../models/CompanySettings');
 const { generateToken } = require('../utils/auth');
 const { OAuth2Client } = require('google-auth-library');
 
@@ -37,6 +38,13 @@ const register = async (req, res) => {
       email,
       password,
       role: 'Admin', // Default role is Admin as per requirements
+    });
+
+    // Create default store settings
+    await CompanySettings.create({
+      userId: user._id,
+      shopName: `${user.name}'s Store`,
+      email: user.email,
     });
 
     // Generate token
@@ -164,6 +172,21 @@ const googleLogin = async (req, res) => {
         avatarUrl,
         role: 'Admin', // Automatically registered as Admin as per requirements
         isEmailVerified: true, // Google email is verified
+      });
+
+      // Create default store settings
+      await StoreSettings.create({
+        userId: user._id,
+        shopName: user.name + "'s Store",
+        email: user.email,
+      });
+
+      // Create default firm
+      await Firm.create({
+        userId: user._id,
+        name: user.name + "'s Store",
+        email: user.email,
+        isDefault: true,
       });
     }
 

@@ -465,17 +465,9 @@ export default function SettingsPage() {
 
               </div>
 
-              {/* ── Column 2: Multi Firm ── */}
+              {/* â”€â”€ Column 2: Multi Firm (Disabled) â”€â”€ */}
               <div>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#111827', marginBottom: 16 }}>Multi Firm</div>
-                <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, padding: '16px 18px', minHeight: 120 }}>
-                  <SettingRow checked={multiFirm} onChange={setMultiFirm} label="Enable Multi Firm" />
-                  {multiFirm && (
-                    <div style={{ marginTop: 14, borderTop: '1px solid #F3F4F6', paddingTop: 14 }}>
-                      <MultiFirmManager />
-                    </div>
-                  )}
-                </div>
+                {/* Feature removed: Each user is now an independent tenant/business */}
               </div>
 
               {/* ── Column 3: Customize View ── */}

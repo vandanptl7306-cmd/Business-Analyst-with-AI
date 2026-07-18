@@ -2,6 +2,9 @@
 
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { AsyncLocalStorage } = require('async_hooks');
+
+const userContext = new AsyncLocalStorage();
 
 /**
  * Protect middleware to secure routes and verify JWT tokens
@@ -28,7 +31,10 @@ const protect = async (req, res, next) => {
         return res.status(401).json({ success: false, error: 'Not authorized, user not found' });
       }
 
-      next();
+      // Wrap the next() call inside userContext to make req.user globally available
+      return userContext.run({ user: req.user }, () => {
+        next();
+      });
     } catch (error) {
       console.error('Authorization error:', error.message);
       return res.status(401).json({ success: false, error: 'Not authorized, token failed' });
@@ -51,4 +57,4 @@ const admin = (req, res, next) => {
   }
 };
 
-module.exports = { protect, admin };
+module.exports = { protect, admin, userContext };

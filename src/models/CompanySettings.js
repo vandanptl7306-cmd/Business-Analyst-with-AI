@@ -4,32 +4,36 @@ const mongoose = require('mongoose');
 
 const storeSettingsSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
     shopName: {
       type: String,
       required: true,
       trim: true,
-      default: 'IntellectBill AI Operations'
+      default: 'My Business'
     },
     address: {
       type: String,
-      required: true,
       trim: true,
-      default: '101, Business Enclave, Cyber City, Sector 45, Gurgaon, Haryana'
+      default: ''
     },
     phoneNumber: {
       type: String,
       trim: true,
-      default: '+919876543210'
+      default: ''
     },
     email: {
       type: String,
       trim: true,
-      default: 'billing@intellectbill.ai'
+      default: ''
     },
     gstin: {
       type: String,
       trim: true,
-      default: '27AAAAA1111A1Z1'
+      default: ''
     },
     logoUrl: {
       type: String,
@@ -315,4 +319,4 @@ const storeSettingsSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model('StoreSettings', storeSettingsSchema);
+module.exports = mongoose.model('CompanySettings', storeSettingsSchema);

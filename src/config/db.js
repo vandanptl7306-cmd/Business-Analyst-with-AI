@@ -11,10 +11,12 @@ const setupMockDB = () => {
   console.log('   - Password: password123');
   console.log('--------------------------------------------------');
 
+  const ADMIN_USER_ID = new mongoose.Types.ObjectId('60c72b2f9b1d8b2c88888888');
+
   const store = {
     users: [
       {
-        _id: new mongoose.Types.ObjectId('60c72b2f9b1d8b2c88888888'),
+        _id: ADMIN_USER_ID,
         name: 'Admin User',
         email: 'admin@example.com',
         password: '$2a$10$lL9WYyb4pN4751xlnlSmDuQYGTdI1iVrTwAOIb2omo1zLtDE10VzO',
@@ -26,40 +28,40 @@ const setupMockDB = () => {
     ],
     invoices: [],
     parties: [
-      { _id: new mongoose.Types.ObjectId(), name: 'Client Alpha', phoneNumber: '+911234567890', outstandingBalance: 1200 },
-      { _id: new mongoose.Types.ObjectId(), name: 'Client Beta', phoneNumber: '+919876543210', outstandingBalance: 450 },
-      { _id: new mongoose.Types.ObjectId(), name: 'Gamma Industries', phoneNumber: '+919555666777', outstandingBalance: 0 }
+      { _id: new mongoose.Types.ObjectId(), userId: ADMIN_USER_ID, name: 'Client Alpha', phoneNumber: '+911234567890', outstandingBalance: 1200 },
+      { _id: new mongoose.Types.ObjectId(), userId: ADMIN_USER_ID, name: 'Client Beta', phoneNumber: '+919876543210', outstandingBalance: 450 },
+      { _id: new mongoose.Types.ObjectId(), userId: ADMIN_USER_ID, name: 'Gamma Industries', phoneNumber: '+919555666777', outstandingBalance: 0 }
     ],
     products: [
       {
-        _id: new mongoose.Types.ObjectId(), name: 'Organic Rice', sku: 'RIC-ORG-01',
+        _id: new mongoose.Types.ObjectId(), userId: ADMIN_USER_ID, name: 'Organic Rice', sku: 'RIC-ORG-01',
         mrp: 85, sellingPrice: 80, averageCostPrice: 60, taxRate: 5, isTaxInclusive: true,
         quantity: 120, lowStockThreshold: 20, unit: 'kg',
         expiryDate: null, createdAt: new Date(), updatedAt: new Date()
       },
       {
-        _id: new mongoose.Types.ObjectId(), name: 'Premium Olive Oil', sku: 'OIL-PRE-02',
+        _id: new mongoose.Types.ObjectId(), userId: ADMIN_USER_ID, name: 'Premium Olive Oil', sku: 'OIL-PRE-02',
         mrp: 270, sellingPrice: 250, averageCostPrice: 180, taxRate: 12, isTaxInclusive: true,
         quantity: 8, lowStockThreshold: 10, unit: 'litre',
-        expiryDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // expires in 15 days
+        expiryDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
         createdAt: new Date(), updatedAt: new Date()
       },
       {
-        _id: new mongoose.Types.ObjectId(), name: 'Organic Tea', sku: 'TEA-ORG-03',
+        _id: new mongoose.Types.ObjectId(), userId: ADMIN_USER_ID, name: 'Organic Tea', sku: 'TEA-ORG-03',
         mrp: 50, sellingPrice: 45, averageCostPrice: 30, taxRate: 5, isTaxInclusive: true,
         quantity: 3, lowStockThreshold: 15, unit: 'pcs',
-        expiryDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // expires in 60 days
+        expiryDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
         createdAt: new Date(), updatedAt: new Date()
       },
       {
-        _id: new mongoose.Types.ObjectId(), name: 'Whole Wheat Flour', sku: 'FLR-WW-04',
+        _id: new mongoose.Types.ObjectId(), userId: ADMIN_USER_ID, name: 'Whole Wheat Flour', sku: 'FLR-WW-04',
         mrp: 45, sellingPrice: 40, averageCostPrice: 28, taxRate: 0, isTaxInclusive: true,
         quantity: 55, lowStockThreshold: 10, unit: 'kg',
         expiryDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
         createdAt: new Date(), updatedAt: new Date()
       },
       {
-        _id: new mongoose.Types.ObjectId(), name: 'Cold Press Coconut Oil', sku: 'OIL-COC-05',
+        _id: new mongoose.Types.ObjectId(), userId: ADMIN_USER_ID, name: 'Cold Press Coconut Oil', sku: 'OIL-COC-05',
         mrp: 180, sellingPrice: 165, averageCostPrice: 110, taxRate: 12, isTaxInclusive: true,
         quantity: 0, lowStockThreshold: 5, unit: 'litre',
         expiryDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
@@ -69,6 +71,7 @@ const setupMockDB = () => {
     storesettings: [
       {
         _id: new mongoose.Types.ObjectId(),
+        userId: ADMIN_USER_ID,
         shopName: 'IntellectBill AI Store',
         businessType: 'Retail',
         address: '101, Business Enclave, Cyber City, Sector 45, Gurgaon, Haryana',
@@ -130,9 +133,9 @@ const setupMockDB = () => {
       }
     ],
     expenses: [
-      { _id: new mongoose.Types.ObjectId(), category: 'Rent', amount: 1500, expenseDate: new Date() },
-      { _id: new mongoose.Types.ObjectId(), category: 'Utilities', amount: 350, expenseDate: new Date() },
-      { _id: new mongoose.Types.ObjectId(), category: 'Salaries', amount: 5000, expenseDate: new Date() }
+      { _id: new mongoose.Types.ObjectId(), userId: ADMIN_USER_ID, category: 'Rent', amount: 1500, expenseDate: new Date() },
+      { _id: new mongoose.Types.ObjectId(), userId: ADMIN_USER_ID, category: 'Utilities', amount: 350, expenseDate: new Date() },
+      { _id: new mongoose.Types.ObjectId(), userId: ADMIN_USER_ID, category: 'Salaries', amount: 5000, expenseDate: new Date() }
     ],
     counters: [
       { _id: 'invoiceNumber', seq: 0 }
@@ -140,6 +143,7 @@ const setupMockDB = () => {
     firms: [
       {
         _id: new mongoose.Types.ObjectId('60c72b2f9b1d8b2c77777701'),
+        userId: ADMIN_USER_ID,
         name: 'My Company',
         address: '101, Business Enclave, Cyber City, Sector 45, Gurgaon, Haryana',
         phoneNumber: '+919876543210',
@@ -153,13 +157,14 @@ const setupMockDB = () => {
     ]
   };
 
-  // Seed invoices
+  // Seed invoices for admin user only
   for (let i = 0; i < 15; i++) {
     const date = new Date();
     date.setDate(date.getDate() - i);
     const isPaid = i % 3 === 0;
     store.invoices.push({
       _id: new mongoose.Types.ObjectId(),
+      userId: ADMIN_USER_ID,
       invoiceNumber: `INV-26-27-0${10 + i}`,
       invoiceDate: date,
       buyerName: i % 2 === 0 ? 'Client Alpha' : 'Client Beta',
@@ -198,10 +203,36 @@ const setupMockDB = () => {
     });
   }
 
+  // Collections that are isolated per user
+  const USER_SCOPED_COLLECTIONS = new Set([
+    'invoices', 'parties', 'products', 'expenses', 'storesettings', 'firms', 'purchases'
+  ]);
+
   const getCollectionKey = (modelName) => {
     if (modelName === 'StoreSettings') return 'storesettings';
     if (modelName === 'Party') return 'parties';
     return modelName.toLowerCase() + 's';
+  };
+
+  // Helper to read the current user ID from AsyncLocalStorage
+  const getCurrentUserId = () => {
+    try {
+      const { userContext } = require('../middleware/auth');
+      const ctx = userContext.getStore();
+      return ctx && ctx.user ? ctx.user._id : null;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  // Apply per-user filtering: only return records belonging to currentUserId
+  const applyUserScope = (collection, collectionKey, currentUserId) => {
+    if (!USER_SCOPED_COLLECTIONS.has(collectionKey)) return collection;
+    if (!currentUserId) return collection;
+    return collection.filter(item => {
+      if (!item.userId) return true; // legacy items without userId are visible to all
+      return item.userId.toString() === currentUserId.toString();
+    });
   };
 
   const matchesFilter = (item, filter) => {
@@ -222,6 +253,9 @@ const setupMockDB = () => {
       if (key === 'email' && filterVal) {
         return String(item.email).toLowerCase() === String(filterVal).toLowerCase();
       }
+      if (key === 'userId' && filterVal) {
+        return item.userId && item.userId.toString() === filterVal.toString();
+      }
       
       if (filterVal && typeof filterVal === 'object') {
         return true;
@@ -239,7 +273,10 @@ const setupMockDB = () => {
     const update = this._update || {};
     const options = this.options || {};
     
-    const collection = store[collectionKey] || [];
+    const currentUserId = getCurrentUserId();
+    const rawCollection = store[collectionKey] || [];
+    // Apply user-scoping for user-owned collections
+    const collection = applyUserScope(rawCollection, collectionKey, currentUserId);
     
     const findItems = () => {
       return collection.filter(item => matchesFilter(item, filter));
@@ -253,77 +290,12 @@ const setupMockDB = () => {
     if (op === 'findOne') {
       const items = findItems();
       let found = items[0] || null;
-      if (!found && modelName === 'User' && filter.email === 'admin@example.com') {
-        found = store.users[0];
+
+      // Special fallback: always find the User by email/id regardless of scope
+      if (!found && modelName === 'User') {
+        found = store.users.find(u => matchesFilter(u, filter)) || null;
       }
       
-      // Dynamic fallback for any requested ID that isn't found in mock DB
-      if (!found && filter._id) {
-        const requestedId = filter._id.toString();
-        try {
-          // Always return admin user when any User is looked up by _id (for JWT auth in mock mode)
-          if (modelName === 'User') {
-            found = store.users[0];
-          } else if (modelName === 'Invoice') {
-            found = {
-              _id: new mongoose.Types.ObjectId(requestedId),
-              invoiceNumber: `INV-26-27-0999`,
-              invoiceDate: new Date(),
-              buyerName: 'Client Alpha',
-              buyerGSTIN: '27AAAAA1111A1Z1',
-              buyerBillingAddress: '123 Business Rd, Mumbai',
-              buyerPIN: '400001',
-              sellerName: 'IntellectBill AI Store',
-              sellerGSTIN: '27BBBBB2222B2Z2',
-              sellerPIN: '400002',
-              items: [
-                { description: 'Organic Rice', hsnCode: '1006', quantity: 5, price: 80, basePrice: 80, gstRate: 18, totalAmount: 400, unitCostPrice: 60 }
-              ],
-              subTotal: 400,
-              taxTotal: 72,
-              grandTotal: 472,
-              totalCost: 300,
-              netProfit: 172,
-              status: 'Unpaid',
-              amountPaid: 0,
-              outstandingAmount: 472,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            };
-            store.invoices.push(found);
-          } else if (modelName === 'Party') {
-            found = {
-              _id: new mongoose.Types.ObjectId(requestedId),
-              name: 'Client Alpha',
-              phoneNumber: '+911234567890',
-              outstandingBalance: 1200,
-              whatsappEnabled: true,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            };
-            store.parties.push(found);
-          } else if (modelName === 'Product') {
-            found = {
-              _id: new mongoose.Types.ObjectId(requestedId),
-              name: 'Organic Rice',
-              sku: 'RIC-ORG-01',
-              mrp: 85,
-              sellingPrice: 80,
-              averageCostPrice: 60,
-              quantity: 100,
-              lowStockThreshold: 20,
-              unit: 'kg',
-              expiryDate: null,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            };
-            store.products.push(found);
-          }
-        } catch (e) {
-          // If requestedId is not a valid ObjectId, ignore and return null
-          found = null;
-        }
-      }
       return found ? new this.model(found) : null;
     }
     
@@ -333,8 +305,7 @@ const setupMockDB = () => {
     }
     
     if (op === 'findOneAndUpdate' || op === 'updateOne') {
-      let items = findItems();
-      let foundObj = items[0];
+      let foundObj = findItems()[0];
       let wasInserted = false;
       
       if (!foundObj) {
@@ -345,7 +316,11 @@ const setupMockDB = () => {
             createdAt: new Date(),
             updatedAt: new Date()
           };
-          collection.push(foundObj);
+          // Auto-stamp userId on upserted documents for user-scoped collections
+          if (USER_SCOPED_COLLECTIONS.has(collectionKey) && currentUserId && !foundObj.userId) {
+            foundObj.userId = currentUserId;
+          }
+          rawCollection.push(foundObj);
           wasInserted = true;
         } else {
           return null;
@@ -378,9 +353,9 @@ const setupMockDB = () => {
       
       foundObj.updatedAt = new Date();
       
-      const idx = collection.findIndex(item => item._id.toString() === foundObj._id.toString());
+      const idx = rawCollection.findIndex(item => item._id.toString() === foundObj._id.toString());
       if (idx !== -1) {
-        collection[idx] = foundObj;
+        rawCollection[idx] = foundObj;
       }
       
       return new this.model(foundObj);
@@ -389,7 +364,7 @@ const setupMockDB = () => {
     if (op === 'deleteMany' || op === 'deleteOne') {
       const items = findItems();
       const ids = items.map(i => i._id.toString());
-      store[collectionKey] = collection.filter(item => !ids.includes(item._id.toString()));
+      store[collectionKey] = rawCollection.filter(item => !ids.includes(item._id.toString()));
       return { deletedCount: items.length };
     }
 
@@ -415,7 +390,10 @@ const setupMockDB = () => {
   mongoose.Aggregate.prototype.exec = async function() {
     const modelName = this._model.modelName;
     const collectionKey = getCollectionKey(modelName);
-    const collection = store[collectionKey] || [];
+    
+    const currentUserId = getCurrentUserId();
+    const rawCollection = store[collectionKey] || [];
+    const collection = applyUserScope(rawCollection, collectionKey, currentUserId);
     
     // Check if it is the GST Liability aggregation
     if (modelName === 'Invoice' && this._pipeline.some(stage => stage.$group && stage.$group.totalCgst)) {
@@ -537,7 +515,11 @@ const setupMockDB = () => {
   mongoose.Model.countDocuments = async function(filter) {
     const modelName = this.modelName;
     const collectionKey = getCollectionKey(modelName);
-    const collection = store[collectionKey] || [];
+    
+    const currentUserId = getCurrentUserId();
+    const rawCollection = store[collectionKey] || [];
+    const collection = applyUserScope(rawCollection, collectionKey, currentUserId);
+
     if (!filter || Object.keys(filter).length === 0) return collection.length;
     return collection.filter(item => {
       return Object.keys(filter).every(key => String(item[key]) === String(filter[key]));
@@ -553,6 +535,12 @@ const setupMockDB = () => {
     if (modelName === 'User' && doc.password) {
       const salt = await bcrypt.genSalt(10);
       doc.password = await bcrypt.hash(doc.password, salt);
+    }
+    
+    // Auto-stamp userId on new documents for user-scoped collections
+    const currentUserId = getCurrentUserId();
+    if (USER_SCOPED_COLLECTIONS.has(collectionKey) && currentUserId && !doc.userId) {
+      doc.userId = currentUserId;
     }
     
     const newDoc = new this({
@@ -576,6 +564,12 @@ const setupMockDB = () => {
       this.password = await bcrypt.hash(this.password, salt);
     }
     
+    // Auto-stamp userId on save for user-scoped collections
+    const currentUserId = getCurrentUserId();
+    if (USER_SCOPED_COLLECTIONS.has(collectionKey) && currentUserId && !this.userId) {
+      this.userId = currentUserId;
+    }
+    
     const plainObj = this.toObject ? this.toObject({ virtuals: true }) : this;
     const idx = collection.findIndex(item => item._id.toString() === this._id.toString());
     if (idx !== -1) {
@@ -588,13 +582,13 @@ const setupMockDB = () => {
 };
 
 const connectDB = async () => {
-  if (!process.env.MONGO_URI) {
+  if (!process.env.MONGODB_URI) {
     setupMockDB();
     return;
   }
   
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI, {
+    const conn = await mongoose.connect(process.env.MONGODB_URI, {
       serverSelectionTimeoutMS: 2000
     });
     console.log(`MongoDB Connected: ${conn.connection.host}`);

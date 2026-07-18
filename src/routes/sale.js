@@ -2,7 +2,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { createInvoice, getInvoice, getInvoices, getUpcomingInvoiceNumber, sendInvoiceEmail, getProfitAnalytics } = require('../controllers/invoiceController');
+const { createInvoice, getInvoice, getInvoices, getUpcomingInvoiceNumber, sendInvoiceEmail, getProfitAnalytics } = require('../controllers/saleController');
 const { printInvoice } = require('../controllers/pdfController');
 const { protect, admin } = require('../middleware/auth');
 

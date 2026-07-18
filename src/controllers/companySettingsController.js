@@ -1,6 +1,6 @@
 // src/controllers/storeSettingsController.js
 
-const StoreSettings = require('../models/StoreSettings');
+const CompanySettings = require('../models/CompanySettings');
 
 /**
  * @desc    Get active store settings
@@ -11,15 +11,16 @@ const getStoreSettings = async (req, res) => {
   try {
     // findOneAndUpdate with upsert ensures a document always exists and works
     // correctly with both MongoDB and the mock in-memory DB
-    let settings = await StoreSettings.findOneAndUpdate(
-      {},
+    let settings = await CompanySettings.findOneAndUpdate(
+      { userId: req.user._id },
       { $setOnInsert: {
-          shopName: 'IntellectBill AI Operations',
-          address: '101, Business Enclave, Cyber City, Sector 45, Gurgaon, Haryana',
-          phoneNumber: '+919876543210',
-          email: 'billing@intellectbill.ai',
-          gstin: '27AAAAA1111A1Z1',
-          logoUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150',
+          userId: req.user._id,
+          shopName: req.user.companyName || (req.user.name ? req.user.name + "'s Store" : 'My Business'),
+          address: '',
+          phoneNumber: req.user.phoneNumber || '',
+          email: req.user.email || '',
+          gstin: '',
+          logoUrl: '',
           defaultInvoiceTemplate: 'Standard'
         }
       },
@@ -69,8 +70,8 @@ const updateStoreSettings = async (req, res) => {
     });
 
     // findOneAndUpdate with upsert — works correctly with both real MongoDB and mock DB
-    const settings = await StoreSettings.findOneAndUpdate(
-      {},
+    const settings = await CompanySettings.findOneAndUpdate(
+      { userId: req.user._id },
       { $set: patch },
       { new: true, upsert: true }
     );
@@ -96,8 +97,8 @@ const updateBusinessProfile = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Please specify a valid business profile type' });
     }
 
-    const settings = await StoreSettings.findOneAndUpdate(
-      {},
+    const settings = await CompanySettings.findOneAndUpdate(
+      { userId: req.user._id },
       { $set: { businessType } },
       { new: true, upsert: true }
     );

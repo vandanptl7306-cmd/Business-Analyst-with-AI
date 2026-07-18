@@ -1,7 +1,7 @@
 // src/controllers/mlController.js
 
 const axios = require('axios');
-const Invoice = require('../models/Invoice');
+const Sale = require('../models/Sale');
 
 // ML Microservice base URL from env variables
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
@@ -32,8 +32,8 @@ const getDemandForecast = async (req, res) => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const salesData = await Invoice.aggregate([
-        { $match: { invoiceDate: { $gte: thirtyDaysAgo } } },
+      const salesData = await Sale.aggregate([
+        { $match: { userId: req.user._id, invoiceDate: { $gte: thirtyDaysAgo } } },
         { $unwind: '$items' },
         {
           $match: {
@@ -86,104 +86,81 @@ const getDemandForecast = async (req, res) => {
  */
 const getDashboardMetrics = async (req, res) => {
   try {
-    const { start_date, end_date, interval } = req.query;
+    const userId = req.user._id;
 
-    try {
-      const response = await axios.get(`${ML_SERVICE_URL}/api/analytics/dashboard-metrics`, {
-        params: { start_date, end_date, interval }
-      });
-      return res.status(200).json(response.data);
-    } catch (mlErr) {
-      console.warn('ML Microservice offline for analytics. Generating Node fallback response.');
+    // Fetch all sales for this user
+    const invoices = await Sale.find({ userId });
+    
+    // Calculate actual metrics from invoices
+    const totalRev = invoices.reduce((acc, curr) => acc + (curr.grandTotal || 0), 0);
+    const totalProfit = invoices.reduce((acc, curr) => acc + (curr.netProfit || 0), 0);
+    
+    // Group invoices by date for trend analysis
+    const trendMap = {};
+    invoices.forEach(inv => {
+      const invDate = new Date(inv.invoiceDate || inv.createdAt);
+      const dateStr = invDate.toISOString().split('T')[0];
       
-      const invoices = await Invoice.find({}).catch(() => []);
-      
-      if (!invoices || invoices.length === 0) {
-        // Generate realistic demo data when no invoices exist
-        const today = new Date();
-        const trendData = [];
-        let baseRevenue = 500;
-        let baseProfit = 150;
-        
-        for (let i = 6; i >= 0; i--) {
-          const date = new Date(today);
-          date.setDate(date.getDate() - i);
-          const variance = Math.random() * 0.4 - 0.2; // ±20% variance
-          
-          trendData.push({
-            date: date.toISOString().split('T')[0],
-            revenue: Math.round(baseRevenue * (1 + variance) * 100) / 100,
-            profit: Math.round(baseProfit * (1 + variance) * 100) / 100,
-            sales_count: Math.floor(8 + Math.random() * 12),
-            revenue_growth: i === 6 ? 0 : Math.round(Math.random() * 30),
-            sales_growth: i === 6 ? 0 : Math.round(Math.random() * 25)
-          });
-        }
-        
-        return res.status(200).json({
-          success: true,
-          kpis: {
-            totalRevenue: 7080,
-            totalProfit: 2580,
-            salesVolume: invoices.length || 15,
-            customersAcquired: 12,
-            repeatCustomerRate: 35.5
-          },
-          trendData: trendData
-        });
+      if (!trendMap[dateStr]) {
+        trendMap[dateStr] = { revenue: 0, profit: 0, count: 0 };
       }
+      trendMap[dateStr].revenue += inv.grandTotal || 0;
+      trendMap[dateStr].profit += inv.netProfit || 0;
+      trendMap[dateStr].count += 1;
+    });
 
-      // Calculate actual metrics from invoices
-      const totalRev = invoices.reduce((acc, curr) => acc + (curr.grandTotal || 0), 0);
-      const totalProfit = invoices.reduce((acc, curr) => acc + (curr.netProfit || 0), 0);
+    const trendData = Object.entries(trendMap)
+      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+      .slice(-7) // Last 7 days
+      .map(([date, data]) => ({
+        date,
+        revenue: Math.round(data.revenue * 100) / 100,
+        profit: Math.round(data.profit * 100) / 100,
+        sales_count: data.count,
+        revenue_growth: 0,
+        sales_growth: 0
+      }));
       
-      // Group invoices by date for trend analysis
-      const trendMap = {};
-      invoices.forEach(inv => {
-        const invDate = new Date(inv.invoiceDate || inv.createdAt);
-        const dateStr = invDate.toISOString().split('T')[0];
-        
-        if (!trendMap[dateStr]) {
-          trendMap[dateStr] = { revenue: 0, profit: 0, count: 0 };
-        }
-        trendMap[dateStr].revenue += inv.grandTotal || 0;
-        trendMap[dateStr].profit += inv.netProfit || 0;
-        trendMap[dateStr].count += 1;
-      });
+    // Fetch Customers
+    const Customer = require('../models/Customer');
+    const customers = await Customer.find({ userId });
+    
+    // Calculate repeat customer rate
+    const buyerCounts = {};
+    invoices.forEach(inv => {
+        const buyer = inv.buyerName || 'Unknown';
+        buyerCounts[buyer] = (buyerCounts[buyer] || 0) + 1;
+    });
+    
+    const uniqueBuyers = Object.keys(buyerCounts).length;
+    let repeatBuyers = 0;
+    Object.values(buyerCounts).forEach(count => {
+        if (count > 1) repeatBuyers++;
+    });
+    
+    const repeatRate = uniqueBuyers > 0 ? Math.round((repeatBuyers / uniqueBuyers) * 1000) / 10 : 0;
 
-      const trendData = Object.entries(trendMap)
-        .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
-        .slice(-7) // Last 7 days
-        .map(([date, data]) => ({
-          date,
-          revenue: Math.round(data.revenue * 100) / 100,
-          profit: Math.round(data.profit * 100) / 100,
-          sales_count: data.count,
-          revenue_growth: 0,
-          sales_growth: 0
-        }));
+    return res.status(200).json({
+      success: true,
+      kpis: {
+        totalRevenue: Math.round(totalRev * 100) / 100,
+        totalProfit: Math.round(totalProfit * 100) / 100,
+        salesVolume: invoices.length,
+        customersAcquired: customers.length,
+        repeatCustomerRate: repeatRate
+      },
+      trendData: trendData.length > 0 ? trendData : [{
+        date: new Date().toISOString().split('T')[0],
+        revenue: totalRev,
+        profit: totalProfit,
+        sales_count: invoices.length,
+        revenue_growth: 0,
+        sales_growth: 0
+      }]
+    });
 
-      return res.status(200).json({
-        success: true,
-        kpis: {
-          totalRevenue: Math.round(totalRev * 100) / 100,
-          totalProfit: Math.round(totalProfit * 100) / 100,
-          salesVolume: invoices.length,
-          customersAcquired: invoices.length > 0 ? Math.floor(invoices.length * 0.8) : 0,
-          repeatCustomerRate: 35.5
-        },
-        trendData: trendData.length > 0 ? trendData : [{
-          date: new Date().toISOString().split('T')[0],
-          revenue: totalRev,
-          profit: totalProfit,
-          sales_count: invoices.length,
-          revenue_growth: 0,
-          sales_growth: 0
-        }]
-      });
-    }
   } catch (error) {
-    console.error('Proxy analytics query error:', error.message);
+    console.error('Analytics query error:', error.message);
     res.status(500).json({ success: false, error: 'Server error processing analytics trend query' });
   }
 };
@@ -196,15 +173,9 @@ const getDashboardMetrics = async (req, res) => {
 const getTrendChart = async (req, res) => {
   try {
     const { metric } = req.query;
-    try {
-      const response = await axios.get(`${ML_SERVICE_URL}/api/analytics/trend-chart`, {
-        params: { metric }
-      });
-      return res.status(200).json(response.data);
-    } catch (mlErr) {
-      console.warn('ML Microservice offline/unreachable for Matplotlib trend-chart. Falling back to frontend mockup.');
-      return res.status(200).json({ success: false, fallback: true });
-    }
+    // Force fallback to frontend React Recharts to ensure multi-tenant data isolation
+    // The Python ML service currently lacks userId filtering and reads globally.
+    return res.status(200).json({ success: false, fallback: true });
   } catch (error) {
     console.error('Proxy trend chart query error:', error.message);
     res.status(500).json({ success: false, error: 'Server error processing trend chart query' });

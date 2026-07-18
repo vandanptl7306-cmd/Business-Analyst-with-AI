@@ -1,7 +1,8 @@
 // src/controllers/pdfController.js
 
-const Invoice = require('../models/Invoice');
-const StoreSettings = require('../models/StoreSettings');
+const Sale = require('../models/Sale');
+const CompanySettings = require('../models/CompanySettings');
+const Customer = require('../models/Customer');
 
 /**
  * Generates an HTML invoice template with custom CSS injects based on the selected layout style.
@@ -634,21 +635,21 @@ const getInvoiceHTML = (invoice, store, template) => {
               </div>
               <div class="tally-totals-row-item highlight">
                 <span>Total:</span>
-                <span>${currencySymbol}${formatAmount(grandTotal)}</span>
+                <span>${currencySymbol}${formatAmount(invoice.grandTotal)}</span>
               </div>
               
               <div class="tally-words-box">
                 <span style="font-weight: bold; color: #475569; display: block; margin-bottom: 2px;">Invoice Amount In Words:</span>
-                <span style="font-style: italic; font-weight: 600; color: #1e293b; font-size: 10px; display: block; line-height: 1.3;">${numberToWords(grandTotal)}</span>
+                <span style="font-style: italic; font-weight: 600; color: #1e293b; font-size: 10px; display: block; line-height: 1.3;">${numberToWords(invoice.grandTotal)}</span>
               </div>
               
               <div class="tally-totals-row-item" style="margin-top: 6px; border-top: 1px solid #e2e8f0; padding-top: 4px;">
                 <span>Received:</span>
-                <span>${currencySymbol}${formatAmount(received)}</span>
+                <span>${currencySymbol}${formatAmount(invoice.amountPaid || 0)}</span>
               </div>
               <div class="tally-totals-row-item" style="color: #dc2626; font-weight: bold;">
                 <span>Balance:</span>
-                <span>${currencySymbol}${formatAmount(balance)}</span>
+                <span>${currencySymbol}${formatAmount(invoice.outstandingAmount || 0)}</span>
               </div>
               ${youSaved > 0 ? `
               <div class="tally-totals-row-item" style="color: #10b981; font-weight: bold; border-top: 1px solid #e2e8f0; padding-top: 4px;">
@@ -1100,8 +1101,8 @@ const getInvoiceHTML = (invoice, store, template) => {
     const lsTotalSgst = invoice.items.reduce((acc, i) => acc + (i.sgst || 0), 0);
     const lsTotalIgst = invoice.items.reduce((acc, i) => acc + (i.igst || 0), 0);
     const lsTotalTax = lsTotalCgst + lsTotalSgst + lsTotalIgst;
-    const lsGrandTotal = invoice.totalAmount || 0;
-    const lsReceived = invoice.receivedAmount || 0;
+    const lsGrandTotal = invoice.grandTotal || 0;
+    const lsReceived = invoice.amountPaid || 0;
     const lsBalance = lsGrandTotal - lsReceived;
     const lsYouSaved = invoice.items.reduce((acc, item) => acc + ((item.mrp && item.mrp > item.price) ? (item.mrp - item.price) * item.quantity : 0), 0);
 
@@ -1548,8 +1549,8 @@ const getInvoiceHTML = (invoice, store, template) => {
     const l2TotalSgst = invoice.items.reduce((a,i) => a + (i.sgst||0), 0);
     const l2TotalIgst = invoice.items.reduce((a,i) => a + (i.igst||0), 0);
     const l2TotalTax  = l2TotalCgst + l2TotalSgst + l2TotalIgst;
-    const l2Grand     = invoice.totalAmount || 0;
-    const l2Received  = invoice.receivedAmount || 0;
+    const l2Grand     = invoice.grandTotal || 0;
+    const l2Received  = invoice.amountPaid || 0;
     const l2Balance   = l2Grand - l2Received;
     const l2YouSaved  = invoice.items.reduce((a,i) => a + ((i.mrp && i.mrp > i.price) ? (i.mrp - i.price) * i.quantity : 0), 0);
 
@@ -2894,13 +2895,13 @@ const printInvoice = async (req, res) => {
     const { id } = req.params;
     const templateQuery = req.query.template; // standard, modern, thermal
 
-    const invoice = await Invoice.findById(id);
+    const invoice = await Sale.findOne({ _id: id, userId: req.user._id });
     if (!invoice) {
       return res.status(404).send('Invoice not found');
     }
 
     // Retrieve active store settings config
-    let store = await StoreSettings.findOne({});
+    let store = await CompanySettings.findOne({ userId: req.user._id });
     if (!store) {
       store = {
         shopName: 'IntellectBill AI Operations',

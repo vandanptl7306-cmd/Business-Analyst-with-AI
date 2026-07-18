@@ -3,7 +3,7 @@
 import os
 import sys
 
-
+#icwz tjji fxyi vrbx
 def main():
     """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend_django.settings')

@@ -30,11 +30,15 @@ const productSchema = new mongoose.Schema(
       min: 0,
       default: 0,
     },
-    taxRate: {
-      type: Number,
-      required: true,
-      enum: [0, 5, 12, 18, 28],
-      default: 18,
+    categoryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Category',
+      default: null,
+    },
+    taxId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Tax',
+      default: null,
     },
     isTaxInclusive: {
       type: Boolean,

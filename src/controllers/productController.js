@@ -10,7 +10,7 @@ const Product = require('../models/Product');
 const createProduct = async (req, res) => {
   try {
     const {
-      name, sku, mrp, sellingPrice, taxRate, isTaxInclusive,
+      name, sku, mrp, sellingPrice, taxId, categoryId, isTaxInclusive,
       barcode, minimumOrderQuantity, batchNumber, rawMaterials,
       billOfMaterialsCost,
       // Stock fields
@@ -22,11 +22,13 @@ const createProduct = async (req, res) => {
     }
 
     const product = await Product.create({
+      userId: req.user._id,
       name,
       sku,
       mrp,
       sellingPrice: sellingPrice || mrp,
-      taxRate: taxRate || 18,
+      taxId: taxId || null,
+      categoryId: categoryId || null,
       isTaxInclusive: isTaxInclusive !== false,
       barcode,
       minimumOrderQuantity: minimumOrderQuantity || 1,
@@ -58,7 +60,7 @@ const createProduct = async (req, res) => {
  */
 const getProducts = async (req, res) => {
   try {
-    const products = await Product.find({}).sort({ name: 1 });
+    const products = await Product.find({ userId: req.user._id }).sort({ name: 1 });
     res.status(200).json({ success: true, products });
   } catch (error) {
     console.error('Fetch products error:', error.message);
@@ -73,7 +75,7 @@ const getProducts = async (req, res) => {
  */
 const getLowStockProducts = async (req, res) => {
   try {
-    const products = await Product.find({}).sort({ name: 1 });
+    const products = await Product.find({ userId: req.user._id }).sort({ name: 1 });
 
     const now = new Date();
     const in30Days = new Date();
@@ -101,12 +103,12 @@ const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      name, sku, mrp, sellingPrice, taxRate,
+      name, sku, mrp, sellingPrice, taxId, categoryId,
       quantity, expiryDate, lowStockThreshold, unit,
       barcode, batchNumber,
     } = req.body;
 
-    const product = await Product.findOne({ _id: id });
+    const product = await Product.findOne({ _id: id, userId: req.user._id });
     if (!product) {
       return res.status(404).json({ success: false, error: 'Product not found' });
     }
@@ -115,7 +117,8 @@ const updateProduct = async (req, res) => {
     if (sku !== undefined) product.sku = sku;
     if (mrp !== undefined) product.mrp = Number(mrp);
     if (sellingPrice !== undefined) product.sellingPrice = Number(sellingPrice);
-    if (taxRate !== undefined) product.taxRate = Number(taxRate);
+    if (taxId !== undefined) product.taxId = taxId || null;
+    if (categoryId !== undefined) product.categoryId = categoryId || null;
     if (quantity !== undefined) product.quantity = Number(quantity);
     if (expiryDate !== undefined) product.expiryDate = expiryDate || null;
     if (lowStockThreshold !== undefined) product.lowStockThreshold = Number(lowStockThreshold);
@@ -142,12 +145,12 @@ const deleteProduct = async (req, res) => {
     const { id } = req.params;
 
     // Use findOne + deleteOne pattern compatible with mock DB
-    const product = await Product.findOne({ _id: id });
+    const product = await Product.findOne({ _id: id, userId: req.user._id });
     if (!product) {
       return res.status(404).json({ success: false, error: 'Product not found' });
     }
 
-    await Product.deleteOne({ _id: id });
+    await Product.deleteOne({ _id: id, userId: req.user._id });
 
     res.status(200).json({ success: true, message: 'Product deleted successfully' });
   } catch (error) {
@@ -171,7 +174,7 @@ const deductStock = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Provide a positive quantity to deduct' });
     }
 
-    const product = await Product.findOne({ _id: id });
+    const product = await Product.findOne({ _id: id, userId: req.user._id });
     if (!product) {
       return res.status(404).json({ success: false, error: 'Product not found' });
     }

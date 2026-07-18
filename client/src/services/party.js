@@ -19,7 +19,7 @@ API.interceptors.request.use((config) => {
  * Fetch all customers/parties
  */
 export const getPartiesList = async () => {
-  const response = await API.get('/parties');
+  const response = await API.get('/customers');
   return response.data;
 };
 
@@ -27,7 +27,7 @@ export const getPartiesList = async () => {
  * Create a new customer/party
  */
 export const createParty = async (partyData) => {
-  const response = await API.post('/parties', partyData);
+  const response = await API.post('/customers', partyData);
   return response.data;
 };
 
@@ -35,7 +35,7 @@ export const createParty = async (partyData) => {
  * Send an outstanding payment reminder via Email
  */
 export const sendEmailReminder = async (id) => {
-  const response = await API.post(`/parties/${id}/send-reminder`);
+  const response = await API.post(`/customers/${id}/send-reminder`);
   return response.data;
 };
 

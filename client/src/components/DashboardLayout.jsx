@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getStoreSettings } from '../services/settings';
 import {
   LogOut,
   Settings,
@@ -16,6 +17,7 @@ import {
   ChevronRight,
   ShoppingCart,
   ShoppingBag,
+  Lock,
 } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -23,6 +25,19 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isLocked, setIsLocked] = useState(false);
+  const [passcodePin, setPasscodePin] = useState('');
+  const [loadingSettings, setLoadingSettings] = useState(true);
+
+  React.useEffect(() => {
+    getStoreSettings().then(res => {
+      if (res?.success && res.settings?.enablePasscode) {
+        setIsLocked(true);
+        setPasscodePin(res.settings.passcodePin || '');
+      }
+      setLoadingSettings(false);
+    }).catch(() => setLoadingSettings(false));
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -44,6 +59,40 @@ export default function DashboardLayout() {
 
   const iconColor = (path) =>
     isActive(path) ? 'text-indigo-400' : 'text-slate-500';
+
+  if (loadingSettings) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-950">
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 rounded-full border-4 border-slate-800"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-t-indigo-500 animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLocked) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-950 flex-col">
+        <div className="bg-slate-900 p-8 rounded-2xl shadow-xl border border-slate-800 max-w-sm w-full text-center">
+          <div className="h-16 w-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-indigo-600/30">
+            <Lock className="h-8 w-8 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">App Locked</h2>
+          <p className="text-slate-400 mb-6 text-sm">Please enter your 4-digit PIN to continue.</p>
+          <input 
+            type="password" 
+            maxLength={4}
+            placeholder="****"
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-center text-2xl tracking-widest text-white focus:outline-none focus:border-indigo-500 mb-4"
+            onChange={(e) => {
+              if (e.target.value === passcodePin) setIsLocked(false);
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen dashboard-grid-layout" style={{ gridTemplateColumns: sidebarOpen ? '260px 1fr' : '60px 1fr' }}>

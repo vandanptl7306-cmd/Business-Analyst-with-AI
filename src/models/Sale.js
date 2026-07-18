@@ -275,4 +275,4 @@ const invoiceSchema = new mongoose.Schema(
 invoiceSchema.index({ invoiceDate: -1 });
 invoiceSchema.index({ createdAt: -1 });
 
-module.exports = mongoose.model('Invoice', invoiceSchema);
+module.exports = mongoose.model('Sale', invoiceSchema);

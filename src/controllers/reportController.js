@@ -1,6 +1,6 @@
 // src/controllers/reportController.js
 
-const Invoice = require('../models/Invoice');
+const Sale = require('../models/Sale');
 const Expense = require('../models/Expense');
 const Product = require('../models/Product');
 
@@ -13,7 +13,7 @@ const getSalesSummary = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
 
-    const matchQuery = {};
+    const matchQuery = { userId: req.user._id };
     if (startDate || endDate) {
       matchQuery.invoiceDate = {};
       if (startDate) matchQuery.invoiceDate.$gte = new Date(startDate);
@@ -22,7 +22,7 @@ const getSalesSummary = async (req, res) => {
 
     // Pipeline 1: Aggregated Daily Revenue & Taxes
     // PERFORMANCE OPTIMIZATION: Index on invoiceDate covers the $match stage.
-    const salesAggregation = await Invoice.aggregate([
+    const salesAggregation = await Sale.aggregate([
       { $match: matchQuery },
       {
         $group: {
@@ -36,7 +36,7 @@ const getSalesSummary = async (req, res) => {
     ]);
 
     // Pipeline 2: Top Performing Products (unwinding items grid)
-    const productAggregation = await Invoice.aggregate([
+    const productAggregation = await Sale.aggregate([
       { $match: matchQuery },
       { $unwind: '$items' },
       {
@@ -70,8 +70,8 @@ const getProfitLoss = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
 
-    const invoiceMatch = {};
-    const expenseMatch = {};
+    const invoiceMatch = { userId: req.user._id };
+    const expenseMatch = { userId: req.user._id };
 
     if (startDate || endDate) {
       invoiceMatch.invoiceDate = {};
@@ -87,7 +87,7 @@ const getProfitLoss = async (req, res) => {
     }
 
     // Aggregate Invoices Sales & COGS
-    const invoiceTotals = await Invoice.aggregate([
+    const invoiceTotals = await Sale.aggregate([
       { $match: invoiceMatch },
       {
         $group: {
@@ -143,7 +143,7 @@ const getGSTLiability = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
 
-    const matchQuery = {};
+    const matchQuery = { userId: req.user._id };
     if (startDate || endDate) {
       matchQuery.invoiceDate = {};
       if (startDate) matchQuery.invoiceDate.$gte = new Date(startDate);
@@ -151,7 +151,7 @@ const getGSTLiability = async (req, res) => {
     }
 
     // Aggregate tax collections (CGST, SGST, IGST)
-    const gstTotals = await Invoice.aggregate([
+    const gstTotals = await Sale.aggregate([
       { $match: matchQuery },
       { $unwind: '$items' },
       {

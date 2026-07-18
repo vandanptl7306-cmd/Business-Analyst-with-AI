@@ -2,7 +2,11 @@
 
 const express = require('express');
 const router = express.Router();
-const { getStoreSettings, updateStoreSettings, updateBusinessProfile } = require('../controllers/storeSettingsController');
+const {
+  getStoreSettings,
+  updateStoreSettings,
+  updateBusinessProfile,
+} = require('../controllers/companySettingsController');
 const { protect } = require('../middleware/auth');
 
 // Secure settings paths under protect middleware

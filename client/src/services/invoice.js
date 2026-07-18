@@ -19,7 +19,7 @@ API.interceptors.request.use((config) => {
  * Fetch a single invoice by ID
  */
 export const getInvoiceById = async (id) => {
-  const response = await API.get(`/invoices/${id}`);
+  const response = await API.get(`/sales/${id}`);
   return response.data;
 };
 
@@ -27,7 +27,7 @@ export const getInvoiceById = async (id) => {
  * Fetch all invoices
  */
 export const getInvoicesList = async () => {
-  const response = await API.get('/invoices');
+  const response = await API.get('/sales');
   return response.data;
 };
 
@@ -37,7 +37,7 @@ export const getInvoicesList = async () => {
  * @param {Object} complianceData - { transporterId, transporterName, transportMode, vehicleNo, vehicleType, distance }
  */
 export const generateInvoiceCompliance = async (id, complianceData) => {
-  const response = await API.post(`/invoices/${id}/compliance`, complianceData);
+  const response = await API.post(`/sales/${id}/compliance`, complianceData);
   return response.data;
 };
 
@@ -45,7 +45,7 @@ export const generateInvoiceCompliance = async (id, complianceData) => {
  * Create a new GST invoice
  */
 export const createInvoice = async (invoiceData) => {
-  const response = await API.post('/invoices', invoiceData);
+  const response = await API.post('/sales', invoiceData);
   return response.data;
 };
 
@@ -53,7 +53,7 @@ export const createInvoice = async (invoiceData) => {
  * Fetch the upcoming auto-generated invoice number
  */
 export const getUpcomingInvoiceNumber = async () => {
-  const response = await API.get('/invoices/next-number');
+  const response = await API.get('/sales/next-number');
   return response.data;
 };
 
@@ -61,7 +61,7 @@ export const getUpcomingInvoiceNumber = async () => {
  * Update the billing status of an invoice
  */
 export const updateInvoiceStatus = async (id, status) => {
-  const response = await API.patch(`/invoices/${id}/status`, { status });
+  const response = await API.patch(`/sales/${id}/status`, { status });
   return response.data;
 };
 
@@ -69,7 +69,7 @@ export const updateInvoiceStatus = async (id, status) => {
  * Send invoice PDF download URL via Email (Nodemailer)
  */
 export const sendInvoiceEmail = async (id, recipientEmail = '') => {
-  const response = await API.post(`/invoices/${id}/send-email`, { recipientEmail });
+  const response = await API.post(`/sales/${id}/send-email`, { recipientEmail });
   return response.data;
 };
 

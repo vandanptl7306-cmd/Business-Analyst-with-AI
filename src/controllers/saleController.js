@@ -1,9 +1,9 @@
 const axios = require('axios');
-const Invoice = require('../models/Invoice');
+const Sale = require('../models/Sale');
 const Counter = require('../models/Counter');
-const Party = require('../models/Party');
+const Customer = require('../models/Customer');
 const Product = require('../models/Product');
-const StoreSettings = require('../models/StoreSettings');
+const CompanySettings = require('../models/CompanySettings');
 const gspService = require('../services/gspService');
 const emailService = require('../services/emailService');
 
@@ -52,17 +52,17 @@ const createInvoice = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Please provide all required GST fields' });
     }
 
-    const settings = await StoreSettings.findOne();
+    const settings = await CompanySettings.findOne({ userId: req.user._id });
     if (settings) {
       if (settings.blockNewPartiesFromTxn && buyerName !== 'Walk-in Customer') {
-        const partyExists = await Party.findOne({ name: buyerName });
+        const partyExists = await Customer.findOne({ name: buyerName, userId: req.user._id });
         if (!partyExists) {
           return res.status(400).json({ success: false, error: 'Creating new parties from transaction form is disabled in settings.' });
         }
       }
 
       for (const item of items) {
-        const product = await Product.findOne({ name: item.description });
+        const product = await Product.findOne({ name: item.description, userId: req.user._id });
         
         if (settings.blockNewItemsFromTxn && !product) {
           return res.status(400).json({ success: false, error: `Item "${item.description}" does not exist and creating new items is disabled.` });
@@ -83,7 +83,7 @@ const createInvoice = async (req, res) => {
     // code at the exact same millisecond, MongoDB serializes the operations. Each gets a unique, 
     // sequential sequence number, preventing duplicate invoice numbers.
     const counter = await Counter.findOneAndUpdate(
-      { _id: 'invoiceNumber' },
+      { _id: `invoiceNumber_${req.user._id}` },
       { $inc: { seq: 1 } },
       { new: true, upsert: true }
     );
@@ -142,7 +142,7 @@ const createInvoice = async (req, res) => {
       // Fetch unit cost price (COGS) at exact time of sale
       let unitCostPrice = item.unitCostPrice;
       if (unitCostPrice === undefined || unitCostPrice === null) {
-        const product = await Product.findOne({ name: item.description });
+        const product = await Product.findOne({ name: item.description, userId: req.user._id });
         unitCostPrice = product ? product.averageCostPrice : Number((basePrice / qty * 0.70).toFixed(2));
       }
 
@@ -226,7 +226,8 @@ const createInvoice = async (req, res) => {
       console.warn('AI Compliance Audit Bot is offline or encountered an error. Proceeding with database fallback. Error:', auditErr.message);
     }
 
-    const invoice = await Invoice.create({
+    const invoice = await Sale.create({
+      userId: req.user._id,
       invoiceNumber,
       sellerName,
       sellerGSTIN,
@@ -265,9 +266,9 @@ const createInvoice = async (req, res) => {
 
     // Auto-send Email Logic
     try {
-      const settings = await StoreSettings.findOne();
+      const settings = await CompanySettings.findOne({ userId: req.user._id });
       if (settings && settings.autoSendEmail) {
-        const party = await Party.findOne({ name: buyerName });
+        const party = await Customer.findOne({ name: buyerName, userId: req.user._id });
         if (party && party.email) {
           try {
             // Get token from auth header
@@ -318,7 +319,7 @@ const createInvoice = async (req, res) => {
  */
 const getInvoice = async (req, res) => {
   try {
-    const invoice = await Invoice.findById(req.params.id);
+    const invoice = await Sale.findOne({ _id: req.params.id, userId: req.user._id });
     if (!invoice) {
       return res.status(404).json({ success: false, error: 'Invoice not found' });
     }
@@ -354,7 +355,7 @@ const getInvoice = async (req, res) => {
  */
 const getInvoices = async (req, res) => {
   try {
-    const invoices = await Invoice.find({}).sort({ createdAt: -1 });
+    const invoices = await Sale.find({ userId: req.user._id }).sort({ createdAt: -1 });
 
     let responseInvoices = invoices.map(inv => {
       let obj = inv.toObject();
@@ -390,7 +391,7 @@ const getInvoices = async (req, res) => {
  */
 const getUpcomingInvoiceNumber = async (req, res) => {
   try {
-    const counter = await Counter.findOne({ _id: 'invoiceNumber' });
+    const counter = await Counter.findOne({ _id: `invoiceNumber_${req.user._id}` });
     const currentSeq = counter ? counter.seq : 0;
     const nextSeq = currentSeq + 1;
     const upcomingNumber = formatInvoiceNumber(nextSeq);
@@ -413,7 +414,7 @@ const sendInvoiceEmail = async (req, res) => {
     const { id } = req.params;
     const { recipientEmail } = req.body;
 
-    const invoice = await Invoice.findById(id);
+    const invoice = await Sale.findOne({ _id: id, userId: req.user._id });
     if (!invoice) {
       return res.status(404).json({ success: false, error: 'Invoice not found' });
     }
@@ -422,7 +423,7 @@ const sendInvoiceEmail = async (req, res) => {
 
     // Look up customer email in database by name if not supplied
     if (!email) {
-      const party = await Party.findOne({ name: invoice.buyerName });
+      const party = await Customer.findOne({ name: invoice.buyerName, userId: req.user._id });
       if (party) {
         email = party.email;
       }
@@ -478,14 +479,14 @@ const getProfitAnalytics = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
 
-    const query = {};
+    const query = { userId: req.user._id };
     if (startDate || endDate) {
       query.createdAt = {};
       if (startDate) query.createdAt.$gte = new Date(startDate);
       if (endDate) query.createdAt.$lte = new Date(endDate);
     }
 
-    const invoices = await Invoice.find(query).select('invoiceNumber netProfit totalRevenue grandTotal totalCost createdAt');
+    const invoices = await Sale.find(query).select('invoiceNumber netProfit totalRevenue grandTotal totalCost createdAt');
 
     // Summarize totals
     let totalSales = 0;
