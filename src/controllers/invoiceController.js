@@ -5,7 +5,7 @@ const Party = require('../models/Party');
 const Product = require('../models/Product');
 const StoreSettings = require('../models/StoreSettings');
 const gspService = require('../services/gspService');
-const whatsappService = require('../services/whatsappService');
+const emailService = require('../services/emailService');
 
 /**
  * Formats a sequence number into INV-YY-YY-XXXX format based on the financial year.
@@ -50,6 +50,31 @@ const createInvoice = async (req, res) => {
     // Standard validations
     if (!sellerGSTIN || !sellerPIN || !buyerGSTIN || !buyerPIN || !items || items.length === 0) {
       return res.status(400).json({ success: false, error: 'Please provide all required GST fields' });
+    }
+
+    const settings = await StoreSettings.findOne();
+    if (settings) {
+      if (settings.blockNewPartiesFromTxn && buyerName !== 'Walk-in Customer') {
+        const partyExists = await Party.findOne({ name: buyerName });
+        if (!partyExists) {
+          return res.status(400).json({ success: false, error: 'Creating new parties from transaction form is disabled in settings.' });
+        }
+      }
+
+      for (const item of items) {
+        const product = await Product.findOne({ name: item.description });
+        
+        if (settings.blockNewItemsFromTxn && !product) {
+          return res.status(400).json({ success: false, error: `Item "${item.description}" does not exist and creating new items is disabled.` });
+        }
+
+        if (settings.stopSaleOnNegativeStock && product) {
+          const qty = item.quantity || 1;
+          if (product.currentStock - qty < 0) {
+            return res.status(400).json({ success: false, error: `Sale blocked: Negative stock for item "${item.description}". Current stock is ${product.currentStock}.` });
+          }
+        }
+      }
     }
 
     // --- CONCURRENCY & ATOMIC NUMBER GENERATION ---
@@ -236,49 +261,49 @@ const createInvoice = async (req, res) => {
       distance: 120,
     });
 
-    let whatsappDelivery = { status: 'NotSent', message: 'WhatsApp delivery not evaluated' };
-    
-    // Auto-send WhatsApp Logic
+    let emailDelivery = { status: 'NotSent', message: 'Email delivery not evaluated' };
+
+    // Auto-send Email Logic
     try {
       const settings = await StoreSettings.findOne();
-      if (settings && settings.autoSendWhatsApp) {
+      if (settings && settings.autoSendEmail) {
         const party = await Party.findOne({ name: buyerName });
-        if (party && party.phoneNumber) {
+        if (party && party.email) {
           try {
             // Get token from auth header
             const token = req.headers.authorization?.split(' ')[1];
-            
+
             const invoiceUrl = `${req.protocol}://${req.get('host')}/api/invoices/${invoice._id}/print${token ? `?token=${token}` : ''}`;
-            
-            await whatsappService.sendInvoiceNotification(party.phoneNumber, {
+
+            await emailService.sendInvoiceNotification(party.email, {
               name: buyerName,
               invoiceNumber: invoice.invoiceNumber,
               grandTotal: invoice.grandTotal,
-              invoiceUrl
+              invoiceUrl,
             });
-            
-            invoice.whatsappSentStatus = 'Sent';
+
+            invoice.emailSentStatus = 'Sent';
             invoice.lastReminderSentAt = new Date();
             await invoice.save();
-            
-            whatsappDelivery = { status: 'Sent', message: 'WhatsApp notification sent successfully.' };
-          } catch (waErr) {
-            invoice.whatsappSentStatus = 'Failed';
+
+            emailDelivery = { status: 'Sent', message: 'Email notification sent successfully.' };
+          } catch (emailErr) {
+            invoice.emailSentStatus = 'Failed';
             await invoice.save();
-            whatsappDelivery = { status: 'Failed', message: waErr.message || 'Failed to send WhatsApp notification.' };
+            emailDelivery = { status: 'Failed', message: emailErr.message || 'Failed to send email notification.' };
           }
         } else {
-          whatsappDelivery = { status: 'Skipped', message: 'Customer phone number not found in profile.' };
+          emailDelivery = { status: 'Skipped', message: 'Customer email address not found in profile.' };
         }
       } else {
-         whatsappDelivery = { status: 'Skipped', message: 'Auto-send WhatsApp is disabled in settings.' };
+        emailDelivery = { status: 'Skipped', message: 'Auto-send Email is disabled in settings.' };
       }
     } catch (err) {
-      console.error('Auto-WhatsApp delivery error:', err.message);
-      whatsappDelivery = { status: 'Failed', message: 'Internal error checking WhatsApp settings.' };
+      console.error('Auto-Email delivery error:', err.message);
+      emailDelivery = { status: 'Failed', message: 'Internal error checking email settings.' };
     }
 
-    res.status(201).json({ success: true, invoice, whatsappDelivery });
+    res.status(201).json({ success: true, invoice, emailDelivery });
   } catch (error) {
     console.error('Invoice creation error:', error.message);
     res.status(500).json({ success: false, error: 'Server error during invoice creation' });
@@ -379,83 +404,68 @@ const getUpcomingInvoiceNumber = async (req, res) => {
 
 
 /**
- * @desc    Send PDF invoice link to a buyer via WhatsApp
- * @route   POST /api/invoices/:id/send-whatsapp
+ * @desc    Send invoice PDF link to a buyer via Email (Nodemailer)
+ * @route   POST /api/invoices/:id/send-email
  * @access  Private
  */
-const sendInvoiceWhatsApp = async (req, res) => {
+const sendInvoiceEmail = async (req, res) => {
   try {
     const { id } = req.params;
-    const { recipientPhone } = req.body;
+    const { recipientEmail } = req.body;
 
     const invoice = await Invoice.findById(id);
     if (!invoice) {
       return res.status(404).json({ success: false, error: 'Invoice not found' });
     }
 
-    let phone = recipientPhone;
-    
-    // Look up customer phone in database by name or GSTIN if not supplied
-    if (!phone) {
-      const party = await Party.findOne({
-        $or: [{ name: invoice.buyerName }, { phoneNumber: { $exists: true } }],
-      });
+    let email = recipientEmail;
+
+    // Look up customer email in database by name if not supplied
+    if (!email) {
+      const party = await Party.findOne({ name: invoice.buyerName });
       if (party) {
-        phone = party.phoneNumber;
+        email = party.email;
       }
     }
 
-    if (!phone) {
+    if (!email) {
       return res.status(400).json({
         success: false,
-        error: 'Please provide a recipient phone number or register a customer first.',
+        error: 'Please provide a recipient email address or register a customer email first.',
       });
     }
 
-    // Auto-format recipient phone number to E.164 standard
-    phone = phone.replace(/[\s\-\(\)]/g, '');
-    if (!phone.startsWith('+')) {
-      if (phone.length === 10) {
-        phone = `+91${phone}`;
-      } else if (phone.startsWith('91') && phone.length === 12) {
-        phone = `+${phone}`;
-      } else {
-        phone = `+${phone}`;
-      }
-    }
-
-    // Validate phone number format
-    if (!whatsappService.isValidE164(phone)) {
+    // Validate email format
+    if (!emailService.isValidEmail(email)) {
       return res.status(400).json({
         success: false,
-        error: `Phone number '${phone}' is invalid. Must be in E.164 international format (e.g., +919876543210).`,
+        error: `Email address '${email}' is invalid.`,
       });
     }
 
     const invoiceUrl = `https://intellectbill.ai/invoices/download/${invoice._id}`;
 
-    // Send mock notification
-    const response = await whatsappService.sendInvoiceNotification(phone, {
+    const response = await emailService.sendInvoiceNotification(email, {
       name: invoice.buyerName,
       invoiceNumber: invoice.invoiceNumber,
       grandTotal: invoice.grandTotal,
       invoiceUrl,
     });
 
-    // Update status in Mongoose
-    invoice.whatsappSentStatus = 'Sent';
+    // Update status in database
+    invoice.emailSentStatus = 'Sent';
     await invoice.save();
 
     res.status(200).json({
       success: true,
-      message: `Invoice WhatsApp notification successfully sent to ${invoice.buyerName}.`,
+      message: `Invoice email notification successfully sent to ${invoice.buyerName}.`,
       messageId: response.messageId,
       sentAt: response.timestamp,
       invoice,
     });
   } catch (error) {
-    console.error('Send WhatsApp invoice error:', error.message);
-    res.status(500).json({ success: false, error: error.message || 'Server error dispatching WhatsApp invoice' });
+    console.error('Send email invoice error:', error.message);
+    res.status(500).json({ success: false, error: error.message || 'Server error dispatching invoice email' });
   }
 };
 
@@ -512,6 +522,6 @@ module.exports = {
   getInvoice,
   getInvoices,
   getUpcomingInvoiceNumber,
-  sendInvoiceWhatsApp,
+  sendInvoiceEmail,
   getProfitAnalytics,
 };

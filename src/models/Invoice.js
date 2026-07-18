@@ -197,8 +197,8 @@ const invoiceSchema = new mongoose.Schema(
     eWayBillGeneratedAt: {
       type: Date,
     },
-    // --- WHATSAPP COMMUNICATION LOGS ---
-    whatsappSentStatus: {
+    // --- EMAIL COMMUNICATION LOGS ---
+    emailSentStatus: {
       type: String,
       enum: ['NotSent', 'Pending', 'Sent', 'Failed'],
       default: 'NotSent',

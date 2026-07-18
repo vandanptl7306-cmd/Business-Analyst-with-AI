@@ -32,9 +32,10 @@ export const createParty = async (partyData) => {
 };
 
 /**
- * Send an outstanding payment reminder via WhatsApp
+ * Send an outstanding payment reminder via Email
  */
-export const sendWhatsAppReminder = async (id) => {
+export const sendEmailReminder = async (id) => {
   const response = await API.post(`/parties/${id}/send-reminder`);
   return response.data;
 };
+

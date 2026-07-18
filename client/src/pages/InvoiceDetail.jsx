@@ -4,10 +4,10 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
-import { getInvoiceById, sendInvoiceWhatsApp } from '../services/invoice';
+import { getInvoiceById, sendInvoiceEmail } from '../services/invoice';
 import { getStoreSettings } from '../services/settings';
 import InvoiceStatusBadge from '../components/InvoiceStatusBadge';
-import { ArrowLeft, Loader2, FileText, Calendar, Building, Landmark, Percent, MessageSquare, Check, Share2, Printer } from 'lucide-react';
+import { ArrowLeft, Loader2, FileText, Calendar, Building, Landmark, Percent, Mail, Check, Share2, Printer } from 'lucide-react';
 
 export default function InvoiceDetail() {
   const { id } = useParams();
@@ -17,8 +17,8 @@ export default function InvoiceDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [storeProfile, setStoreProfile] = useState(null);
-  const [recipientPhone, setRecipientPhone] = useState('+919876543210');
-  const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
+  const [recipientEmail, setRecipientEmail] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
   const [printSrc, setPrintSrc] = useState(null);
 
   useEffect(() => {
@@ -45,18 +45,26 @@ export default function InvoiceDetail() {
 
 
 
-  const handleSendWhatsApp = async () => {
-    setSendingWhatsApp(true);
+  const handleSendEmail = async () => {
+    if (!invoice?._id) {
+      alert('Invoice data not loaded. Please refresh the page.');
+      return;
+    }
+    if (!recipientEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
+      alert('Please enter a valid recipient email address.');
+      return;
+    }
+    setSendingEmail(true);
     try {
-      const data = await sendInvoiceWhatsApp(id, recipientPhone);
+      const data = await sendInvoiceEmail(invoice._id, recipientEmail);
       if (data.success) {
         setInvoice(data.invoice);
-        alert('Invoice shared successfully on WhatsApp!');
+        alert('Invoice emailed successfully!');
       }
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to send WhatsApp message.');
+      alert(err.response?.data?.error || 'Failed to send email.');
     } finally {
-      setSendingWhatsApp(false);
+      setSendingEmail(false);
     }
   };
 
@@ -270,52 +278,52 @@ export default function InvoiceDetail() {
 
             </div>
 
-            {/* WhatsApp Invoicing */}
+            {/* Email Invoicing */}
             <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-4">
               <div className="flex items-center space-x-3 pb-3 border-b border-slate-200">
-                <MessageSquare className="h-6 w-6 text-emerald-700" />
-                <h3 className="text-lg font-bold text-slate-800">WhatsApp Invoicing</h3>
+                <Mail className="h-6 w-6 text-blue-600" />
+                <h3 className="text-lg font-bold text-slate-800">Email Invoicing</h3>
               </div>
               
               <p className="text-xs text-slate-500 leading-relaxed">
-                Send a GST invoice notification directly to your client's phone number on WhatsApp.
+                Send a GST invoice notification directly to your client's email address.
               </p>
 
-              {invoice.whatsappSentStatus === 'Sent' && (
+              {invoice.emailSentStatus === 'Sent' && (
                 <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-xs font-semibold flex items-center">
                   <Check className="h-4 w-4 mr-2" />
-                  <span>Shared successfully on WhatsApp</span>
+                  <span>Invoice emailed successfully</span>
                 </div>
               )}
 
               <div className="space-y-3 pt-1">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Recipient Phone (E.164)
+                    Recipient Email
                   </label>
                   <input
-                    type="text"
-                    value={recipientPhone}
-                    onChange={(e) => setRecipientPhone(e.target.value)}
-                    placeholder="+919876543210"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 font-mono"
+                    type="email"
+                    value={recipientEmail}
+                    onChange={(e) => setRecipientEmail(e.target.value)}
+                    placeholder="customer@example.com"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800"
                   />
                 </div>
 
                 <button
-                  onClick={handleSendWhatsApp}
-                  disabled={sendingWhatsApp}
-                  className="w-full flex items-center justify-center py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-all active:scale-[0.98] disabled:opacity-50"
+                  onClick={handleSendEmail}
+                  disabled={sendingEmail}
+                  className="w-full flex items-center justify-center py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all active:scale-[0.98] disabled:opacity-50"
                 >
-                  {sendingWhatsApp ? (
+                  {sendingEmail ? (
                     <>
                       <Loader2 className="animate-spin mr-2 h-4 w-4" />
-                      Sending PDF Link...
+                      Sending Email...
                     </>
                   ) : (
                     <>
                       <Share2 className="h-4 w-4 mr-2" />
-                      <span>Share via WhatsApp</span>
+                      <span>Send via Email</span>
                     </>
                   )}
                 </button>

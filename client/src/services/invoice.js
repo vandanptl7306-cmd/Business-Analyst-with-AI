@@ -66,9 +66,10 @@ export const updateInvoiceStatus = async (id, status) => {
 };
 
 /**
- * Send invoice PDF download URL via WhatsApp Business API
+ * Send invoice PDF download URL via Email (Nodemailer)
  */
-export const sendInvoiceWhatsApp = async (id, recipientPhone = '') => {
-  const response = await API.post(`/invoices/${id}/send-whatsapp`, { recipientPhone });
+export const sendInvoiceEmail = async (id, recipientEmail = '') => {
+  const response = await API.post(`/invoices/${id}/send-email`, { recipientEmail });
   return response.data;
 };
+

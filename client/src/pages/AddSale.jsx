@@ -139,11 +139,11 @@ export default function AddSale() {
       const res = await createInvoice(payload);
       if (res.success) {
         let msg = 'Sale saved successfully!';
-        if (res.whatsappDelivery) {
-          if (res.whatsappDelivery.status === 'Sent') {
-            msg += '\n\nWhatsApp notification sent successfully!';
-          } else if (res.whatsappDelivery.status === 'Skipped' || res.whatsappDelivery.status === 'Failed') {
-            msg += `\n\nWhatsApp Notice: ${res.whatsappDelivery.message}`;
+        if (res.emailDelivery) {
+          if (res.emailDelivery.status === 'Sent') {
+            msg += '\n\nEmail notification sent successfully!';
+          } else if (res.emailDelivery.status === 'Skipped' || res.emailDelivery.status === 'Failed') {
+            msg += `\n\nEmail Notice: ${res.emailDelivery.message}`;
           }
         }
         alert(msg);
@@ -202,14 +202,16 @@ export default function AddSale() {
                   />
                 </div>
               </div>
-              <div className="w-[300px]">
-                <label className="block text-[11px] text-gray-600 font-semibold mb-1">Customer GSTIN (Optional)</label>
-                <input 
-                  type="text" value={customerGSTIN} onChange={e => setCustomerGSTIN(e.target.value)}
-                  placeholder="GSTIN"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-[6px] text-[13px] text-gray-800 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-shadow" 
-                />
-              </div>
+              {storeProfile?.gstinNumber !== false && (
+                <div className="w-[300px]">
+                  <label className="block text-[11px] text-gray-600 font-semibold mb-1">Customer GSTIN (Optional)</label>
+                  <input 
+                    type="text" value={customerGSTIN} onChange={e => setCustomerGSTIN(e.target.value)}
+                    placeholder="GSTIN"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-[6px] text-[13px] text-gray-800 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-shadow" 
+                  />
+                </div>
+              )}
               <div className="w-[300px]">
                 <label className="block text-[11px] text-gray-600 font-semibold mb-1">Customer Address (Optional)</label>
                 <input 

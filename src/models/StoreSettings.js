@@ -53,6 +53,34 @@ const storeSettingsSchema = new mongoose.Schema(
       type: String,
       default: '₹'
     },
+    enablePasscode: {
+      type: Boolean,
+      default: false
+    },
+    passcodePin: {
+      type: String,
+      default: ''
+    },
+    decimalPlaces: {
+      type: Number,
+      default: 2
+    },
+    stopSaleOnNegativeStock: {
+      type: Boolean,
+      default: false
+    },
+    blockNewItemsFromTxn: {
+      type: Boolean,
+      default: false
+    },
+    blockNewPartiesFromTxn: {
+      type: Boolean,
+      default: false
+    },
+    gstinNumber: {
+      type: Boolean,
+      default: true
+    },
     
     // Printer Type
     printerType: {
@@ -124,9 +152,16 @@ const storeSettingsSchema = new mongoose.Schema(
       type: String,
       default: ''
     },
-    autoSendWhatsApp: {
+    autoSendEmail: {
       type: Boolean,
       default: false
+    },
+
+    // Email notification configuration
+    notificationEmailFrom: {
+      type: String,
+      trim: true,
+      default: ''
     },
 
     // Paper size, layout sizes

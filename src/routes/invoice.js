@@ -2,7 +2,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { createInvoice, getInvoice, getInvoices, getUpcomingInvoiceNumber, sendInvoiceWhatsApp, getProfitAnalytics } = require('../controllers/invoiceController');
+const { createInvoice, getInvoice, getInvoices, getUpcomingInvoiceNumber, sendInvoiceEmail, getProfitAnalytics } = require('../controllers/invoiceController');
 const { printInvoice } = require('../controllers/pdfController');
 const { protect, admin } = require('../middleware/auth');
 
@@ -20,6 +20,6 @@ router.get('/', getInvoices);
 router.get('/analytics/profit', admin, getProfitAnalytics);
 router.get('/:id', getInvoice);
 
-router.post('/:id/send-whatsapp', sendInvoiceWhatsApp);
+router.post('/:id/send-email', sendInvoiceEmail);
 
 module.exports = router;

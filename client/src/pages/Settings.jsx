@@ -23,6 +23,24 @@ const inputCls = (err) =>
       : 'border-slate-200 focus:border-indigo-300 focus:ring-indigo-200'
   }`;
 
+function HelpTooltip({ text }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <span 
+      className="relative flex items-center justify-center" 
+      onClick={(e) => { e.preventDefault(); setVisible(!visible); }}
+      onMouseLeave={() => setVisible(false)}
+    >
+      <HelpCircle className="h-3.5 w-3.5 text-gray-400 cursor-help flex-shrink-0 hover:text-gray-600 transition-colors" />
+      {visible && text && (
+        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-48 rounded bg-gray-800 px-2 py-1.5 text-[11px] text-white shadow-lg whitespace-normal text-center leading-tight pointer-events-none after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-gray-800">
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
+
 // Reusable checkbox row matching the reference image
 function SettingRow({ checked, onChange, label, info }) {
   return (
@@ -34,7 +52,7 @@ function SettingRow({ checked, onChange, label, info }) {
         className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-400 cursor-pointer flex-shrink-0"
       />
       <span className="text-[13px] text-gray-700 select-none">{label}</span>
-      {info && <HelpCircle className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />}
+      {info && <HelpTooltip text={typeof info === 'string' ? info : "More details"} />}
     </label>
   );
 }
@@ -107,15 +125,16 @@ export default function SettingsPage() {
     }
   };
 
-  // â”€â”€ General settings state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── General settings state ──────────────────────────────────
   const [enablePasscode, setEnablePasscode] = useState(false);
+  const [passcodePin, setPasscodePin] = useState('');
   const [businessCurrency, setBusinessCurrency] = useState('₹');
   const [decimalPlaces, setDecimalPlaces] = useState(2);
   const [gstinNumber, setGstinNumber] = useState(true);
   const [stopSaleOnNegativeStock, setStopSaleOnNegativeStock] = useState(false);
   const [blockNewItemsFromTxn, setBlockNewItemsFromTxn] = useState(false);
   const [blockNewPartiesFromTxn, setBlockNewPartiesFromTxn] = useState(false);
-  const [autoSendWhatsApp, setAutoSendWhatsApp] = useState(false);
+  const [autoSendEmail, setAutoSendEmail] = useState(false);
 
   // Multi Firm
   const [multiFirm, setMultiFirm] = useState(false);
@@ -235,8 +254,15 @@ export default function SettingsPage() {
           setThermalCopies(s.thermalCopies ?? 1);
           setThermalPrintCompanyName(s.thermalPrintCompanyName ?? true);
           setThermalCompanyName(s.thermalCompanyName || s.shopName || '');
-          setAutoSendWhatsApp(s.autoSendWhatsApp ?? false);
+          setAutoSendEmail(s.autoSendEmail ?? false);
           setBusinessCurrency(s.businessCurrency || '₹');
+          setEnablePasscode(s.enablePasscode ?? false);
+          setPasscodePin(s.passcodePin || '');
+          setDecimalPlaces(s.decimalPlaces ?? 2);
+          setGstinNumber(s.gstinNumber ?? true);
+          setStopSaleOnNegativeStock(s.stopSaleOnNegativeStock ?? false);
+          setBlockNewItemsFromTxn(s.blockNewItemsFromTxn ?? false);
+          setBlockNewPartiesFromTxn(s.blockNewPartiesFromTxn ?? false);
         }
       } catch (e) {
         setApiError('Failed to load settings.');
@@ -310,7 +336,8 @@ export default function SettingsPage() {
         printBankDetails, bankAccountHolderName, bankName, bankAccountNumber, bankIfscCode, bankBranchName,
         thermalPrintingType, thermalUseTextStylingBold, thermalAutoCut, thermalOpenCashDrawer,
         thermalExtraLines, thermalCopies, thermalPrintCompanyName, thermalCompanyName,
-        autoSendWhatsApp, businessCurrency,
+        autoSendEmail, businessCurrency,
+        enablePasscode, passcodePin, decimalPlaces, gstinNumber, stopSaleOnNegativeStock, blockNewItemsFromTxn, blockNewPartiesFromTxn,
         ...printSettingsPayload
       };
       const [pRes, sRes] = await Promise.all([
@@ -384,12 +411,24 @@ export default function SettingsPage() {
               <div>
                 <div style={{ fontWeight: 700, fontSize: 14, color: '#111827', marginBottom: 16 }}>Application</div>
                 <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, padding: '16px 18px' }}>
-                  <SettingRow checked={enablePasscode} onChange={setEnablePasscode} label="Enable Passcode" info />
+                  <SettingRow checked={enablePasscode} onChange={setEnablePasscode} label="Enable Passcode" info="Require a passcode to open the application." />
+                  {enablePasscode && (
+                    <div style={{ padding: '4px 0 8px 32px' }}>
+                      <input 
+                        type="password" 
+                        maxLength={4}
+                        placeholder="Enter 4-digit PIN"
+                        value={passcodePin}
+                        onChange={e => setPasscodePin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                        style={{ border: '1px solid #D1D5DB', borderRadius: 6, padding: '6px 12px', fontSize: 13, width: '140px' }}
+                      />
+                    </div>
+                  )}
 
                   {/* Business Currency */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: '1px solid #F3F4F6', marginTop: 4 }}>
                     <span style={{ fontSize: 13, color: '#374151' }}>Business Currency</span>
-                    <HelpCircle style={{ width: 13, height: 13, color: '#9CA3AF' }} />
+                    <HelpTooltip text="Select the primary currency for your business." />
                     <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontSize: 14, color: '#111827', fontWeight: 600 }}>{businessCurrency}</span>
                       <select value={businessCurrency} onChange={e => setBusinessCurrency(e.target.value)}
@@ -416,11 +455,11 @@ export default function SettingsPage() {
                   </div>
 
                   <div style={{ borderTop: '1px solid #F3F4F6', marginTop: 4 }}>
-                    <SettingRow checked={gstinNumber} onChange={setGstinNumber} label="GSTIN Number" info />
-                    <SettingRow checked={stopSaleOnNegativeStock} onChange={setStopSaleOnNegativeStock} label="Stop Sale on Negative Stock" info />
-                    <SettingRow checked={blockNewItemsFromTxn} onChange={setBlockNewItemsFromTxn} label="Block New Items from Txn Form" info />
-                    <SettingRow checked={blockNewPartiesFromTxn} onChange={setBlockNewPartiesFromTxn} label="Block New Parties from Txn Form" info />
-                    <SettingRow checked={autoSendWhatsApp} onChange={setAutoSendWhatsApp} label="Auto-send WhatsApp" info />
+                    <SettingRow checked={gstinNumber} onChange={setGstinNumber} label="GSTIN Number" info="Enable GSTIN number for transactions." />
+                    <SettingRow checked={stopSaleOnNegativeStock} onChange={setStopSaleOnNegativeStock} label="Stop Sale on Negative Stock" info="Prevent sales if the stock goes below zero." />
+                    <SettingRow checked={blockNewItemsFromTxn} onChange={setBlockNewItemsFromTxn} label="Block New Items from Txn Form" info="Do not allow creating new items directly from the transaction form." />
+                    <SettingRow checked={blockNewPartiesFromTxn} onChange={setBlockNewPartiesFromTxn} label="Block New Parties from Txn Form" info="Do not allow creating new parties directly from the transaction form." />
+                    <SettingRow checked={autoSendEmail} onChange={setAutoSendEmail} label="Auto-send Email" info="Automatically send invoices via Email when created." />
                   </div>
                 </div>
 

@@ -21,7 +21,12 @@ const partySchema = new mongoose.Schema(
         message: props => `${props.value} is not a valid E.164 phone number!`
       }
     },
-    whatsappEnabled: {
+    email: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    emailEnabled: {
       type: Boolean,
       default: true,
     },
@@ -43,3 +48,4 @@ const partySchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model('Party', partySchema);
+

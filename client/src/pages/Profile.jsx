@@ -168,7 +168,7 @@ export default function Profile() {
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 Mobile Number
                 <span className="ml-1.5 text-[9px] font-normal text-slate-400 normal-case">
-                  (required to send invoices via WhatsApp)
+                  (used for customer identification)
                 </span>
               </label>
               <div className="relative">
@@ -184,7 +184,7 @@ export default function Profile() {
               {!phoneNumber.trim() && (
                 <p className="text-[10px] text-amber-600 font-medium flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3" />
-                  Add your mobile number to enable WhatsApp invoice sharing
+                  Add your mobile number for your business profile
                 </p>
               )}
             </div>

@@ -56,7 +56,8 @@ const updateStoreSettings = async (req, res) => {
       'thermalPrintCompanyName', 'thermalCompanyName',
       'printBankDetails', 'bankAccountHolderName', 'bankName',
       'bankAccountNumber', 'bankIfscCode', 'bankBranchName', 'bankQrCodeUrl',
-      'companyTagline', 'poReference', 'invoiceNotes'
+      'companyTagline', 'poReference', 'invoiceNotes',
+      'autoSendEmail', 'notificationEmailFrom',
     ];
 
     // Build $set patch from request body

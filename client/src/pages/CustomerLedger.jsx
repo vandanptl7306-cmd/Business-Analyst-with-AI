@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { getPartiesList, createParty, sendWhatsAppReminder } from '../services/party';
+import { getPartiesList, createParty, sendEmailReminder } from '../services/party';
 import { ArrowLeft, Users, UserPlus, Phone, CheckCircle, ShieldAlert, Loader2, Send, DollarSign } from 'lucide-react';
 
 const partySchema = z.object({
@@ -17,7 +17,8 @@ const partySchema = z.object({
       message: 'Invalid E.164 format (e.g. +919876543210)',
     }),
   outstandingBalance: z.coerce.number().min(0, 'Balance cannot be negative'),
-  whatsappEnabled: z.boolean().default(true),
+  email: z.string().email('Please enter a valid email').or(z.literal('')).default(''),
+  emailEnabled: z.boolean().default(true),
 });
 
 export default function CustomerLedger() {
@@ -34,7 +35,7 @@ export default function CustomerLedger() {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(partySchema),
-    defaultValues: { name: '', phoneNumber: '+91', outstandingBalance: 0, whatsappEnabled: true },
+    defaultValues: { name: '', phoneNumber: '+91', outstandingBalance: 0, email: '', emailEnabled: true },
   });
 
   const loadParties = async () => {
@@ -74,9 +75,9 @@ export default function CustomerLedger() {
     setApiError('');
     setSuccessMsg('');
     try {
-      const response = await sendWhatsAppReminder(id);
+      const response = await sendEmailReminder(id);
       if (response.success) {
-        setSuccessMsg(`WhatsApp reminder successfully sent to ${name}.`);
+        setSuccessMsg(`Email reminder successfully sent to ${name}.`);
       }
     } catch (err) {
       setApiError(err.response?.data?.error || `Failed to send payment reminder to ${name}.`);
@@ -92,7 +93,7 @@ export default function CustomerLedger() {
       <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
         <div className="absolute top-0 right-0 -mt-4 -mr-4 w-40 h-40 bg-indigo-50/5 rounded-full blur-2xl pointer-events-none"></div>
         <h1 className="text-2xl font-extrabold tracking-tight text-slate-800">Customer Ledger & Reminders</h1>
-        <p className="text-xs text-slate-500 mt-1">Manage client records, outstanding balances, and trigger automated alerts via WhatsApp</p>
+        <p className="text-xs text-slate-500 mt-1">Manage client records, outstanding balances, and trigger automated email alerts</p>
       </div>
 
       {/* Global Notifications */}
@@ -169,15 +170,26 @@ export default function CustomerLedger() {
               </div>
             </div>
 
+            <div>
+              <label className="block text-[10px] font-bold text-slate-450 uppercase mb-1.5">Customer Email</label>
+              <input
+                type="email"
+                placeholder="customer@example.com"
+                {...register('email')}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-650"
+              />
+              {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
+            </div>
+
             <div className="flex items-center space-x-2.5 pt-2">
               <input
                 type="checkbox"
-                id="whatsappEnabled"
-                {...register('whatsappEnabled')}
+                id="emailEnabled"
+                {...register('emailEnabled')}
                 className="w-4 h-4 text-indigo-650 border-slate-300 rounded bg-slate-50 focus:ring-indigo-500/20 cursor-pointer"
               />
-              <label htmlFor="whatsappEnabled" className="text-xs text-slate-500 select-none cursor-pointer">
-                Enable WhatsApp notifications
+              <label htmlFor="emailEnabled" className="text-xs text-slate-500 select-none cursor-pointer">
+                Enable Email notifications
               </label>
             </div>
 

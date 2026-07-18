@@ -1,7 +1,7 @@
 // src/controllers/partyController.js
 
 const Party = require('../models/Party');
-const whatsappService = require('../services/whatsappService');
+const emailService = require('../services/emailService');
 
 /**
  * @desc    Create a new customer (Party)
@@ -10,7 +10,7 @@ const whatsappService = require('../services/whatsappService');
  */
 const createParty = async (req, res) => {
   try {
-    const { name, phoneNumber, whatsappEnabled, outstandingBalance } = req.body;
+    const { name, phoneNumber, email, emailEnabled, outstandingBalance } = req.body;
 
     if (!name || !phoneNumber) {
       return res.status(400).json({ success: false, error: 'Please provide name and phone number' });
@@ -27,18 +27,11 @@ const createParty = async (req, res) => {
       }
     }
 
-    // Standard phone check before creating
-    if (!whatsappService.isValidE164(phone)) {
-      return res.status(400).json({
-        success: false,
-        error: `Phone number '${phoneNumber}' is invalid. Must be in E.164 international format (e.g., +919876543210).`,
-      });
-    }
-
     const party = await Party.create({
       name,
       phoneNumber: phone,
-      whatsappEnabled: whatsappEnabled !== false,
+      email: email || '',
+      emailEnabled: emailEnabled !== false,
       outstandingBalance: outstandingBalance || 0,
     });
 
@@ -83,7 +76,7 @@ const getParty = async (req, res) => {
 };
 
 /**
- * @desc    Send payment reminder to a Party via WhatsApp
+ * @desc    Send payment reminder to a Party via Email
  * @route   POST /api/parties/:id/send-reminder
  * @access  Private
  */
@@ -94,10 +87,10 @@ const sendPaymentReminder = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Customer not found' });
     }
 
-    if (!party.whatsappEnabled) {
+    if (!party.emailEnabled) {
       return res.status(400).json({
         success: false,
-        error: 'WhatsApp alerts are disabled for this customer.',
+        error: 'Email alerts are disabled for this customer.',
       });
     }
 
@@ -108,18 +101,16 @@ const sendPaymentReminder = async (req, res) => {
       });
     }
 
-    // Verify format
-    if (!whatsappService.isValidE164(party.phoneNumber)) {
+    if (!party.email || !emailService.isValidEmail(party.email)) {
       return res.status(400).json({
         success: false,
-        error: `Customer phone number '${party.phoneNumber}' must be in E.164 format.`,
+        error: `Customer email address '${party.email}' is missing or invalid.`,
       });
     }
 
     const paymentUrl = `https://intellectbill.ai/pay/${party._id}`;
-    
-    // Call mock integrations
-    const response = await whatsappService.sendPaymentReminder(party.phoneNumber, {
+
+    const response = await emailService.sendPaymentReminder(party.email, {
       name: party.name,
       outstandingBalance: party.outstandingBalance,
       paymentUrl,
@@ -127,7 +118,7 @@ const sendPaymentReminder = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: `WhatsApp payment reminder successfully sent to ${party.name}.`,
+      message: `Email payment reminder successfully sent to ${party.name}.`,
       messageId: response.messageId,
       sentAt: response.timestamp,
     });
