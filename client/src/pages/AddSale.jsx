@@ -249,7 +249,11 @@ export default function AddSale() {
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to save sale: ' + (err.response?.data?.error || err.message));
+      let errorMsg = err.response?.data?.error || err.message;
+      if (err.response?.data?.details && Array.isArray(err.response.data.details)) {
+        errorMsg += '\n\nDetails:\n- ' + err.response.data.details.join('\n- ');
+      }
+      alert('Failed to save sale: ' + errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -487,72 +491,1082 @@ export default function AddSale() {
           </div>
         </div>
 
-        {/* ── RIGHT PANE (PREVIEW) ── */}
+        {/* ── RIGHT PANE (DYNAMIC THEME PREVIEW MATCHING PRINT SETTINGS) ── */}
         <div className="w-[42%] bg-[#F0F2F5] p-6 flex justify-center overflow-y-auto">
-          <div id="invoice-printable-area" className="bg-white w-full max-w-[480px] shadow-sm border border-gray-300 p-[20px] text-black shrink-0 relative flex flex-col" style={{ minHeight: '700px', zoom: 0.9 }}>
-            <div className="absolute inset-[15px] border-[1.5px] border-black pointer-events-none" />
-
-            <div className="relative z-10 p-2 flex flex-col h-full mt-[15px] mx-[15px]">
-              <div className="text-center font-bold text-[12px] border-b border-black pb-1 mb-2">Tax Invoice</div>
-
-              {/* Header Grid */}
-              <div className="flex border-b-[1.5px] border-black pb-2 mb-0">
-                <div className="flex-1 flex gap-3 pr-2">
-                  <div className="w-[60px] h-[60px] bg-gray-400 flex items-center justify-center text-white font-bold text-[10px]">LOGO</div>
-                  <div className="flex flex-col pt-1">
-                    <div className="font-bold text-[15px]">{storeProfile?.shopName || 'My Company'}</div>
-                    <div className="text-[9px] mt-1 text-gray-700">Phone: {storeProfile?.phoneNumber || '-'}</div>
+          {(() => {
+            const activeTheme = storeProfile?.regularLayoutTheme || 'GST Theme 1';
+            
+            // --- TALLY THEME PREVIEW ---
+            if (activeTheme === 'Tally Theme' || activeTheme === 'tally') {
+              return (
+                <div id="invoice-printable-area" className="bg-white w-full max-w-[500px] shadow-md border border-slate-700 p-4 text-black shrink-0 relative flex flex-col text-[10px]" style={{ minHeight: '750px', fontFamily: "'Segoe UI', Arial, sans-serif" }}>
+                  <div className="text-center font-bold text-[12px] uppercase mb-2 border border-slate-700 py-1 bg-slate-50 text-slate-800">
+                    Tax Invoice
+                  </div>
+                  <div className="border border-slate-700 flex-1 flex flex-col">
+                    <div className="flex border-b border-slate-700 p-2 items-center">
+                      <div className="w-12 h-12 bg-slate-200 border border-slate-700 flex items-center justify-center text-[8px] text-slate-500 mr-3 flex-shrink-0">
+                        {storeProfile?.customLogoUrl || storeProfile?.logoUrl ? (
+                          <img src={storeProfile.customLogoUrl || storeProfile.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                        ) : ('Image')}
+                      </div>
+                      <div>
+                        <div className="font-extrabold text-sm text-slate-900">{storeProfile?.customCompanyName || storeProfile?.shopName || 'My Company'}</div>
+                        <div className="text-[9px] text-slate-700 mt-0.5 font-semibold">Phone: {storeProfile?.customPhone || storeProfile?.phoneNumber || '9913039185'}</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 border-b border-slate-700">
+                      <div className="p-2 border-r border-slate-700">
+                        <div className="font-bold text-[10px] underline mb-1">Buyer (Bill to)</div>
+                        <div className="font-bold text-slate-900">{customerName || 'Walk-in Customer'}</div>
+                        <div className="text-slate-600">{customerAddress || ''}</div>
+                        <div className="text-slate-600">Contact: {customerPhone || '-'}</div>
+                      </div>
+                      <div className="p-2">
+                        <div className="font-bold text-[10px] underline mb-1">Invoice Details</div>
+                        <div>Invoice No: Draft</div>
+                        <div>Dated: {todayStr}</div>
+                      </div>
+                    </div>
+                    {/* Table */}
+                    <div className="flex-1">
+                      <table className="w-full text-left text-[9px] border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-700 bg-slate-100 font-bold">
+                            <th className="p-1 text-center border-r border-slate-700">#</th>
+                            <th className="p-1 border-r border-slate-700">Description of Goods</th>
+                            <th className="p-1 text-center border-r border-slate-700">HSN</th>
+                            <th className="p-1 text-center border-r border-slate-700">Qty</th>
+                            <th className="p-1 text-right border-r border-slate-700">Rate</th>
+                            <th className="p-1 text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {items.filter(it => it.name).map((it, idx) => (
+                            <tr key={idx} className="border-b border-slate-200">
+                              <td className="p-1 text-center border-r border-slate-700">{idx + 1}</td>
+                              <td className="p-1 font-bold border-r border-slate-700">{it.name}</td>
+                              <td className="p-1 text-center border-r border-slate-700">0000</td>
+                              <td className="p-1 text-center border-r border-slate-700">{it.qty}</td>
+                              <td className="p-1 text-right border-r border-slate-700">₹{parseFloat(it.price || 0).toFixed(2)}</td>
+                              <td className="p-1 text-right font-bold">₹{parseFloat(it.total || 0).toFixed(2)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {/* Footer */}
+                    <div className="border-t border-slate-700 p-2 flex justify-between items-end">
+                      <div>
+                        <div className="font-bold">Total: ₹{totalAmount.toFixed(2)}</div>
+                        <div className="text-[8px] text-slate-500">Rupees {totalAmount} Only</div>
+                      </div>
+                      <div className="text-right">
+                        <div>For {storeProfile?.shopName || 'My Company'}</div>
+                        <div className="mt-4 font-bold">Authorized Signatory</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="w-[180px] border-l border-black pl-2 flex flex-col gap-1 text-[9px] pt-1">
-                  <div className="flex gap-2"><span className="w-[60px]">Invoice No.</span>: —</div>
-                  <div className="flex gap-2"><span className="w-[60px]">Date</span>: {todayStr}</div>
+              );
+            }
+
+            // --- LANDSCAPE THEME PREVIEW ---
+            if (activeTheme === 'Landscape Theme 1' || activeTheme === 'landscape1' || activeTheme === 'Landscape Theme 2' || activeTheme === 'landscape2') {
+              return (
+                <div id="invoice-printable-area" className="bg-white w-full max-w-[540px] shadow-md border border-gray-200 p-5 text-black shrink-0 relative flex flex-col text-[10px]" style={{ minHeight: '650px' }}>
+                  <div className="bg-blue-600 text-white p-3 rounded mb-3 flex justify-between items-center">
+                    <div>
+                      <div className="font-bold text-base">{storeProfile?.customCompanyName || storeProfile?.shopName || 'My Company'}</div>
+                      <div className="text-[10px]">Ph: {storeProfile?.customPhone || storeProfile?.phoneNumber || '9913039185'}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-bold">TAX INVOICE</div>
+                      <div>Date: {todayStr}</div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mb-3 p-2 bg-gray-50 rounded">
+                    <div>
+                      <div className="font-bold text-gray-700">BILL TO</div>
+                      <div className="font-bold">{customerName || 'Customer'}</div>
+                      <div>{customerAddress}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-gray-700">INVOICE NO</div>
+                      <div className="font-bold">INV-Draft</div>
+                    </div>
+                  </div>
+                  <table className="w-full text-left text-[9px] border-collapse mb-4">
+                    <thead>
+                      <tr className="bg-blue-600 text-white font-bold">
+                        <th className="p-1">#</th>
+                        <th className="p-1">Item Description</th>
+                        <th className="p-1 text-center">Qty</th>
+                        <th className="p-1 text-right">Price</th>
+                        <th className="p-1 text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {items.filter(it => it.name).map((it, idx) => (
+                        <tr key={idx} className="border-b border-gray-200">
+                          <td className="p-1">{idx + 1}</td>
+                          <td className="p-1 font-bold">{it.name}</td>
+                          <td className="p-1 text-center">{it.qty}</td>
+                          <td className="p-1 text-right">₹{parseFloat(it.price || 0).toFixed(2)}</td>
+                          <td className="p-1 text-right font-bold">₹{parseFloat(it.total || 0).toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="mt-auto flex justify-between items-end border-t pt-2">
+                    <div>
+                      <div className="font-bold text-blue-600 text-sm">Grand Total: ₹{totalAmount.toFixed(2)}</div>
+                    </div>
+                    <div className="text-right font-bold">Authorized Signatory</div>
+                  </div>
                 </div>
-              </div>
+              );
+            }
 
-              {/* Bill To */}
-              <div className="border-b-[1.5px] border-black pb-2 pt-1 px-1">
-                <div className="font-bold text-[10px] mb-1">Bill To:</div>
-                <div className="text-[10px] font-bold">{customerName || '—'}</div>
-                <div className="text-[9px] text-gray-700">{customerAddress || ''}</div>
-                <div className="text-[9px] text-gray-700">Contact No: {customerPhone || '-'}</div>
-              </div>
+            // --- MINIMALIST THEME PREVIEW ---
+            if (activeTheme === 'Minimalist Theme' || activeTheme === 'minimalist') {
+              // Calculate dynamic tax summary for Minimalist Theme
+              const taxSummary = {};
+              items.filter(it => it.name).forEach(it => {
+                const qty = parseFloat(it.qty) || 1;
+                const price = parseFloat(it.price) || 0;
+                const disc = it.discountPercent ? (qty * price * (parseFloat(it.discountPercent) / 100)) : 0;
+                let gstRate = 0;
+                if (it.tax && it.tax !== 'NONE') {
+                  const match = it.tax.match(/@([\d.]+)%/);
+                  if (match) gstRate = parseFloat(match[1]);
+                }
+                const taxable = (qty * price) - disc;
+                const totalGstAmt = taxable * (gstRate / 100);
+                if (gstRate > 0) {
+                  const key = `IGST@${gstRate}%`;
+                  taxSummary[key] = (taxSummary[key] || 0) + totalGstAmt;
+                }
+              });
 
-              {/* Items Table inside Invoice */}
-              <div className="flex-1 mt-0 flex flex-col border-b-[1.5px] border-black border-l border-r -mx-1 px-1">
-                <div className="flex border-b border-black text-[9px] font-bold py-1 bg-[#F9F9F9]">
-                  <div className="w-[22px] pl-1">#</div>
-                  <div className="flex-1">Item name</div>
-                  <div className="w-[40px] text-right">Qty</div>
-                  <div className="w-[65px] text-right">Price(₹)</div>
-                  <div className="w-[65px] text-right pr-1">Amt(₹)</div>
-                </div>
-
-                <div className="flex-1 pt-1">
-                  {items.filter(it => it.name).length === 0 ? (
-                    <div className="text-[9px] text-gray-300 text-center py-4 italic">No items added yet</div>
-                  ) : (
-                    items.filter(it => it.name).map((it, idx) => (
-                      <div key={idx} className="flex text-[9px] py-0.5 border-b border-gray-100">
-                        <div className="w-[22px] pl-1 text-center">{idx + 1}</div>
-                        <div className="flex-1 font-semibold truncate pr-1">{it.name}</div>
-                        <div className="w-[40px] text-right pr-1">{it.qty}</div>
-                        <div className="w-[65px] text-right pr-1">₹ {parseFloat(it.price || 0).toFixed(2)}</div>
-                        <div className="w-[65px] text-right pr-1">₹ {parseFloat(it.total || 0).toFixed(2)}</div>
+              return (
+                <div id="invoice-printable-area" className="bg-white w-full max-w-[500px] shadow-md border border-[#D0D0D0] p-0 text-black shrink-0 relative flex flex-col text-[9px] overflow-hidden" style={{ minHeight: '750px', fontFamily: "'Poppins', 'Roboto', sans-serif" }}>
+                  <div className="p-4 flex flex-col h-full">
+                    {/* Header Section */}
+                    <div className="flex justify-between items-start mb-3 shrink-0">
+                      <div className="w-[200px]">
+                        <div className="bg-[#0C7DA8] text-white text-[16px] font-bold text-center py-2 mb-2 tracking-wide uppercase">
+                          Tax Invoice
+                        </div>
+                        <div className="text-[#0C7DA8] font-bold text-[14px] leading-tight mb-1">{storeProfile?.customCompanyName || storeProfile?.shopName || 'My Company'}</div>
+                        <div className="text-gray-700 leading-tight">
+                          <span className="text-[#0C7DA8] text-[8px]">Phone:</span><br/>{storeProfile?.customPhone || storeProfile?.phoneNumber || '9913039185'}
+                        </div>
+                        <div className="text-gray-700 leading-tight mt-1">
+                          <span className="text-[#0C7DA8] text-[8px]">Email:</span><br/>{storeProfile?.email || 'company@email.com'}
+                        </div>
                       </div>
-                    ))
-                  )}
-                </div>
-              </div>
+                      <div className="w-[60px] h-[60px] bg-gray-200 flex items-center justify-center text-gray-500 text-[9px]">
+                        {storeProfile?.customLogoUrl || storeProfile?.logoUrl ? <img src={storeProfile.customLogoUrl || storeProfile.logoUrl} className="w-full h-full object-contain" alt="logo" /> : 'Image'}
+                      </div>
+                    </div>
 
-              {/* Footer Total */}
-              <div className="flex text-[9px] font-bold pt-1 pb-1 px-1">
-                <div className="flex-1">Total</div>
-                <div className="w-[40px] text-right pr-1">{items.filter(it => it.name).reduce((s, i) => s + (parseFloat(i.qty) || 0), 0)}</div>
-                <div className="w-[130px] text-right pr-1">₹ {totalAmount.toFixed(2)}</div>
+                    <div className="border-b border-[#0C7DA8] mb-3 shrink-0"></div>
+
+                    {/* 3 Column Grid */}
+                    <div className="grid grid-cols-3 gap-2 mb-3 shrink-0">
+                      <div>
+                        <div className="text-gray-700 flex justify-between items-center mb-1"><span className="text-[#0C7DA8] text-[10px]">Invoice No.:</span><span className="text-[#0C7DA8] text-[12px] font-bold">INV-Draft</span></div>
+                        <div className="text-gray-700 flex justify-between"><span>Invoice Date:</span><span>{todayStr}</span></div>
+                        <div className="text-gray-700 flex justify-between"><span>Invoice Time:</span><span>{new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})}</span></div>
+                        <div className="text-gray-700 flex justify-between"><span>Place of Supply:</span><span>-</span></div>
+                        <div className="text-gray-700 flex justify-between"><span>PO date:</span><span>-</span></div>
+                      </div>
+                      <div>
+                        <div className="text-[#0C7DA8] font-bold text-[10px] mb-1">Bill To:</div>
+                        <div className="font-bold">{customerName || 'Walk-in Customer'}</div>
+                        <div className="text-gray-700 leading-tight">{customerAddress || ''}</div>
+                        <div className="text-gray-700 flex justify-between mt-1"><span>Contact No.:</span><span>{customerPhone || '-'}</span></div>
+                        <div className="text-gray-700 flex justify-between"><span>GSTIN:</span><span>-</span></div>
+                        <div className="text-gray-700 flex justify-between"><span>State:</span><span>-</span></div>
+                      </div>
+                      <div>
+                        <div className="text-[#0C7DA8] font-bold text-[10px] mb-1">Transportation Details:</div>
+                        <div className="text-gray-700 flex justify-between"><span>Transport Name:</span><span className="text-right">-</span></div>
+                        <div className="text-gray-700 flex justify-between mt-1"><span>Vehicle Number:</span><span>-</span></div>
+                        <div className="text-gray-700 flex justify-between"><span>Delivery Date:</span><span>-</span></div>
+                      </div>
+                    </div>
+
+                    {/* Item Table */}
+                    <div className="flex-1 flex flex-col">
+                      <table className="w-full text-left border-collapse border border-[#CFCFCF] mb-3">
+                        <thead>
+                          <tr className="bg-[#0C7DA8] text-white font-bold text-[9px]">
+                            <th className="p-1.5 border-r border-[#CFCFCF] w-[20px] text-center">#</th>
+                            <th className="p-1.5 border-r border-[#CFCFCF]">Item name</th>
+                            <th className="p-1.5 text-center border-r border-[#CFCFCF]">HSN/ SAC</th>
+                            <th className="p-1.5 text-center border-r border-[#CFCFCF]">Quantity</th>
+                            <th className="p-1.5 text-right border-r border-[#CFCFCF]">Price/ unit</th>
+                            <th className="p-1.5 text-right border-r border-[#CFCFCF]">Discount</th>
+                            <th className="p-1.5 text-right border-r border-[#CFCFCF]">GST</th>
+                            <th className="p-1.5 text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {items.filter(it => it.name).length === 0 ? (
+                            <tr>
+                              <td colSpan="8" className="p-4 text-center text-gray-400 italic">No items added</td>
+                            </tr>
+                          ) : (
+                            items.filter(it => it.name).map((it, idx) => {
+                              const qty = parseFloat(it.qty) || 1;
+                              const price = parseFloat(it.price) || 0;
+                              const disc = it.discountPercent ? (qty * price * (parseFloat(it.discountPercent) / 100)) : 0;
+                              let gstRate = 0;
+                              if (it.tax && it.tax !== 'NONE') {
+                                const match = it.tax.match(/@([\d.]+)%/);
+                                if (match) gstRate = parseFloat(match[1]);
+                              }
+                              const totalGstAmt = ((qty * price - disc) * (gstRate / 100));
+                              const amt = parseFloat(it.total || 0);
+
+                              return (
+                                <tr key={idx} className="bg-white border-b border-[#CFCFCF]">
+                                  <td className="p-1 border-r border-[#CFCFCF] text-center">{idx + 1}</td>
+                                  <td className="p-1 font-bold border-r border-[#CFCFCF]">{it.name}</td>
+                                  <td className="p-1 border-r border-[#CFCFCF] text-center">0000</td>
+                                  <td className="p-1 text-center border-r border-[#CFCFCF]">{qty}</td>
+                                  <td className="p-1 text-right border-r border-[#CFCFCF]">₹{price.toFixed(2)}</td>
+                                  <td className="p-1 text-right border-r border-[#CFCFCF]">₹{disc.toFixed(2)}</td>
+                                  <td className="p-1 text-right border-r border-[#CFCFCF]">₹{totalGstAmt.toFixed(2)} ({gstRate}%)</td>
+                                  <td className="p-1 text-right">₹{amt.toFixed(2)}</td>
+                                </tr>
+                              );
+                            })
+                          )}
+                          {/* Totals Row */}
+                          <tr className="bg-[#0C7DA8] text-white font-bold border-b border-[#CFCFCF]">
+                            <td colSpan="3" className="p-1.5 border-r border-[#CFCFCF]">Total</td>
+                            <td className="p-1.5 text-center border-r border-[#CFCFCF]">{items.filter(it => it.name).reduce((s, i) => s + (parseFloat(i.qty) || 0), 0)}</td>
+                            <td className="p-1.5 border-r border-[#CFCFCF]"></td>
+                            <td className="p-1.5 text-right border-r border-[#CFCFCF]">₹0.00</td>
+                            <td className="p-1.5 text-right border-r border-[#CFCFCF]">₹{(totalAmount - subTotal).toFixed(2)}</td>
+                            <td className="p-1.5 text-right">₹{totalAmount.toFixed(2)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      {/* Bottom Section */}
+                      <div className="flex gap-4 mt-auto">
+                        {/* Left Col */}
+                        <div className="flex-1 flex flex-col gap-2">
+                          <div className="flex gap-2">
+                            <div className="w-[45px] h-[45px] bg-gray-200 flex items-center justify-center text-[7px] text-gray-500 rounded">QR</div>
+                            <div className="flex flex-col gap-0.5 justify-center">
+                              <div className="text-[#0C7DA8] font-bold text-[10px]">Pay To:</div>
+                              <div>Bank Name: {storeProfile?.bankName || '123123123'}</div>
+                              <div>A/C No.: {storeProfile?.bankAccountNumber || '12312312312'}</div>
+                              <div>IFSC: {storeProfile?.bankIfscCode || '123123123'}</div>
+                            </div>
+                          </div>
+                          <div><span className="bg-emerald-500 text-white px-1 font-bold text-[8px] rounded italic">UPI</span><span className="bg-emerald-500 text-white px-1 font-bold text-[8px] rounded ml-0.5">PAY NOW</span></div>
+                          
+                          <div className="mt-1">
+                            <div className="text-[#0C7DA8] font-bold text-[11px]">Invoice Amount In Words</div>
+                            <div>Rupees {totalAmount} Only</div>
+                          </div>
+                          
+                          <div className="mt-1">
+                            <div className="text-[#0C7DA8] font-bold text-[11px]">Terms And Conditions</div>
+                            <div>{storeProfile?.invoiceNotes || 'Thanks for doing business with us!'}</div>
+                          </div>
+
+                          <div className="mt-3">
+                            <div>For : {storeProfile?.customCompanyName || storeProfile?.shopName || 'My Company'}</div>
+                            <div className="w-[60px] h-[30px] bg-gray-200 flex items-center justify-center text-[8px] text-gray-500 my-1">Image</div>
+                            <div className="font-bold text-[10px]">Authorized Signatory</div>
+                          </div>
+                        </div>
+                        {/* Right Col Summary Table */}
+                        <div className="w-[180px]">
+                          <table className="w-full text-left border-collapse border border-[#CFCFCF]">
+                            <tbody>
+                              <tr className="border-b border-[#CFCFCF]">
+                                <td className="p-1 border-r border-[#CFCFCF]">Sub Total</td>
+                                <td className="p-1 text-right">₹{subTotal.toFixed(2)}</td>
+                              </tr>
+                              <tr className="border-b border-[#CFCFCF]">
+                                <td className="p-1 border-r border-[#CFCFCF]">Discount</td>
+                                <td className="p-1 text-right">₹0.00</td>
+                              </tr>
+                              {Object.entries(taxSummary).map(([key, val]) => (
+                                <tr key={key} className="border-b border-[#CFCFCF]">
+                                  <td className="p-1 border-r border-[#CFCFCF]">{key}</td>
+                                  <td className="p-1 text-right">₹{val.toFixed(2)}</td>
+                                </tr>
+                              ))}
+                              {Object.keys(taxSummary).length === 0 && (
+                                <tr className="border-b border-[#CFCFCF]">
+                                  <td className="p-1 border-r border-[#CFCFCF]">GST</td>
+                                  <td className="p-1 text-right">₹0.00</td>
+                                </tr>
+                              )}
+                              <tr className="border-b border-[#CFCFCF]">
+                                <td className="p-1 border-r border-[#CFCFCF]">Round off</td>
+                                <td className="p-1 text-right">₹0.00</td>
+                              </tr>
+                              <tr className="bg-[#0C7DA8] text-white font-bold border-b border-[#CFCFCF]">
+                                <td className="p-1 border-r border-[#CFCFCF]">Total</td>
+                                <td className="p-1 text-right">₹{totalAmount.toFixed(2)}</td>
+                              </tr>
+                              <tr className="border-b border-[#CFCFCF]">
+                                <td className="p-1 border-r border-[#CFCFCF]">Received</td>
+                                <td className="p-1 text-right">₹{receivedAmt.toFixed(2)}</td>
+                              </tr>
+                              <tr className="border-b border-[#CFCFCF]">
+                                <td className="p-1 border-r border-[#CFCFCF]">Balance</td>
+                                <td className="p-1 text-right">₹{balance.toFixed(2)}</td>
+                              </tr>
+                              <tr className="bg-[#0C7DA8] text-white font-bold border-b border-[#CFCFCF]">
+                                <td className="p-1 border-r border-[#CFCFCF]">You Saved</td>
+                                <td className="p-1 text-right">₹0.00</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            // --- MODERN THEME PREVIEW ---
+            if (activeTheme === 'Modern Theme' || activeTheme === 'modern') {
+              // Calculate dynamic tax summary for Modern Theme
+              const taxSummary = {};
+              items.filter(it => it.name).forEach(it => {
+                const qty = parseFloat(it.qty) || 1;
+                const price = parseFloat(it.price) || 0;
+                const disc = it.discountPercent ? (qty * price * (parseFloat(it.discountPercent) / 100)) : 0;
+                let gstRate = 0;
+                if (it.tax && it.tax !== 'NONE') {
+                  const match = it.tax.match(/@([\d.]+)%/);
+                  if (match) gstRate = parseFloat(match[1]);
+                }
+                const taxable = (qty * price) - disc;
+                const totalGstAmt = taxable * (gstRate / 100);
+                if (gstRate > 0) {
+                  // Standard splitting (IGST vs CGST/SGST depends on state, but we'll show IGST as per reference for simplicity if not specified, or just GST)
+                  // For the preview, we'll just group by GST rate.
+                  const key = `GST@${gstRate}%`;
+                  taxSummary[key] = (taxSummary[key] || 0) + totalGstAmt;
+                }
+              });
+
+              return (
+                <div id="invoice-printable-area" className="bg-white w-full max-w-[500px] shadow-md border border-[#D0D0D0] p-0 text-black shrink-0 relative flex flex-col text-[9px] overflow-hidden" style={{ minHeight: '750px', fontFamily: "'Poppins', 'Roboto', sans-serif" }}>
+                  {/* Header Section */}
+                  <div className="relative h-[80px] w-full mb-3 shrink-0">
+                    {/* Red Banner */}
+                    <div className="absolute top-0 right-0 h-[40px] bg-[#E61C35] flex items-center z-10" style={{ left: '160px' }}>
+                      <div className="text-white text-[10px] ml-4 flex items-center gap-1">
+                        <svg viewBox="0 0 24 24" fill="white" className="w-3 h-3"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>
+                        {storeProfile?.customPhone || storeProfile?.phoneNumber || '9913039185'}
+                      </div>
+                    </div>
+                    {/* Dark Charcoal Curve */}
+                    <div className="absolute top-0 left-0 bg-[#232A34] w-[260px] h-[80px] z-20 flex flex-col justify-center" style={{ borderBottomRightRadius: '50px' }}>
+                      <div className="px-3 flex items-center gap-3">
+                        <div className="w-[45px] h-[45px] bg-gray-500 flex items-center justify-center text-gray-300 text-[8px]">
+                          {storeProfile?.customLogoUrl || storeProfile?.logoUrl ? <img src={storeProfile.customLogoUrl || storeProfile.logoUrl} className="w-full h-full object-contain" alt="logo" /> : 'Image'}
+                        </div>
+                        <div className="text-white font-bold text-[14px] leading-tight flex-1">{storeProfile?.customCompanyName || storeProfile?.shopName || 'My Company'}</div>
+                      </div>
+                    </div>
+                    {/* Tax Invoice Text */}
+                    <div className="absolute top-[40px] right-4 z-0">
+                      <div className="text-[20px] font-light text-black">Tax Invoice</div>
+                    </div>
+                  </div>
+
+                  <div className="px-3 pb-3 flex flex-col flex-1">
+                    {/* 3 Column Grid */}
+                    <div className="grid grid-cols-3 gap-2 mb-3 shrink-0">
+                      <div>
+                        <div className="text-[#E61C35] font-bold text-[10px] mb-1">Bill To:</div>
+                        <div className="font-bold">{customerName || 'Walk-in Customer'}</div>
+                        <div className="text-gray-700 leading-tight">{customerAddress || ''}</div>
+                        <div className="text-gray-700 flex justify-between mt-1"><span>Contact No.:</span><span>{customerPhone || '-'}</span></div>
+                        <div className="text-gray-700 flex justify-between"><span>GSTIN:</span><span>-</span></div>
+                        <div className="text-gray-700 flex justify-between"><span>State:</span><span>-</span></div>
+                      </div>
+                      <div>
+                        <div className="text-[#E61C35] font-bold text-[10px] mb-1">Transportation Details:</div>
+                        <div className="text-gray-700 flex justify-between"><span>Transport Name:</span><span className="text-right">-</span></div>
+                        <div className="text-gray-700 flex justify-between mt-1"><span>Vehicle Number:</span><span>-</span></div>
+                        <div className="text-gray-700 flex justify-between"><span>Delivery Date:</span><span>-</span></div>
+                      </div>
+                      <div>
+                        <div className="text-gray-700 flex justify-between mt-4"><span>Invoice No.:</span><span>INV-Draft</span></div>
+                        <div className="text-gray-700 flex justify-between"><span>Invoice Date:</span><span>{todayStr}</span></div>
+                        <div className="text-gray-700 flex justify-between"><span>Invoice Time:</span><span>{new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})}</span></div>
+                        <div className="text-gray-700 flex justify-between"><span>Place of Supply:</span><span>-</span></div>
+                        <div className="text-gray-700 flex justify-between"><span>PO date:</span><span>-</span></div>
+                      </div>
+                    </div>
+
+                    {/* Item Table */}
+                    <div className="flex-1 flex flex-col">
+                      <table className="w-full text-left border-collapse border border-[#D0D0D0] mb-3">
+                        <thead>
+                          <tr className="bg-[#E61C35] text-white font-bold text-[9px]">
+                            <th className="p-1.5 border-r border-[#D0D0D0] w-[20px] text-center">#</th>
+                            <th className="p-1.5 border-r border-[#D0D0D0]">Item name</th>
+                            <th className="p-1.5 text-center border-r border-[#D0D0D0]">HSN/ SAC</th>
+                            <th className="p-1.5 text-center border-r border-[#D0D0D0]">Quantity</th>
+                            <th className="p-1.5 text-right border-r border-[#D0D0D0]">Price/ unit</th>
+                            <th className="p-1.5 text-right border-r border-[#D0D0D0]">Discount</th>
+                            <th className="p-1.5 text-right border-r border-[#D0D0D0]">GST</th>
+                            <th className="p-1.5 text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {items.filter(it => it.name).length === 0 ? (
+                            <tr>
+                              <td colSpan="8" className="p-4 text-center text-gray-400 italic">No items added</td>
+                            </tr>
+                          ) : (
+                            items.filter(it => it.name).map((it, idx) => {
+                              const qty = parseFloat(it.qty) || 1;
+                              const price = parseFloat(it.price) || 0;
+                              const disc = it.discountPercent ? (qty * price * (parseFloat(it.discountPercent) / 100)) : 0;
+                              let gstRate = 0;
+                              if (it.tax && it.tax !== 'NONE') {
+                                const match = it.tax.match(/@([\d.]+)%/);
+                                if (match) gstRate = parseFloat(match[1]);
+                              }
+                              const totalGstAmt = ((qty * price - disc) * (gstRate / 100));
+                              const amt = parseFloat(it.total || 0);
+
+                              return (
+                                <tr key={idx} className="bg-white border-b border-[#D0D0D0]">
+                                  <td className="p-1 border-r border-[#D0D0D0] text-center">{idx + 1}</td>
+                                  <td className="p-1 font-bold border-r border-[#D0D0D0]">{it.name}</td>
+                                  <td className="p-1 border-r border-[#D0D0D0] text-center">0000</td>
+                                  <td className="p-1 text-center border-r border-[#D0D0D0]">{qty}</td>
+                                  <td className="p-1 text-right border-r border-[#D0D0D0]">₹{price.toFixed(2)}</td>
+                                  <td className="p-1 text-right border-r border-[#D0D0D0]">₹{disc.toFixed(2)}</td>
+                                  <td className="p-1 text-right border-r border-[#D0D0D0]">₹{totalGstAmt.toFixed(2)} ({gstRate}%)</td>
+                                  <td className="p-1 text-right">₹{amt.toFixed(2)}</td>
+                                </tr>
+                              );
+                            })
+                          )}
+                          {/* Totals Row */}
+                          <tr className="bg-[#E61C35] text-white font-bold border-b border-[#D0D0D0]">
+                            <td colSpan="3" className="p-1.5 border-r border-[#D0D0D0]">Total</td>
+                            <td className="p-1.5 text-center border-r border-[#D0D0D0]">{items.filter(it => it.name).reduce((s, i) => s + (parseFloat(i.qty) || 0), 0)}</td>
+                            <td className="p-1.5 border-r border-[#D0D0D0]"></td>
+                            <td className="p-1.5 text-right border-r border-[#D0D0D0]">₹0.00</td>
+                            <td className="p-1.5 text-right border-r border-[#D0D0D0]">₹{(totalAmount - subTotal).toFixed(2)}</td>
+                            <td className="p-1.5 text-right">₹{totalAmount.toFixed(2)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      {/* Bottom Section */}
+                      <div className="flex gap-4 mt-auto">
+                        {/* Left Col */}
+                        <div className="flex-1 flex flex-col gap-2">
+                          <div className="flex gap-2">
+                            <div className="w-[45px] h-[45px] bg-gray-200 flex items-center justify-center text-[7px] text-gray-500 rounded">QR</div>
+                            <div className="flex flex-col gap-0.5 justify-center">
+                              <div className="text-[#E61C35] font-bold text-[10px]">Pay To:</div>
+                              <div>Bank Name: {storeProfile?.bankName || '123123123'}</div>
+                              <div>A/C No.: {storeProfile?.bankAccountNumber || '12312312312'}</div>
+                              <div>IFSC: {storeProfile?.bankIfscCode || '123123123'}</div>
+                            </div>
+                          </div>
+                          <div><span className="bg-emerald-500 text-white px-1 font-bold text-[8px] rounded italic">UPI</span><span className="bg-emerald-500 text-white px-1 font-bold text-[8px] rounded ml-0.5">PAY NOW</span></div>
+                          
+                          <div className="mt-1">
+                            <div className="text-[#E61C35] font-bold text-[11px]">Invoice Amount In Words</div>
+                            <div>Rupees {totalAmount} Only</div>
+                          </div>
+                          
+                          <div className="mt-1">
+                            <div className="text-[#E61C35] font-bold text-[11px]">Terms And Conditions</div>
+                            <div>{storeProfile?.invoiceNotes || 'Thanks for doing business with us!'}</div>
+                          </div>
+
+                          <div className="mt-3">
+                            <div>For : {storeProfile?.customCompanyName || storeProfile?.shopName || 'My Company'}</div>
+                            <div className="w-[60px] h-[30px] bg-gray-200 flex items-center justify-center text-[8px] text-gray-500 my-1">Image</div>
+                            <div className="font-bold text-[10px]">Authorized Signatory</div>
+                          </div>
+                        </div>
+                        {/* Right Col Summary Table */}
+                        <div className="w-[180px]">
+                          <table className="w-full text-left border-collapse border border-[#D0D0D0]">
+                            <tbody>
+                              <tr className="border-b border-[#D0D0D0]">
+                                <td className="p-1 border-r border-[#D0D0D0]">Sub Total</td>
+                                <td className="p-1 text-right">₹{subTotal.toFixed(2)}</td>
+                              </tr>
+                              <tr className="border-b border-[#D0D0D0]">
+                                <td className="p-1 border-r border-[#D0D0D0]">Discount</td>
+                                <td className="p-1 text-right">₹0.00</td>
+                              </tr>
+                              {Object.entries(taxSummary).map(([key, val]) => (
+                                <tr key={key} className="border-b border-[#D0D0D0]">
+                                  <td className="p-1 border-r border-[#D0D0D0]">{key}</td>
+                                  <td className="p-1 text-right">₹{val.toFixed(2)}</td>
+                                </tr>
+                              ))}
+                              {Object.keys(taxSummary).length === 0 && (
+                                <tr className="border-b border-[#D0D0D0]">
+                                  <td className="p-1 border-r border-[#D0D0D0]">GST</td>
+                                  <td className="p-1 text-right">₹0.00</td>
+                                </tr>
+                              )}
+                              <tr className="border-b border-[#D0D0D0]">
+                                <td className="p-1 border-r border-[#D0D0D0]">Round off</td>
+                                <td className="p-1 text-right">₹0.00</td>
+                              </tr>
+                              <tr className="bg-[#E61C35] text-white font-bold border-b border-[#D0D0D0]">
+                                <td className="p-1 border-r border-[#D0D0D0]">Total</td>
+                                <td className="p-1 text-right">₹{totalAmount.toFixed(2)}</td>
+                              </tr>
+                              <tr className="border-b border-[#D0D0D0]">
+                                <td className="p-1 border-r border-[#D0D0D0]">Received</td>
+                                <td className="p-1 text-right">₹{receivedAmt.toFixed(2)}</td>
+                              </tr>
+                              <tr className="border-b border-[#D0D0D0]">
+                                <td className="p-1 border-r border-[#D0D0D0]">Balance</td>
+                                <td className="p-1 text-right">₹{balance.toFixed(2)}</td>
+                              </tr>
+                              <tr className="bg-[#E61C35] text-white font-bold border-b border-[#D0D0D0]">
+                                <td className="p-1 border-r border-[#D0D0D0]">You Saved</td>
+                                <td className="p-1 text-right">₹0.00</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            // --- GST THEME 3 PREVIEW ---
+            if (activeTheme === 'GST Theme 3' || activeTheme === 'gst3') {
+              return (
+                <div id="invoice-printable-area" className="bg-white w-full max-w-[500px] shadow-md border border-[#BDBDBD] p-0 text-black shrink-0 relative flex flex-col text-[9px]" style={{ minHeight: '750px', fontFamily: "'Poppins', 'Roboto', sans-serif" }}>
+                  <div className="text-center font-bold text-[12px] text-black py-2 bg-white">
+                    Sale
+                  </div>
+                  <div className="border-t border-[#BDBDBD] flex flex-col flex-1">
+                    
+                    {/* Header */}
+                    <div className="flex justify-between items-start p-3 border-b border-[#BDBDBD]">
+                      <div className="w-[60px] h-[60px] bg-gray-200 text-gray-400 flex items-center justify-center text-[10px]">
+                        {storeProfile?.customLogoUrl || storeProfile?.logoUrl ? <img src={storeProfile.customLogoUrl || storeProfile.logoUrl} className="w-full h-full object-contain" alt="logo" /> : 'Image'}
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-[16px] text-gray-900">{storeProfile?.customCompanyName || storeProfile?.shopName || 'My Company'}</div>
+                        <div className="text-gray-700 mt-1 text-[10px]">Ph. no.: {storeProfile?.customPhone || storeProfile?.phoneNumber || '9913039185'}</div>
+                      </div>
+                    </div>
+
+                    {/* 3 Column Info Header */}
+                    <div className="grid grid-cols-3 bg-[#0C7DA8] text-white font-bold border-b border-[#BDBDBD] text-[10px]">
+                      <div className="p-1.5 border-r border-[#BDBDBD]">Bill To:</div>
+                      <div className="p-1.5 border-r border-[#BDBDBD]">Shipping To</div>
+                      <div className="p-1.5 text-right">Invoice Details</div>
+                    </div>
+                    <div className="grid grid-cols-3 border-b border-[#BDBDBD]">
+                      <div className="p-2 border-r border-[#BDBDBD]">
+                        <div className="font-bold text-gray-900 mb-0.5">{customerName || 'Walk-in Customer'}</div>
+                        <div className="text-gray-600 leading-tight">{customerAddress || ''}</div>
+                        <div className="text-gray-600 mt-1">Contact No.: {customerPhone || '-'}</div>
+                      </div>
+                      <div className="p-2 border-r border-[#BDBDBD]">
+                        <div className="text-gray-600 leading-tight">{customerAddress || ''}</div>
+                      </div>
+                      <div className="p-2 text-right">
+                        <div className="text-gray-700 mb-0.5">Invoice No.: INV-Draft</div>
+                        <div className="text-gray-700 mb-0.5">Date: {todayStr}</div>
+                        <div className="text-gray-700 mb-0.5">Time: {new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})}</div>
+                        <div className="text-gray-700">Due Date: {todayStr}</div>
+                      </div>
+                    </div>
+
+                    {/* Item Table */}
+                    <div className="flex-1 flex flex-col">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-[#0C7DA8] text-white font-bold">
+                            <th className="p-1.5 text-center border-r border-[#BDBDBD] w-[20px]">#</th>
+                            <th className="p-1.5 border-r border-[#BDBDBD]">Item name</th>
+                            <th className="p-1.5 text-center border-r border-[#BDBDBD]">HSC/SAC</th>
+                            <th className="p-1.5 text-center border-r border-[#BDBDBD]">Qty</th>
+                            <th className="p-1.5 text-right border-r border-[#BDBDBD]">Price/unit</th>
+                            <th className="p-1.5 text-right border-r border-[#BDBDBD]">Discount</th>
+                            <th className="p-1.5 text-right border-r border-[#BDBDBD]">GST</th>
+                            <th className="p-1.5 text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {items.filter(it => it.name).length === 0 ? (
+                            <tr>
+                              <td colSpan="8" className="p-4 text-center text-gray-400 italic">No items added</td>
+                            </tr>
+                          ) : (
+                            items.filter(it => it.name).map((it, idx) => {
+                              const qty = parseFloat(it.qty) || 1;
+                              const price = parseFloat(it.price) || 0;
+                              const disc = it.discountPercent ? (qty * price * (parseFloat(it.discountPercent) / 100)) : 0;
+                              let gstRate = 0;
+                              if (it.tax && it.tax !== 'NONE') {
+                                const match = it.tax.match(/@([\d.]+)%/);
+                                if (match) gstRate = parseFloat(match[1]);
+                              }
+                              const totalGstAmt = ((qty * price - disc) * (gstRate / 100));
+                              const amt = parseFloat(it.total || 0);
+
+                              return (
+                                <tr key={idx} className="bg-white border-b border-[#BDBDBD]">
+                                  <td className="p-1 text-center border-r border-[#BDBDBD]">{idx + 1}</td>
+                                  <td className="p-1 font-bold border-r border-[#BDBDBD]">{it.name}</td>
+                                  <td className="p-1 text-center border-r border-[#BDBDBD]">0000</td>
+                                  <td className="p-1 text-center border-r border-[#BDBDBD]">{qty}</td>
+                                  <td className="p-1 text-right border-r border-[#BDBDBD]">₹{price.toFixed(2)}</td>
+                                  <td className="p-1 text-right border-r border-[#BDBDBD]">₹{disc.toFixed(2)}</td>
+                                  <td className="p-1 text-right border-r border-[#BDBDBD]">₹{totalGstAmt.toFixed(2)} ({gstRate}%)</td>
+                                  <td className="p-1 text-right font-bold">₹{amt.toFixed(2)}</td>
+                                </tr>
+                              );
+                            })
+                          )}
+                          {/* Totals Row */}
+                          <tr className="font-bold border-b border-[#BDBDBD] bg-white">
+                            <td colSpan="3" className="p-1 border-r border-[#BDBDBD]">Total</td>
+                            <td className="p-1 text-center border-r border-[#BDBDBD]">{items.filter(it => it.name).reduce((s, i) => s + (parseFloat(i.qty) || 0), 0)}</td>
+                            <td className="p-1 border-r border-[#BDBDBD]"></td>
+                            <td className="p-1 text-right border-r border-[#BDBDBD]">₹0.00</td>
+                            <td className="p-1 text-right border-r border-[#BDBDBD]">₹0.00</td>
+                            <td className="p-1 text-right">₹{totalAmount.toFixed(2)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      {/* Sub-Tables (Tax & Amounts) */}
+                      <div className="flex border-b border-[#BDBDBD]">
+                        {/* Left Tax Table */}
+                        <div className="w-[50%] border-r border-[#BDBDBD] flex flex-col">
+                          <div className="grid grid-cols-4 bg-[#0C7DA8] text-white font-bold p-1">
+                            <div>Tax type</div>
+                            <div className="text-right">Taxable amount</div>
+                            <div className="text-right">Rate</div>
+                            <div className="text-right">Tax amount</div>
+                          </div>
+                          <div className="p-2 text-center text-gray-500 italic mt-4">
+                            Dynamically calculated tax breakdown will appear here.
+                          </div>
+                        </div>
+                        {/* Right Amounts Table */}
+                        <div className="w-[50%] flex flex-col">
+                          <div className="bg-[#0C7DA8] text-white font-bold p-1">Amounts</div>
+                          <div className="flex justify-between p-1.5 border-b border-gray-100"><span>Sub Total</span><span>₹{subTotal.toFixed(2)}</span></div>
+                          <div className="flex justify-between p-1.5 border-b border-gray-100"><span>Discount</span><span>₹0.00</span></div>
+                          <div className="flex justify-between p-1.5 border-b border-gray-100"><span>Tax</span><span>₹{(totalAmount - subTotal).toFixed(2)}</span></div>
+                          <div className="flex justify-between p-1.5 border-b border-[#BDBDBD] font-bold"><span>Total</span><span>₹{totalAmount.toFixed(2)}</span></div>
+                          <div className="flex justify-between p-1.5 border-b border-gray-100"><span>Received</span><span>₹{receivedAmt.toFixed(2)}</span></div>
+                          <div className="flex justify-between p-1.5 border-b border-[#BDBDBD] font-bold"><span>Balance</span><span>₹{balance.toFixed(2)}</span></div>
+                          <div className="flex justify-between p-1.5 font-bold"><span>You Saved</span><span>₹0.00</span></div>
+                        </div>
+                      </div>
+
+                      {/* Invoice Amount In Words & Description */}
+                      <div className="grid grid-cols-2 border-b border-[#BDBDBD]">
+                        <div className="border-r border-[#BDBDBD]">
+                          <div className="bg-[#0C7DA8] text-white font-bold p-1 text-center border-b border-[#BDBDBD]">Invoice Amount In Words</div>
+                          <div className="p-3 text-center text-gray-700 h-full">Rupees {totalAmount} Only</div>
+                        </div>
+                        <div>
+                          <div className="bg-[#0C7DA8] text-white font-bold p-1 text-center border-b border-[#BDBDBD]">Description</div>
+                          <div className="p-3 text-center text-gray-700 h-full">Sale Description</div>
+                        </div>
+                      </div>
+
+                      {/* Footer */}
+                      <div className="flex mt-auto text-[8px]">
+                        <div className="w-[33.33%] border-r border-[#BDBDBD] flex flex-col">
+                          <div className="bg-[#0C7DA8] text-white font-bold p-1">Bank Details</div>
+                          <div className="p-2 flex gap-2">
+                            <div className="w-[40px] h-[40px] bg-gray-200 flex items-center justify-center text-[7px] text-gray-500 rounded">QR</div>
+                            <div className="flex flex-col gap-0.5 justify-center">
+                              <div>Bank Name: {storeProfile?.bankName || '123123123'}</div>
+                              <div>A/C No.: {storeProfile?.bankAccountNumber || '12312312312'}</div>
+                              <div>IFSC: {storeProfile?.bankIfscCode || '123123123'}</div>
+                            </div>
+                          </div>
+                          <div className="px-2 pb-2 text-[6px] font-bold text-emerald-600"><span className="border border-emerald-600 px-1 py-0.5 rounded">UPI PAY NOW</span></div>
+                        </div>
+                        <div className="w-[33.33%] border-r border-[#BDBDBD] flex flex-col">
+                          <div className="bg-[#0C7DA8] text-white font-bold p-1">Terms and conditions</div>
+                          <div className="p-2 text-gray-700">{storeProfile?.invoiceNotes || 'Thanks for doing business with us!'}</div>
+                        </div>
+                        <div className="w-[33.33%] flex flex-col items-center justify-center p-2">
+                          <div>For : {storeProfile?.customCompanyName || storeProfile?.shopName || 'My Company'}</div>
+                          <div className="w-[60px] h-[30px] bg-gray-200 flex items-center justify-center text-[8px] text-gray-500 my-1">Image</div>
+                          <div className="font-bold">Authorized Signatory</div>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            // --- GST THEME 2 PREVIEW ---
+            if (activeTheme === 'GST Theme 2' || activeTheme === 'gst2') {
+              return (
+                <div id="invoice-printable-area" className="bg-white w-full max-w-[500px] shadow-md border border-[#BDBDBD] p-0 text-black shrink-0 relative flex flex-col text-[9px]" style={{ minHeight: '750px', fontFamily: "'Poppins', 'Roboto', sans-serif" }}>
+                  <div className="text-center font-bold text-[12px] text-black py-2 bg-white">
+                    Sale
+                  </div>
+                  <div className="border-t border-[#BDBDBD] flex flex-col flex-1">
+                    
+                    {/* Header */}
+                    <div className="flex justify-between items-start p-3 border-b border-[#BDBDBD]">
+                      <div className="w-[60px] h-[60px] bg-gray-200 text-gray-400 flex items-center justify-center text-[10px]">
+                        {storeProfile?.customLogoUrl || storeProfile?.logoUrl ? <img src={storeProfile.customLogoUrl || storeProfile.logoUrl} className="w-full h-full object-contain" alt="logo" /> : 'Image'}
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-[16px] text-gray-900">{storeProfile?.customCompanyName || storeProfile?.shopName || 'My Company'}</div>
+                        <div className="text-gray-700 mt-1 text-[10px]">Ph. no.: {storeProfile?.customPhone || storeProfile?.phoneNumber || '9913039185'}</div>
+                      </div>
+                    </div>
+
+                    {/* 3 Column Info Header */}
+                    <div className="grid grid-cols-3 bg-[#8D84E8] text-white font-bold border-b border-[#BDBDBD] text-[10px]">
+                      <div className="p-1.5 border-r border-[#BDBDBD]">Bill To:</div>
+                      <div className="p-1.5 border-r border-[#BDBDBD]">Shipping To</div>
+                      <div className="p-1.5 text-right">Invoice Details</div>
+                    </div>
+                    <div className="grid grid-cols-3 border-b border-[#BDBDBD]">
+                      <div className="p-2 border-r border-[#BDBDBD]">
+                        <div className="font-bold text-gray-900 mb-0.5">{customerName || 'Walk-in Customer'}</div>
+                        <div className="text-gray-600 leading-tight">{customerAddress || ''}</div>
+                        <div className="text-gray-600 mt-1">Contact No.: {customerPhone || '-'}</div>
+                      </div>
+                      <div className="p-2 border-r border-[#BDBDBD]">
+                        <div className="text-gray-600 leading-tight">{customerAddress || ''}</div>
+                      </div>
+                      <div className="p-2 text-right">
+                        <div className="text-gray-700 mb-0.5">Invoice No.: INV-Draft</div>
+                        <div className="text-gray-700 mb-0.5">Date: {todayStr}</div>
+                        <div className="text-gray-700 mb-0.5">Time: {new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})}</div>
+                        <div className="text-gray-700">Due Date: {todayStr}</div>
+                      </div>
+                    </div>
+
+                    {/* Item Table */}
+                    <div className="flex-1 flex flex-col">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-[#8D84E8] text-white font-bold">
+                            <th className="p-1.5 text-center border-r border-[#BDBDBD] w-[20px]">#</th>
+                            <th className="p-1.5 border-r border-[#BDBDBD]">Item name</th>
+                            <th className="p-1.5 text-center border-r border-[#BDBDBD]">HSC/SAC</th>
+                            <th className="p-1.5 text-center border-r border-[#BDBDBD]">Qty</th>
+                            <th className="p-1.5 text-right border-r border-[#BDBDBD]">Price/unit</th>
+                            <th className="p-1.5 text-right border-r border-[#BDBDBD]">Discount</th>
+                            <th className="p-1.5 text-right border-r border-[#BDBDBD]">CGST</th>
+                            <th className="p-1.5 text-right border-r border-[#BDBDBD]">SGST</th>
+                            <th className="p-1.5 text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {items.filter(it => it.name).length === 0 ? (
+                            <tr>
+                              <td colSpan="9" className="p-4 text-center text-gray-400 italic">No items added</td>
+                            </tr>
+                          ) : (
+                            items.filter(it => it.name).map((it, idx) => {
+                              const qty = parseFloat(it.qty) || 1;
+                              const price = parseFloat(it.price) || 0;
+                              const disc = it.discountPercent ? (qty * price * (parseFloat(it.discountPercent) / 100)) : 0;
+                              let gstRate = 0;
+                              if (it.tax && it.tax !== 'NONE') {
+                                const match = it.tax.match(/@([\d.]+)%/);
+                                if (match) gstRate = parseFloat(match[1]);
+                              }
+                              const halfGstAmt = ((qty * price - disc) * (gstRate / 100)) / 2;
+                              const amt = parseFloat(it.total || 0);
+
+                              return (
+                                <tr key={idx} className="bg-white border-b border-[#BDBDBD]">
+                                  <td className="p-1 text-center border-r border-[#BDBDBD]">{idx + 1}</td>
+                                  <td className="p-1 font-bold border-r border-[#BDBDBD]">{it.name}</td>
+                                  <td className="p-1 text-center border-r border-[#BDBDBD]">0000</td>
+                                  <td className="p-1 text-center border-r border-[#BDBDBD]">{qty}</td>
+                                  <td className="p-1 text-right border-r border-[#BDBDBD]">₹{price.toFixed(2)}</td>
+                                  <td className="p-1 text-right border-r border-[#BDBDBD]">₹{disc.toFixed(2)}</td>
+                                  <td className="p-1 text-right border-r border-[#BDBDBD]">₹{halfGstAmt.toFixed(2)}</td>
+                                  <td className="p-1 text-right border-r border-[#BDBDBD]">₹{halfGstAmt.toFixed(2)}</td>
+                                  <td className="p-1 text-right font-bold">₹{amt.toFixed(2)}</td>
+                                </tr>
+                              );
+                            })
+                          )}
+                          {/* Totals Row */}
+                          <tr className="font-bold border-b border-[#BDBDBD] bg-white">
+                            <td colSpan="3" className="p-1 border-r border-[#BDBDBD]">Total</td>
+                            <td className="p-1 text-center border-r border-[#BDBDBD]">{items.filter(it => it.name).reduce((s, i) => s + (parseFloat(i.qty) || 0), 0)}</td>
+                            <td className="p-1 border-r border-[#BDBDBD]"></td>
+                            <td className="p-1 text-right border-r border-[#BDBDBD]">₹0.00</td>
+                            <td className="p-1 text-right border-r border-[#BDBDBD]">₹0.00</td>
+                            <td className="p-1 text-right border-r border-[#BDBDBD]">₹0.00</td>
+                            <td className="p-1 text-right">₹{totalAmount.toFixed(2)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      {/* Sub-Tables (Tax & Amounts) */}
+                      <div className="flex border-b border-[#BDBDBD]">
+                        {/* Left Tax Table */}
+                        <div className="w-[50%] border-r border-[#BDBDBD] flex flex-col">
+                          <div className="grid grid-cols-4 bg-[#8D84E8] text-white font-bold p-1">
+                            <div>Tax type</div>
+                            <div className="text-right">Taxable amount</div>
+                            <div className="text-right">Rate</div>
+                            <div className="text-right">Tax amount</div>
+                          </div>
+                          <div className="p-2 text-center text-gray-500 italic mt-4">
+                            Dynamically calculated tax breakdown will appear here.
+                          </div>
+                        </div>
+                        {/* Right Amounts Table */}
+                        <div className="w-[50%] flex flex-col">
+                          <div className="bg-[#8D84E8] text-white font-bold p-1">Amounts</div>
+                          <div className="flex justify-between p-1.5 border-b border-gray-100"><span>Sub Total</span><span>₹{subTotal.toFixed(2)}</span></div>
+                          <div className="flex justify-between p-1.5 border-b border-gray-100"><span>Discount</span><span>₹0.00</span></div>
+                          <div className="flex justify-between p-1.5 border-b border-gray-100"><span>Tax</span><span>₹{(totalAmount - subTotal).toFixed(2)}</span></div>
+                          <div className="flex justify-between p-1.5 border-b border-[#BDBDBD] font-bold"><span>Total</span><span>₹{totalAmount.toFixed(2)}</span></div>
+                          <div className="flex justify-between p-1.5 border-b border-gray-100"><span>Received</span><span>₹{receivedAmt.toFixed(2)}</span></div>
+                          <div className="flex justify-between p-1.5 border-b border-[#BDBDBD] font-bold"><span>Balance</span><span>₹{balance.toFixed(2)}</span></div>
+                          <div className="flex justify-between p-1.5 font-bold"><span>You Saved</span><span>₹0.00</span></div>
+                        </div>
+                      </div>
+
+                      {/* Invoice Amount In Words & Description */}
+                      <div className="grid grid-cols-2 border-b border-[#BDBDBD]">
+                        <div className="border-r border-[#BDBDBD]">
+                          <div className="bg-[#8D84E8] text-white font-bold p-1 text-center border-b border-[#BDBDBD]">Invoice Amount In Words</div>
+                          <div className="p-3 text-center text-gray-700 h-full">Rupees {totalAmount} Only</div>
+                        </div>
+                        <div>
+                          <div className="bg-[#8D84E8] text-white font-bold p-1 text-center border-b border-[#BDBDBD]">Description</div>
+                          <div className="p-3 text-center text-gray-700 h-full">Sale Description</div>
+                        </div>
+                      </div>
+
+                      {/* Footer */}
+                      <div className="flex mt-auto text-[8px]">
+                        <div className="w-[33.33%] border-r border-[#BDBDBD] flex flex-col">
+                          <div className="bg-[#8D84E8] text-white font-bold p-1">Bank Details</div>
+                          <div className="p-2 flex gap-2">
+                            <div className="w-[40px] h-[40px] bg-gray-200 flex items-center justify-center text-[7px] text-gray-500 rounded">QR</div>
+                            <div className="flex flex-col gap-0.5 justify-center">
+                              <div>Bank Name: {storeProfile?.bankName || '123123123'}</div>
+                              <div>A/C No.: {storeProfile?.bankAccountNumber || '12312312312'}</div>
+                              <div>IFSC: {storeProfile?.bankIfscCode || '123123123'}</div>
+                            </div>
+                          </div>
+                          <div className="px-2 pb-2 text-[6px] font-bold text-emerald-600"><span className="border border-emerald-600 px-1 py-0.5 rounded">UPI PAY NOW</span></div>
+                        </div>
+                        <div className="w-[33.33%] border-r border-[#BDBDBD] flex flex-col">
+                          <div className="bg-[#8D84E8] text-white font-bold p-1">Terms and conditions</div>
+                          <div className="p-2 text-gray-700">{storeProfile?.invoiceNotes || 'Thanks for doing business with us!'}</div>
+                        </div>
+                        <div className="w-[33.33%] flex flex-col items-center justify-center p-2">
+                          <div>For : {storeProfile?.customCompanyName || storeProfile?.shopName || 'My Company'}</div>
+                          <div className="w-[60px] h-[30px] bg-gray-200 flex items-center justify-center text-[8px] text-gray-500 my-1">Image</div>
+                          <div className="font-bold">Authorized Signatory</div>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            // --- GST THEME 1 PREVIEW (DEFAULT & EXPLICIT) ---
+            return (
+              <div id="invoice-printable-area" className="bg-white w-full max-w-[500px] shadow-md border border-gray-200 p-[24px] text-black shrink-0 relative flex flex-col text-[11px]" style={{ minHeight: '750px', fontFamily: "'Poppins', 'Roboto', sans-serif" }}>
+                
+                {/* Header */}
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <div className="text-[16px] font-bold text-gray-900">{storeProfile?.customCompanyName || storeProfile?.shopName || 'My Company'}</div>
+                    <div className="text-[11px] text-gray-700 mt-0.5">Ph. no.: {storeProfile?.customPhone || storeProfile?.phoneNumber || '9913039185'}</div>
+                  </div>
+                  <div>
+                    {storeProfile?.customLogoUrl || storeProfile?.logoUrl ? (
+                      <img src={storeProfile.customLogoUrl || storeProfile.logoUrl} className="w-[60px] h-[60px] object-contain" alt="logo" />
+                    ) : (
+                      <div className="w-[60px] h-[60px] bg-gray-200 text-gray-400 flex items-center justify-center text-[10px] rounded">Image</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Thin Purple Divider */}
+                <div className="h-[1px] bg-[#8D84E8] my-2" />
+
+                {/* Title */}
+                <div className="text-center text-[22px] font-bold text-[#8D84E8] mb-3">
+                  Sale
+                </div>
+
+                {/* 3 Column Info Section */}
+                <div className="grid grid-cols-3 gap-2 mb-4 text-[10px]">
+                  <div>
+                    <div className="font-bold text-[11px] mb-1">Bill To:</div>
+                    <div className="font-bold text-gray-900">{customerName || 'Walk-in Customer'}</div>
+                    <div className="text-gray-600 leading-tight">{customerAddress || 'Customer Address'}</div>
+                    <div className="text-gray-600 mt-1">Contact No.: {customerPhone || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="font-bold text-[11px] mb-1">Shipping To</div>
+                    <div className="text-gray-600 leading-tight">{customerAddress || 'Shipping Address'}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-[11px] mb-1">Invoice Details</div>
+                    <div className="text-gray-700">Invoice No.: <span className="font-medium">INV-Draft</span></div>
+                    <div className="text-gray-700">Date: {todayStr}</div>
+                    <div className="text-gray-700">Time: {new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})}</div>
+                  </div>
+                </div>
+
+                {/* Item Table */}
+                <div className="border border-gray-200 rounded overflow-hidden mb-4">
+                  <table className="w-full text-left text-[10px] border-collapse">
+                    <thead>
+                      <tr className="bg-[#8D84E8] text-white font-bold">
+                        <th className="p-1.5 text-center w-[20px]">#</th>
+                        <th className="p-1.5">Item name</th>
+                        <th className="p-1.5 text-center">HSC/SAC</th>
+                        <th className="p-1.5 text-center">Qty</th>
+                        <th className="p-1.5 text-right">Price/unit</th>
+                        <th className="p-1.5 text-right">Discount</th>
+                        <th className="p-1.5 text-right">GST</th>
+                        <th className="p-1.5 text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {items.filter(it => it.name).length === 0 ? (
+                        <tr>
+                          <td colSpan="8" className="p-4 text-center text-gray-400 italic">No items added</td>
+                        </tr>
+                      ) : (
+                        items.filter(it => it.name).map((it, idx) => {
+                          const qty = parseFloat(it.qty) || 1;
+                          const price = parseFloat(it.price) || 0;
+                          const disc = it.discountPercent ? (qty * price * (parseFloat(it.discountPercent) / 100)) : 0;
+                          let gstRate = 0;
+                          if (it.tax && it.tax !== 'NONE') {
+                            const match = it.tax.match(/@([\d.]+)%/);
+                            if (match) gstRate = parseFloat(match[1]);
+                          }
+                          const gstAmt = (qty * price - disc) * (gstRate / 100);
+                          const amt = parseFloat(it.total || 0);
+
+                          return (
+                            <tr key={idx} className={idx % 2 === 1 ? 'bg-[#F8FAFC]' : 'bg-white'}>
+                              <td className="p-1.5 text-center border-b border-gray-100">{idx + 1}</td>
+                              <td className="p-1.5 font-bold uppercase border-b border-gray-100">{it.name}</td>
+                              <td className="p-1.5 text-center border-b border-gray-100">0000</td>
+                              <td className="p-1.5 text-center border-b border-gray-100">{qty}</td>
+                              <td className="p-1.5 text-right border-b border-gray-100">₹{price.toFixed(2)}</td>
+                              <td className="p-1.5 text-right border-b border-gray-100">₹{disc.toFixed(2)}</td>
+                              <td className="p-1.5 text-right border-b border-gray-100">₹{gstAmt.toFixed(2)}</td>
+                              <td className="p-1.5 text-right font-bold border-b border-gray-100">₹{amt.toFixed(2)}</td>
+                            </tr>
+                          );
+                        })
+                      )}
+                      {/* Totals Row */}
+                      <tr className="font-bold border-t border-b border-gray-300 bg-white">
+                        <td className="p-1.5"></td>
+                        <td className="p-1.5">Total</td>
+                        <td className="p-1.5"></td>
+                        <td className="p-1.5 text-center">{items.filter(it => it.name).reduce((s, i) => s + (parseFloat(i.qty) || 0), 0)}</td>
+                        <td className="p-1.5"></td>
+                        <td className="p-1.5 text-right">₹0.00</td>
+                        <td className="p-1.5 text-right">₹0.00</td>
+                        <td className="p-1.5 text-right">₹{totalAmount.toFixed(2)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Bottom Section */}
+                <div className="flex justify-between gap-4 mb-4 text-[10px]">
+                  <div className="w-[50%]">
+                    <div className="font-bold mb-0.5">Description</div>
+                    <div className="text-gray-600 mb-3">Sale Description</div>
+
+                    <div className="font-bold uppercase mb-0.5">Invoice Amount in Words</div>
+                    <div className="text-gray-600 mb-3">Rupees {totalAmount} Only</div>
+
+                    <div className="font-bold uppercase mb-0.5">Terms and Conditions</div>
+                    <div className="text-gray-600">{storeProfile?.invoiceNotes || 'Thanks for doing business with us!'}</div>
+                  </div>
+
+                  <div className="w-[45%] text-[10px]">
+                    <div className="flex justify-between py-0.5"><span>Sub Total</span><span>₹{subTotal.toFixed(2)}</span></div>
+                    <div className="flex justify-between py-0.5"><span>Discount</span><span>₹0.00</span></div>
+                    <div className="flex justify-between py-[#4px] px-1.5 bg-[#8D84E8] text-white font-bold my-1 rounded">
+                      <span>Total</span><span>₹{totalAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between py-0.5"><span>Received</span><span>₹{receivedAmt.toFixed(2)}</span></div>
+                    <div className="flex justify-between py-0.5 border-b border-gray-200"><span>Balance</span><span>₹{balance.toFixed(2)}</span></div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="mt-auto flex justify-between items-end pt-2 border-t border-gray-100 text-[9px]">
+                  <div className="flex gap-2 items-center">
+                    <div className="text-center">
+                      <div className="w-[45px] h-[45px] bg-gray-200 text-gray-400 flex items-center justify-center text-[7px] rounded">QR</div>
+                      <div className="text-[7px] font-bold text-emerald-600 border border-emerald-600 px-1 mt-0.5 rounded">UPI PAY</div>
+                    </div>
+                    <div>
+                      <div className="font-bold">Pay To:</div>
+                      <div>Bank: {storeProfile?.bankName || '123123123'}</div>
+                      <div>A/C: {storeProfile?.bankAccountNumber || '12312312312'}</div>
+                      <div>IFSC: {storeProfile?.bankIfscCode || '123123123'}</div>
+                    </div>
+                  </div>
+
+                  <div className="text-center">
+                    <div>For : {storeProfile?.customCompanyName || storeProfile?.shopName || 'My Company'}</div>
+                    <div className="w-[70px] h-[35px] bg-gray-200 text-gray-400 flex items-center justify-center text-[8px] my-1 mx-auto rounded">Image</div>
+                    <div className="font-bold">Authorized Signatory</div>
+                  </div>
+                </div>
+
               </div>
-            </div>
-          </div>
+            );
+          })()}
         </div>
 
       </div>
@@ -568,10 +1582,10 @@ export default function AddSale() {
         </button>
 
         <div className="flex items-center gap-3 absolute right-6">
-          <button onClick={() => window.print()} className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 bg-white text-blue-500 hover:bg-blue-50 transition-colors shadow-sm cursor-pointer">
+          <button onClick={() => window.print()} className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 bg-white text-blue-500 hover:bg-blue-50 transition-colors shadow-sm cursor-pointer" title="Print Invoice">
             <Printer className="w-4 h-4" />
           </button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 bg-white text-blue-500 hover:bg-blue-50 transition-colors shadow-sm cursor-pointer">
+          <button className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 bg-white text-blue-500 hover:bg-blue-50 transition-colors shadow-sm cursor-pointer" title="Download PDF">
             <Download className="w-4 h-4" />
           </button>
         </div>

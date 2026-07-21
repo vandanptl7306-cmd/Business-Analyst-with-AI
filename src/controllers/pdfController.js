@@ -711,6 +711,1017 @@ const getInvoiceHTML = (invoice, store, template) => {
     `;
   }
   
+  // 3d. --- MINIMALIST THEME (A4 Portrait) ---
+  if (template === 'Minimalist Theme' || template === 'minimalist') {
+    const primaryBlue = '#0C7DA8';
+    const borderColor = '#CFCFCF';
+
+    const minimalistItemRows = invoice.items.map((item, idx) => {
+      const rate = (item.isTaxInclusive ? item.mrp : item.price) || 0;
+      const amount = item.totalAmount || 0;
+      const hsn = item.hsnCode || '';
+      const disc = item.discount || 0;
+      const gstRate = item.gstRate || 0;
+      const totalGstAmt = (item.cgst || 0) + (item.sgst || 0) + (item.igst || 0);
+      
+      return `
+        <tr style="background: white;">
+          <td class="center border-r" style="border-bottom: 1px solid ${borderColor}; padding: 6px;">${idx + 1}</td>
+          <td class="bold border-r" style="border-bottom: 1px solid ${borderColor}; padding: 6px; word-break: break-word;">${item.description}</td>
+          <td class="center border-r" style="border-bottom: 1px solid ${borderColor}; padding: 6px;">${hsn}</td>
+          <td class="center border-r" style="border-bottom: 1px solid ${borderColor}; padding: 6px;">${item.quantity}</td>
+          <td class="right border-r" style="border-bottom: 1px solid ${borderColor}; padding: 6px;">${currencySymbol} ${formatAmount(rate)}</td>
+          <td class="right border-r" style="border-bottom: 1px solid ${borderColor}; padding: 6px;">${currencySymbol} ${formatAmount(disc)}</td>
+          <td class="right border-r" style="border-bottom: 1px solid ${borderColor}; padding: 6px;">${currencySymbol} ${formatAmount(totalGstAmt)} (${gstRate}%)</td>
+          <td class="right bold" style="border-bottom: 1px solid ${borderColor}; padding: 6px;">${currencySymbol} ${formatAmount(amount)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const totalQty = invoice.items.reduce((acc, i) => acc + (i.quantity || 0), 0);
+    const totalDisc = invoice.items.reduce((acc, i) => acc + (i.discount || 0), 0);
+    const grandTotal = invoice.grandTotal || 0;
+    const subTotal = invoice.items.reduce((acc, i) => acc + (i.totalAmount || 0), 0) - (invoice.totalTax || 0) + totalDisc; 
+    const received = invoice.amountPaid || 0;
+    const balance = grandTotal - received;
+    const totalTax = invoice.totalTax || 0;
+    const youSaved = invoice.items.reduce((acc, item) => acc + ((item.mrp && item.mrp > item.price) ? (item.mrp - item.price) * item.quantity : 0), 0) + totalDisc;
+
+    // Dynamic Tax Breakdown
+    const taxSummary = {};
+    invoice.items.forEach(item => {
+      const gstRate = item.gstRate || 0;
+      const totalGstAmt = (item.cgst || 0) + (item.sgst || 0) + (item.igst || 0);
+      if (gstRate > 0) {
+        const key = `IGST@${gstRate}%`;
+        taxSummary[key] = (taxSummary[key] || 0) + totalGstAmt;
+      }
+    });
+
+    const taxRowsHTML = Object.entries(taxSummary).map(([key, val]) => `
+      <tr style="border-bottom: 1px solid ${borderColor};">
+        <td class="border-r" style="padding: 4px 6px;">${key}</td>
+        <td class="right" style="padding: 4px 6px;">${currencySymbol} ${formatAmount(val)}</td>
+      </tr>
+    `).join('');
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Roboto:wght@400;500;700&display=swap');
+          body {
+            margin: 0; padding: 0;
+            font-family: 'Poppins', sans-serif;
+            font-size: 11px; color: #000;
+            width: 210mm;
+            background-color: white;
+            box-sizing: border-box;
+          }
+          .container { padding: 15px; min-height: 850px; display: flex; flex-direction: column; position: relative; }
+
+          .flex { display: flex; }
+          .border-b { border-bottom: 1px solid ${borderColor}; }
+          .border-r { border-right: 1px solid ${borderColor}; }
+          .right { text-align: right; }
+          .center { text-align: center; }
+          .bold { font-weight: bold; }
+          
+          /* Main Table */
+          .item-table { width: 100%; border-collapse: collapse; border: 1px solid ${borderColor}; margin-bottom: 15px; }
+          .item-table th { background-color: ${primaryBlue}; color: white; padding: 6px; font-weight: bold; text-align: left; border-right: 1px solid ${borderColor}; }
+          .item-table th.center { text-align: center; }
+          .item-table th.right { text-align: right; }
+          .item-table th:last-child { border-right: none; }
+          
+          /* Summary Table */
+          .summary-table { width: 100%; border-collapse: collapse; border: 1px solid ${borderColor}; }
+          
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          
+          <!-- Header Area -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <div style="width: 250px;">
+              <div style="background-color: ${primaryBlue}; color: white; font-size: 26px; font-weight: bold; text-align: center; padding: 15px 0; margin-bottom: 15px; letter-spacing: 1px;">
+                TAX INVOICE
+              </div>
+              <div style="color: ${primaryBlue}; font-weight: bold; font-size: 18px; margin-bottom: 5px;">
+                ${store.customCompanyName || store.shopName || 'My Company'}
+              </div>
+              <div style="color: #4b5563; margin-bottom: 5px;">
+                <span style="color: ${primaryBlue}; font-size: 10px;">Phone:</span><br/>
+                ${store.customPhone || store.phoneNumber || ''}
+              </div>
+              <div style="color: #4b5563;">
+                <span style="color: ${primaryBlue}; font-size: 10px;">Email:</span><br/>
+                ${store.email || ''}
+              </div>
+            </div>
+            
+            <div style="width: 80px; height: 80px; background: #e5e7eb; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-size:12px;">
+              ${store.logoUrl ? `<img src="${store.logoUrl}" style="width: 100%; height: 100%; object-fit: contain;">` : 'Image'}
+            </div>
+          </div>
+
+          <div style="border-bottom: 1px solid ${primaryBlue}; margin-bottom: 15px;"></div>
+
+          <!-- Top Grid (Invoice Details, Bill To, Transport) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="color: ${primaryBlue}; font-size: 14px;">Invoice No.:</span>
+                <span style="color: ${primaryBlue}; font-size: 18px; font-weight: bold;">${invoice.invoiceNumber}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 3px;"><span>Invoice Date:</span><span>${new Date(invoice.createdAt).toLocaleDateString('en-GB')}</span></div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 3px;"><span>Invoice Time:</span><span>${new Date(invoice.createdAt).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})}</span></div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 3px;"><span>Place of Supply:</span><span></span></div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 3px;"><span>PO date:</span><span></span></div>
+            </div>
+            <div>
+              <div style="color: ${primaryBlue}; font-size: 14px; font-weight: bold; margin-bottom: 5px;">Bill To:</div>
+              <div class="bold" style="font-size: 12px; margin-bottom: 3px;">${invoice.customerName}</div>
+              <div style="color: #4b5563; line-height: 1.3; margin-bottom: 5px;">${invoice.billingAddress || invoice.customerAddress || ''}</div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 3px;"><span>Contact No.:</span><span>${invoice.customerPhone || ''}</span></div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 3px;"><span>GSTIN Number:</span><span></span></div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 3px;"><span>State:</span><span></span></div>
+            </div>
+            <div>
+              <div style="color: ${primaryBlue}; font-size: 14px; font-weight: bold; margin-bottom: 5px;">Transportation Details:</div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 3px;"><span>Transport Name:</span><span class="right"></span></div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 3px;"><span>Vehicle Number:</span><span></span></div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 3px;"><span>Delivery Date:</span><span></span></div>
+            </div>
+          </div>
+
+          <!-- Items Table -->
+          <div style="flex: 1;">
+            <table class="item-table">
+              <thead>
+                <tr>
+                  <th class="center" style="width: 25px;">#</th>
+                  <th>Item name</th>
+                  <th class="center">HSN/ SAC</th>
+                  <th class="center">Quantity</th>
+                  <th class="right">Price/ unit</th>
+                  <th class="right">Discount</th>
+                  <th class="right">GST</th>
+                  <th class="right" style="border-right: none;">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${minimalistItemRows}
+                <tr style="background-color: ${primaryBlue}; color: white; font-weight: bold;">
+                  <td colspan="3" class="border-r" style="padding: 6px; border-color: ${borderColor}">Total</td>
+                  <td class="center border-r" style="padding: 6px; border-color: ${borderColor}">${totalQty}</td>
+                  <td class="border-r" style="padding: 6px; border-color: ${borderColor}"></td>
+                  <td class="right border-r" style="padding: 6px; border-color: ${borderColor}">${currencySymbol} ${formatAmount(totalDisc)}</td>
+                  <td class="right border-r" style="padding: 6px; border-color: ${borderColor}">${currencySymbol} ${formatAmount(totalTax)}</td>
+                  <td class="right" style="padding: 6px;">${currencySymbol} ${formatAmount(grandTotal)}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Bottom Area -->
+            <div style="display: flex; gap: 20px;">
+              
+              <!-- Left Details -->
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 15px;">
+                
+                <div style="display: flex; gap: 15px;">
+                  <div style="width: 55px; height: 55px; background: #eee; display: flex; align-items: center; justify-content: center; color: #aaa; border-radius: 4px;">QR</div>
+                  <div style="line-height: 1.4;">
+                    <div style="color: ${primaryBlue}; font-size: 14px; font-weight: bold; margin-bottom: 2px;">Pay To:</div>
+                    <div>Bank Name: ${store.bankName || ''}</div>
+                    <div>Bank Account No.: ${store.bankAccountNumber || ''}</div>
+                    <div>Bank IFSC code: ${store.bankIfscCode || ''}</div>
+                  </div>
+                </div>
+                <div><span style="background: #10b981; color: white; padding: 2px 4px; font-size: 10px; font-weight: bold; border-radius: 3px; font-style: italic;">UPI</span><span style="background: #10b981; color: white; padding: 2px 4px; font-size: 10px; font-weight: bold; border-radius: 3px; margin-left: 2px;">PAY NOW</span></div>
+                
+                <div>
+                  <div style="color: ${primaryBlue}; font-size: 12px; font-weight: bold; margin-bottom: 2px;">Invoice Amount In Words</div>
+                  <div>${numberToWords(grandTotal)}</div>
+                </div>
+
+                <div>
+                  <div style="color: ${primaryBlue}; font-size: 12px; font-weight: bold; margin-bottom: 2px;">Terms And Conditions</div>
+                  <div style="color: #4b5563;">${store.invoiceNotes || 'Thanks for doing business with us!'}</div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                  <div>For : ${store.customCompanyName || store.shopName || 'My Company'}</div>
+                  ${store.signatureUrl ? `<img src="${store.signatureUrl}" style="max-height: 45px; margin: 10px 0;">` : '<div style="height:45px; width: 80px; background: #eee; margin: 10px 0; display:flex; align-items:center; justify-content:center; color:#aaa; font-size:10px;">Image</div>'}
+                  <div class="bold" style="font-size: 12px;">Authorized Signatory</div>
+                </div>
+
+              </div>
+
+              <!-- Right Summary Table -->
+              <div style="width: 240px;">
+                <table class="summary-table">
+                  <tbody>
+                    <tr style="border-bottom: 1px solid ${borderColor};">
+                      <td class="border-r" style="padding: 4px 6px;">Sub Total</td>
+                      <td class="right" style="padding: 4px 6px;">${currencySymbol} ${formatAmount(subTotal)}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid ${borderColor};">
+                      <td class="border-r" style="padding: 4px 6px;">Discount</td>
+                      <td class="right" style="padding: 4px 6px;">${currencySymbol} ${formatAmount(totalDisc)}</td>
+                    </tr>
+                    ${taxRowsHTML}
+                    ${Object.keys(taxSummary).length === 0 ? `
+                      <tr style="border-bottom: 1px solid ${borderColor};">
+                        <td class="border-r" style="padding: 4px 6px;">GST</td>
+                        <td class="right" style="padding: 4px 6px;">${currencySymbol} ${formatAmount(totalTax)}</td>
+                      </tr>
+                    ` : ''}
+                    <tr style="border-bottom: 1px solid ${borderColor};">
+                      <td class="border-r" style="padding: 4px 6px;">Round off</td>
+                      <td class="right" style="padding: 4px 6px;">${currencySymbol} 0.00</td>
+                    </tr>
+                    <tr style="background-color: ${primaryBlue}; color: white; font-weight: bold; border-bottom: 1px solid ${borderColor};">
+                      <td class="border-r" style="padding: 4px 6px;">Total</td>
+                      <td class="right" style="padding: 4px 6px;">${currencySymbol} ${formatAmount(grandTotal)}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid ${borderColor};">
+                      <td class="border-r" style="padding: 4px 6px;">Received</td>
+                      <td class="right" style="padding: 4px 6px;">${currencySymbol} ${formatAmount(received)}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid ${borderColor};">
+                      <td class="border-r" style="padding: 4px 6px;">Balance</td>
+                      <td class="right" style="padding: 4px 6px;">${currencySymbol} ${formatAmount(balance)}</td>
+                    </tr>
+                    <tr style="background-color: ${primaryBlue}; color: white; font-weight: bold;">
+                      <td class="border-r" style="padding: 4px 6px;">You Saved</td>
+                      <td class="right" style="padding: 4px 6px;">${currencySymbol} ${formatAmount(youSaved)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+          </div>
+          
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  // 3e. --- MODERN THEME (A4 Portrait) ---
+  if (template === 'Modern Theme' || template === 'modern') {
+    const primaryRed = '#E61C35';
+    const darkHeader = '#232A34';
+    const borderColor = '#D0D0D0';
+
+    const modernItemRows = invoice.items.map((item, idx) => {
+      const rate = (item.isTaxInclusive ? item.mrp : item.price) || 0;
+      const amount = item.totalAmount || 0;
+      const hsn = item.hsnCode || '';
+      const disc = item.discount || 0;
+      const gstRate = item.gstRate || 0;
+      const totalGstAmt = (item.cgst || 0) + (item.sgst || 0) + (item.igst || 0);
+      
+      return `
+        <tr style="background: white;">
+          <td class="center border-r" style="border-bottom: 1px solid ${borderColor}; padding: 6px;">${idx + 1}</td>
+          <td class="bold border-r" style="border-bottom: 1px solid ${borderColor}; padding: 6px; word-break: break-word;">${item.description}</td>
+          <td class="center border-r" style="border-bottom: 1px solid ${borderColor}; padding: 6px;">${hsn}</td>
+          <td class="center border-r" style="border-bottom: 1px solid ${borderColor}; padding: 6px;">${item.quantity}</td>
+          <td class="right border-r" style="border-bottom: 1px solid ${borderColor}; padding: 6px;">${currencySymbol} ${formatAmount(rate)}</td>
+          <td class="right border-r" style="border-bottom: 1px solid ${borderColor}; padding: 6px;">${currencySymbol} ${formatAmount(disc)}</td>
+          <td class="right border-r" style="border-bottom: 1px solid ${borderColor}; padding: 6px;">${currencySymbol} ${formatAmount(totalGstAmt)} (${gstRate}%)</td>
+          <td class="right bold" style="border-bottom: 1px solid ${borderColor}; padding: 6px;">${currencySymbol} ${formatAmount(amount)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const totalQty = invoice.items.reduce((acc, i) => acc + (i.quantity || 0), 0);
+    const totalDisc = invoice.items.reduce((acc, i) => acc + (i.discount || 0), 0);
+    const grandTotal = invoice.grandTotal || 0;
+    const subTotal = invoice.items.reduce((acc, i) => acc + (i.totalAmount || 0), 0) - (invoice.totalTax || 0) + totalDisc; 
+    const received = invoice.amountPaid || 0;
+    const balance = grandTotal - received;
+    const totalTax = invoice.totalTax || 0;
+    const youSaved = invoice.items.reduce((acc, item) => acc + ((item.mrp && item.mrp > item.price) ? (item.mrp - item.price) * item.quantity : 0), 0) + totalDisc;
+
+    // Dynamic Tax Breakdown
+    const taxSummary = {};
+    invoice.items.forEach(item => {
+      const gstRate = item.gstRate || 0;
+      const totalGstAmt = (item.cgst || 0) + (item.sgst || 0) + (item.igst || 0);
+      if (gstRate > 0) {
+        // Just calling it IGST to match design for simplicity, could be split if needed.
+        const key = `IGST@${gstRate}%`;
+        taxSummary[key] = (taxSummary[key] || 0) + totalGstAmt;
+      }
+    });
+
+    const taxRowsHTML = Object.entries(taxSummary).map(([key, val]) => `
+      <tr style="border-bottom: 1px solid ${borderColor};">
+        <td class="border-r" style="padding: 4px 6px;">${key}</td>
+        <td class="right" style="padding: 4px 6px;">${currencySymbol} ${formatAmount(val)}</td>
+      </tr>
+    `).join('');
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@400;500;700&display=swap');
+          body {
+            margin: 0; padding: 0;
+            font-family: 'Poppins', sans-serif;
+            font-size: 11px; color: #000;
+            width: 210mm;
+            background-color: white;
+            box-sizing: border-box;
+          }
+          .container { padding: 10px; min-height: 850px; display: flex; flex-direction: column; position: relative; }
+          
+          /* Header Shapes */
+          .header-banner {
+            position: absolute;
+            top: 10px; right: 10px;
+            height: 50px;
+            background-color: ${primaryRed};
+            left: 200px; /* Offset for dark curve */
+            z-index: 1;
+            display: flex;
+            align-items: center;
+          }
+          .header-banner-text {
+            color: white; font-size: 12px; margin-left: 50px; display: flex; align-items: center; gap: 5px;
+          }
+          .header-curve {
+            position: absolute;
+            top: 10px; left: 10px;
+            width: 320px;
+            height: 100px;
+            background-color: ${darkHeader};
+            z-index: 2;
+            border-bottom-right-radius: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-left: 20px;
+          }
+          .header-title-text {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            font-size: 30px;
+            font-weight: 300;
+            z-index: 0;
+          }
+
+          .flex { display: flex; }
+          .border-b { border-bottom: 1px solid ${borderColor}; }
+          .border-r { border-right: 1px solid ${borderColor}; }
+          .right { text-align: right; }
+          .center { text-align: center; }
+          .bold { font-weight: bold; }
+          
+          /* Main Table */
+          .item-table { width: 100%; border-collapse: collapse; border: 1px solid ${borderColor}; margin-bottom: 15px; }
+          .item-table th { background-color: ${primaryRed}; color: white; padding: 6px; font-weight: bold; text-align: left; border-right: 1px solid ${borderColor}; }
+          .item-table th.center { text-align: center; }
+          .item-table th.right { text-align: right; }
+          .item-table th:last-child { border-right: none; }
+          
+          /* Summary Table */
+          .summary-table { width: 100%; border-collapse: collapse; border: 1px solid ${borderColor}; }
+          
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          
+          <!-- Header Area -->
+          <div style="position: relative; height: 130px; width: 100%;">
+            <div class="header-banner">
+              <div class="header-banner-text">
+                <svg viewBox="0 0 24 24" fill="white" style="width: 14px; height: 14px;"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>
+                ${store.customPhone || store.phoneNumber || ''}
+              </div>
+            </div>
+            
+            <div class="header-curve">
+              <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="width: 55px; height: 55px; background: #6b7280; display:flex; align-items:center; justify-content:center; color:#d1d5db; font-size:10px;">
+                  ${store.logoUrl ? `<img src="${store.logoUrl}" style="width: 100%; height: 100%; object-fit: contain;">` : 'Image'}
+                </div>
+                <div style="color: white; font-size: 18px; font-weight: bold; line-height: 1.2;">
+                  ${store.customCompanyName || store.shopName || 'My Company'}
+                </div>
+              </div>
+            </div>
+
+            <div class="header-title-text">Tax Invoice</div>
+          </div>
+
+          <!-- Top Grid (Bill To, Transport, Invoice Details) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+            <div>
+              <div style="color: ${primaryRed}; font-size: 14px; font-weight: bold; margin-bottom: 5px;">Bill To:</div>
+              <div class="bold" style="font-size: 12px; margin-bottom: 2px;">${invoice.customerName}</div>
+              <div style="color: #4b5563; line-height: 1.3; margin-bottom: 5px;">${invoice.billingAddress || invoice.customerAddress || ''}</div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 2px;"><span>Contact No.:</span><span>${invoice.customerPhone || ''}</span></div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 2px;"><span>GSTIN Number:</span><span></span></div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 2px;"><span>State:</span><span></span></div>
+            </div>
+            <div>
+              <div style="color: ${primaryRed}; font-size: 14px; font-weight: bold; margin-bottom: 5px;">Transportation Details:</div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 2px;"><span>Transport Name:</span><span class="right"></span></div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 2px;"><span>Vehicle Number:</span><span></span></div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 2px;"><span>Delivery Date:</span><span></span></div>
+            </div>
+            <div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-top: 25px; margin-bottom: 2px;"><span>Invoice No.:</span><span class="bold">${invoice.invoiceNumber}</span></div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 2px;"><span>Invoice Date:</span><span>${new Date(invoice.createdAt).toLocaleDateString('en-GB')}</span></div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 2px;"><span>Invoice Time:</span><span>${new Date(invoice.createdAt).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})}</span></div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 2px;"><span>Place of Supply:</span><span></span></div>
+              <div style="display: flex; justify-content: space-between; color: #4b5563; margin-bottom: 2px;"><span>PO date:</span><span></span></div>
+            </div>
+          </div>
+
+          <!-- Items Table -->
+          <div style="flex: 1;">
+            <table class="item-table">
+              <thead>
+                <tr>
+                  <th class="center" style="width: 25px;">#</th>
+                  <th>Item name</th>
+                  <th class="center">HSN/ SAC</th>
+                  <th class="center">Quantity</th>
+                  <th class="right">Price/ unit</th>
+                  <th class="right">Discount</th>
+                  <th class="right">GST</th>
+                  <th class="right" style="border-right: none;">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${modernItemRows}
+                <tr style="background-color: ${primaryRed}; color: white; font-weight: bold;">
+                  <td colspan="3" class="border-r" style="padding: 6px;">Total</td>
+                  <td class="center border-r" style="padding: 6px;">${totalQty}</td>
+                  <td class="border-r" style="padding: 6px;"></td>
+                  <td class="right border-r" style="padding: 6px;">${currencySymbol} ${formatAmount(totalDisc)}</td>
+                  <td class="right border-r" style="padding: 6px;">${currencySymbol} ${formatAmount(totalTax)}</td>
+                  <td class="right" style="padding: 6px;">${currencySymbol} ${formatAmount(grandTotal)}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Bottom Area -->
+            <div style="display: flex; gap: 20px;">
+              
+              <!-- Left Details -->
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 15px;">
+                
+                <div style="display: flex; gap: 15px;">
+                  <div style="width: 55px; height: 55px; background: #eee; display: flex; align-items: center; justify-content: center; color: #aaa; border-radius: 4px;">QR</div>
+                  <div style="line-height: 1.4;">
+                    <div style="color: ${primaryRed}; font-size: 14px; font-weight: bold; margin-bottom: 2px;">Pay To:</div>
+                    <div>Bank Name: ${store.bankName || ''}</div>
+                    <div>Bank Account No.: ${store.bankAccountNumber || ''}</div>
+                    <div>Bank IFSC code: ${store.bankIfscCode || ''}</div>
+                  </div>
+                </div>
+                <div><span style="background: #10b981; color: white; padding: 2px 4px; font-size: 10px; font-weight: bold; border-radius: 3px; font-style: italic;">UPI</span><span style="background: #10b981; color: white; padding: 2px 4px; font-size: 10px; font-weight: bold; border-radius: 3px; margin-left: 2px;">PAY NOW</span></div>
+                
+                <div>
+                  <div style="color: ${primaryRed}; font-size: 12px; font-weight: bold; margin-bottom: 2px;">Invoice Amount In Words</div>
+                  <div>${numberToWords(grandTotal)}</div>
+                </div>
+
+                <div>
+                  <div style="color: ${primaryRed}; font-size: 12px; font-weight: bold; margin-bottom: 2px;">Terms And Conditions</div>
+                  <div style="color: #4b5563;">${store.invoiceNotes || 'Thanks for doing business with us!'}</div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                  <div>For : ${store.customCompanyName || store.shopName || 'My Company'}</div>
+                  ${store.signatureUrl ? `<img src="${store.signatureUrl}" style="max-height: 45px; margin: 10px 0;">` : '<div style="height:45px; width: 80px; background: #eee; margin: 10px 0; display:flex; align-items:center; justify-content:center; color:#aaa; font-size:10px;">Image</div>'}
+                  <div class="bold" style="font-size: 12px;">Authorized Signatory</div>
+                </div>
+
+              </div>
+
+              <!-- Right Summary Table -->
+              <div style="width: 240px;">
+                <table class="summary-table">
+                  <tbody>
+                    <tr style="border-bottom: 1px solid ${borderColor};">
+                      <td class="border-r" style="padding: 4px 6px;">Sub Total</td>
+                      <td class="right" style="padding: 4px 6px;">${currencySymbol} ${formatAmount(subTotal)}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid ${borderColor};">
+                      <td class="border-r" style="padding: 4px 6px;">Discount</td>
+                      <td class="right" style="padding: 4px 6px;">${currencySymbol} ${formatAmount(totalDisc)}</td>
+                    </tr>
+                    ${taxRowsHTML}
+                    ${Object.keys(taxSummary).length === 0 ? `
+                      <tr style="border-bottom: 1px solid ${borderColor};">
+                        <td class="border-r" style="padding: 4px 6px;">GST</td>
+                        <td class="right" style="padding: 4px 6px;">${currencySymbol} ${formatAmount(totalTax)}</td>
+                      </tr>
+                    ` : ''}
+                    <tr style="border-bottom: 1px solid ${borderColor};">
+                      <td class="border-r" style="padding: 4px 6px;">Round off</td>
+                      <td class="right" style="padding: 4px 6px;">${currencySymbol} 0.00</td>
+                    </tr>
+                    <tr style="background-color: ${primaryRed}; color: white; font-weight: bold; border-bottom: 1px solid ${borderColor};">
+                      <td class="border-r" style="padding: 4px 6px;">Total</td>
+                      <td class="right" style="padding: 4px 6px;">${currencySymbol} ${formatAmount(grandTotal)}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid ${borderColor};">
+                      <td class="border-r" style="padding: 4px 6px;">Received</td>
+                      <td class="right" style="padding: 4px 6px;">${currencySymbol} ${formatAmount(received)}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid ${borderColor};">
+                      <td class="border-r" style="padding: 4px 6px;">Balance</td>
+                      <td class="right" style="padding: 4px 6px;">${currencySymbol} ${formatAmount(balance)}</td>
+                    </tr>
+                    <tr style="background-color: ${primaryRed}; color: white; font-weight: bold;">
+                      <td class="border-r" style="padding: 4px 6px;">You Saved</td>
+                      <td class="right" style="padding: 4px 6px;">${currencySymbol} ${formatAmount(youSaved)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+          </div>
+          
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  // 3c. --- GST THEME 3 (A4 Portrait) ---
+  if (template === 'GST Theme 3' || template === 'gst3') {
+    const primaryBlue = '#0C7DA8';
+    const borderColor = '#BDBDBD';
+
+    const gst3ItemRows = invoice.items.map((item, idx) => {
+      const rate = (item.isTaxInclusive ? item.mrp : item.price) || 0;
+      const amount = item.totalAmount || 0;
+      const hsn = item.hsnCode || '';
+      const disc = item.discount || 0;
+      const gstRate = item.gstRate || 0;
+      const cgst = (item.cgst || 0) + ((item.igst || 0) / 2);
+      const sgst = (item.sgst || 0) + ((item.igst || 0) / 2);
+      const totalGstAmt = cgst + sgst;
+      
+      return `
+        <tr>
+          <td class="center">${idx + 1}</td>
+          <td class="bold text-uppercase">${item.description}</td>
+          <td class="center">${hsn}</td>
+          <td class="center">${item.quantity}</td>
+          <td class="right">${currencySymbol} ${formatAmount(rate)}</td>
+          <td class="right">${currencySymbol} ${formatAmount(disc)}</td>
+          <td class="right">${currencySymbol} ${formatAmount(totalGstAmt)} (${gstRate}%)</td>
+          <td class="right bold">${currencySymbol} ${formatAmount(amount)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const totalQty = invoice.items.reduce((acc, i) => acc + (i.quantity || 0), 0);
+    const totalDisc = invoice.items.reduce((acc, i) => acc + (i.discount || 0), 0);
+    const grandTotal = invoice.grandTotal || 0;
+    const subTotal = invoice.items.reduce((acc, i) => acc + (i.totalAmount || 0), 0) - (invoice.totalTax || 0) + totalDisc; 
+    const received = invoice.amountPaid || 0;
+    const balance = grandTotal - received;
+    const totalTax = invoice.totalTax || 0;
+    const youSaved = invoice.items.reduce((acc, item) => acc + ((item.mrp && item.mrp > item.price) ? (item.mrp - item.price) * item.quantity : 0), 0) + totalDisc;
+
+    // Tax rows for Left Table (Split SGST/CGST as requested)
+    const taxRows = invoice.items.map(item => {
+      const rate = item.gstRate || 0;
+      const cgst = (item.cgst || 0) + ((item.igst || 0) / 2);
+      const sgst = (item.sgst || 0) + ((item.igst || 0) / 2);
+      const taxable = item.quantity * ((item.isTaxInclusive ? item.mrp : item.price) || 0) - (item.discount || 0);
+      if (rate === 0) return '';
+      return `
+        <tr>
+          <td style="border:none; padding: 2px 4px;">SGST</td><td class="right" style="border:none; padding: 2px 4px;">${currencySymbol} ${formatAmount(taxable)}</td><td class="right" style="border:none; padding: 2px 4px;">${rate/2}%</td><td class="right" style="border:none; padding: 2px 4px;">${currencySymbol} ${formatAmount(sgst)}</td>
+        </tr>
+        <tr>
+          <td style="border:none; padding: 2px 4px;">CGST</td><td class="right" style="border:none; padding: 2px 4px;">${currencySymbol} ${formatAmount(taxable)}</td><td class="right" style="border:none; padding: 2px 4px;">${rate/2}%</td><td class="right" style="border:none; padding: 2px 4px;">${currencySymbol} ${formatAmount(cgst)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+          body {
+            margin: 0; padding: 0;
+            font-family: 'Poppins', sans-serif;
+            font-size: 11px; color: #000;
+            width: 210mm;
+          }
+          .container { padding: 10px; }
+          .title { text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 8px; }
+          .wrapper { border: 1px solid ${borderColor}; min-height: 850px; display: flex; flex-direction: column; }
+          .flex { display: flex; }
+          .border-b { border-bottom: 1px solid ${borderColor}; }
+          .border-r { border-right: 1px solid ${borderColor}; }
+          .p-2 { padding: 8px; }
+          .p-1 { padding: 4px; }
+          .bg-blue-theme { background-color: ${primaryBlue}; color: white; font-weight: bold; }
+          .text-right { text-align: right; }
+          .center { text-align: center; }
+          .right { text-align: right; }
+          .bold { font-weight: bold; }
+          .text-uppercase { text-transform: uppercase; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border-right: 1px solid ${borderColor}; border-bottom: 1px solid ${borderColor}; padding: 6px; }
+          th:last-child, td:last-child { border-right: none; }
+          tr:last-child td { border-bottom: none; }
+          th { background-color: ${primaryBlue}; color: white; font-weight: bold; text-align: left; }
+          .flex-1 { flex: 1; display: flex; flex-direction: column; }
+          .col-3 { width: 33.33%; }
+          .col-2 { width: 50%; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="title">Sale</div>
+          <div class="wrapper">
+            
+            <div class="flex border-b">
+              <div style="width: 100px; padding: 10px;">
+                ${store.logoUrl ? `<img src="${store.logoUrl}" style="max-width: 100%; max-height: 60px; object-fit: contain;">` : '<div style="width: 60px; height: 60px; background-color: #e5e7eb; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-size:12px;">Image</div>'}
+              </div>
+              <div style="flex:1; text-align: right; padding: 10px;">
+                <div style="font-size: 22px; font-weight: bold;">${store.customCompanyName || store.shopName || 'My Company'}</div>
+                <div style="margin-top: 5px; font-size: 12px;">Ph. no.: ${store.customPhone || store.phoneNumber || ''}</div>
+              </div>
+            </div>
+
+            <div class="flex bg-blue-theme border-b">
+              <div class="col-3 p-2 border-r" style="font-size: 12px;">Bill To:</div>
+              <div class="col-3 p-2 border-r" style="font-size: 12px;">Shipping To</div>
+              <div class="col-3 p-2 text-right" style="font-size: 12px;">Invoice Details</div>
+            </div>
+            
+            <div class="flex border-b">
+              <div class="col-3 p-2 border-r">
+                <div class="bold" style="font-size:12px; margin-bottom: 4px;">${invoice.customerName}</div>
+                <div>${invoice.billingAddress || invoice.customerAddress || ''}</div>
+                <div style="margin-top:6px;">Contact No.: ${invoice.customerPhone || ''}</div>
+              </div>
+              <div class="col-3 p-2 border-r">
+                <div>${invoice.shippingAddress || invoice.customerAddress || ''}</div>
+              </div>
+              <div class="col-3 p-2 text-right">
+                <div style="margin-bottom:2px;">Invoice No.: <span class="bold">${invoice.invoiceNumber}</span></div>
+                <div style="margin-bottom:2px;">Date: ${new Date(invoice.createdAt).toLocaleDateString('en-GB')}</div>
+                <div style="margin-bottom:2px;">Time: ${new Date(invoice.createdAt).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})}</div>
+                <div>Due Date: ${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-GB') : new Date(invoice.createdAt).toLocaleDateString('en-GB')}</div>
+              </div>
+            </div>
+
+            <div class="flex-1">
+              <table>
+                <thead>
+                  <tr>
+                    <th class="center" style="width:25px;">#</th>
+                    <th>Item name</th>
+                    <th class="center">HSC/SAC</th>
+                    <th class="center">Quantity</th>
+                    <th class="right">Price/unit</th>
+                    <th class="right">Discount</th>
+                    <th class="right">GST</th>
+                    <th class="right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${gst3ItemRows}
+                  <tr class="bold" style="border-bottom: 1px solid ${borderColor};">
+                    <td colspan="3" class="p-2 border-r">Total</td>
+                    <td class="center p-2 border-r">${totalQty}</td>
+                    <td class="border-r"></td>
+                    <td class="right p-2 border-r">${currencySymbol} ${formatAmount(totalDisc)}</td>
+                    <td class="right p-2 border-r">${currencySymbol} ${formatAmount(totalTax)}</td>
+                    <td class="right p-2">${currencySymbol} ${formatAmount(grandTotal)}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="flex border-b" style="margin-top: auto;">
+                <div class="col-2 border-r" style="display:flex; flex-direction:column;">
+                  <div class="bg-blue-theme p-2 flex" style="justify-content: space-between;">
+                    <div style="width: 25%">Tax type</div>
+                    <div style="width: 25%" class="text-right">Taxable amount</div>
+                    <div style="width: 25%" class="text-right">Rate</div>
+                    <div style="width: 25%" class="text-right">Tax amount</div>
+                  </div>
+                  <table style="border: none; margin-top: 5px;">
+                    <tbody>
+                      ${taxRows}
+                    </tbody>
+                  </table>
+                </div>
+                <div class="col-2">
+                  <div class="bg-blue-theme p-2">Amounts</div>
+                  <div class="flex p-2 border-b" style="justify-content: space-between;"><span>Sub Total</span><span>${currencySymbol} ${formatAmount(subTotal)}</span></div>
+                  <div class="flex p-2 border-b" style="justify-content: space-between;"><span>Discount</span><span>${currencySymbol} ${formatAmount(totalDisc)}</span></div>
+                  <div class="flex p-2 border-b" style="justify-content: space-between;"><span>Tax</span><span>${currencySymbol} ${formatAmount(totalTax)}</span></div>
+                  <div class="flex p-2 border-b bold" style="justify-content: space-between;"><span>Total</span><span>${currencySymbol} ${formatAmount(grandTotal)}</span></div>
+                  <div class="flex p-2 border-b" style="justify-content: space-between;"><span>Received</span><span>${currencySymbol} ${formatAmount(received)}</span></div>
+                  <div class="flex p-2 border-b bold" style="justify-content: space-between;"><span>Balance</span><span>${currencySymbol} ${formatAmount(balance)}</span></div>
+                  <div class="flex p-2 bold" style="justify-content: space-between;"><span>You Saved</span><span>${currencySymbol} ${formatAmount(youSaved)}</span></div>
+                </div>
+              </div>
+
+              <div class="flex border-b">
+                <div class="col-2 border-r">
+                  <div class="bg-blue-theme p-2 center border-b">Invoice Amount In Words</div>
+                  <div class="p-3 center" style="min-height: 25px;">${numberToWords(grandTotal)}</div>
+                </div>
+                <div class="col-2">
+                  <div class="bg-blue-theme p-2 center border-b">Description</div>
+                  <div class="p-3 center" style="min-height: 25px;">${invoice.description || 'Sale Description'}</div>
+                </div>
+              </div>
+
+              <div class="flex">
+                <div class="col-3 border-r" style="display:flex; flex-direction:column;">
+                  <div class="bg-blue-theme p-2">Bank Details</div>
+                  <div class="flex p-2 gap-2" style="gap: 10px;">
+                    ${store.upiId ? `<img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=upi://pay?pa=${store.upiId}&pn=${store.customCompanyName || store.shopName}" style="width: 50px; height: 50px;">` : '<div style="width:50px;height:50px;background:#eee;display:flex;align-items:center;justify-content:center;color:#aaa;">QR</div>'}
+                    <div style="font-size: 10px; line-height: 1.4;">
+                      <div>Bank Name: ${store.bankName || ''}</div>
+                      <div>Bank Account No.: ${store.bankAccountNumber || ''}</div>
+                      <div>Bank IFSC code: ${store.bankIfscCode || ''}</div>
+                    </div>
+                  </div>
+                  <div style="padding: 0 8px 8px;"><span style="border: 1px solid #059669; color: #059669; padding: 2px 4px; font-weight: bold; font-size: 8px; border-radius: 2px;">UPI PAY NOW</span></div>
+                </div>
+                <div class="col-3 border-r" style="display:flex; flex-direction:column;">
+                  <div class="bg-blue-theme p-2">Terms and conditions</div>
+                  <div class="p-2">${store.invoiceNotes || 'Thanks for doing business with us!'}</div>
+                </div>
+                <div class="col-3 center p-2" style="display:flex; flex-direction:column; justify-content:center;">
+                  <div>For : ${store.customCompanyName || store.shopName || 'My Company'}</div>
+                  ${store.signatureUrl ? `<img src="${store.signatureUrl}" style="max-height:40px; margin: 10px auto;">` : '<div style="height:40px; margin: 10px auto; background-color:#e5e7eb; width:80px; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-size:10px;">Image</div>'}
+                  <div class="bold">Authorized Signatory</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  // 3b. --- GST THEME 2 (A4 Portrait) ---
+  if (template === 'GST Theme 2' || template === 'gst2') {
+    const primaryPurple = '#8D84E8';
+    const borderColor = '#BDBDBD';
+
+    const gst2ItemRows = invoice.items.map((item, idx) => {
+      const rate = (item.isTaxInclusive ? item.mrp : item.price) || 0;
+      const amount = item.totalAmount || 0;
+      const hsn = item.hsnCode || '';
+      const disc = item.discount || 0;
+      const gstRate = item.gstRate || 0;
+      const cgst = (item.cgst || 0) + ((item.igst || 0) / 2); // Split IGST if present for UI
+      const sgst = (item.sgst || 0) + ((item.igst || 0) / 2);
+      const halfGstRate = gstRate / 2;
+      
+      return `
+        <tr>
+          <td class="center">${idx + 1}</td>
+          <td class="bold text-uppercase">${item.description}</td>
+          <td class="center">${hsn}</td>
+          <td class="center">${item.quantity}</td>
+          <td class="right">${currencySymbol} ${formatAmount(rate)}</td>
+          <td class="right">${currencySymbol} ${formatAmount(disc)}</td>
+          <td class="right">${currencySymbol} ${formatAmount(cgst)} (${halfGstRate}%)</td>
+          <td class="right">${currencySymbol} ${formatAmount(sgst)} (${halfGstRate}%)</td>
+          <td class="right bold">${currencySymbol} ${formatAmount(amount)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const totalQty = invoice.items.reduce((acc, i) => acc + (i.quantity || 0), 0);
+    const totalDisc = invoice.items.reduce((acc, i) => acc + (i.discount || 0), 0);
+    const grandTotal = invoice.grandTotal || 0;
+    const subTotal = invoice.items.reduce((acc, i) => acc + (i.totalAmount || 0), 0) - (invoice.totalTax || 0) + totalDisc; 
+    const received = invoice.amountPaid || 0;
+    const balance = grandTotal - received;
+    const totalTax = invoice.totalTax || 0;
+    const youSaved = invoice.items.reduce((acc, item) => acc + ((item.mrp && item.mrp > item.price) ? (item.mrp - item.price) * item.quantity : 0), 0) + totalDisc;
+
+    // Tax rows for Left Table
+    const taxRows = invoice.items.map(item => {
+      const rate = item.gstRate || 0;
+      const cgst = (item.cgst || 0) + ((item.igst || 0) / 2);
+      const sgst = (item.sgst || 0) + ((item.igst || 0) / 2);
+      const taxable = item.quantity * ((item.isTaxInclusive ? item.mrp : item.price) || 0) - (item.discount || 0);
+      if (rate === 0) return '';
+      return `
+        <tr>
+          <td style="border:none; padding: 2px 4px;">SGST</td><td class="right" style="border:none; padding: 2px 4px;">${currencySymbol} ${formatAmount(taxable)}</td><td class="right" style="border:none; padding: 2px 4px;">${rate/2}%</td><td class="right" style="border:none; padding: 2px 4px;">${currencySymbol} ${formatAmount(sgst)}</td>
+        </tr>
+        <tr>
+          <td style="border:none; padding: 2px 4px;">CGST</td><td class="right" style="border:none; padding: 2px 4px;">${currencySymbol} ${formatAmount(taxable)}</td><td class="right" style="border:none; padding: 2px 4px;">${rate/2}%</td><td class="right" style="border:none; padding: 2px 4px;">${currencySymbol} ${formatAmount(cgst)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+          body {
+            margin: 0; padding: 0;
+            font-family: 'Poppins', sans-serif;
+            font-size: 11px; color: #000;
+            width: 210mm;
+          }
+          .container { padding: 10px; }
+          .title { text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 8px; }
+          .wrapper { border: 1px solid ${borderColor}; min-height: 850px; display: flex; flex-direction: column; }
+          .flex { display: flex; }
+          .border-b { border-bottom: 1px solid ${borderColor}; }
+          .border-r { border-right: 1px solid ${borderColor}; }
+          .p-2 { padding: 8px; }
+          .p-1 { padding: 4px; }
+          .bg-purple { background-color: ${primaryPurple}; color: white; font-weight: bold; }
+          .text-right { text-align: right; }
+          .center { text-align: center; }
+          .right { text-align: right; }
+          .bold { font-weight: bold; }
+          .text-uppercase { text-transform: uppercase; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border-right: 1px solid ${borderColor}; border-bottom: 1px solid ${borderColor}; padding: 6px; }
+          th:last-child, td:last-child { border-right: none; }
+          tr:last-child td { border-bottom: none; }
+          th { background-color: ${primaryPurple}; color: white; font-weight: bold; text-align: left; }
+          .flex-1 { flex: 1; display: flex; flex-direction: column; }
+          .col-3 { width: 33.33%; }
+          .col-2 { width: 50%; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="title">Sale</div>
+          <div class="wrapper">
+            
+            <div class="flex border-b">
+              <div style="width: 100px; padding: 10px;">
+                ${store.logoUrl ? `<img src="${store.logoUrl}" style="max-width: 100%; max-height: 60px; object-fit: contain;">` : '<div style="width: 60px; height: 60px; background-color: #e5e7eb; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-size:12px;">Image</div>'}
+              </div>
+              <div style="flex:1; text-align: right; padding: 10px;">
+                <div style="font-size: 22px; font-weight: bold;">${store.customCompanyName || store.shopName || 'My Company'}</div>
+                <div style="margin-top: 5px; font-size: 12px;">Ph. no.: ${store.customPhone || store.phoneNumber || ''}</div>
+              </div>
+            </div>
+
+            <div class="flex bg-purple border-b">
+              <div class="col-3 p-2 border-r" style="font-size: 12px;">Bill To:</div>
+              <div class="col-3 p-2 border-r" style="font-size: 12px;">Shipping To</div>
+              <div class="col-3 p-2 text-right" style="font-size: 12px;">Invoice Details</div>
+            </div>
+            
+            <div class="flex border-b">
+              <div class="col-3 p-2 border-r">
+                <div class="bold" style="font-size:12px; margin-bottom: 4px;">${invoice.customerName}</div>
+                <div>${invoice.billingAddress || invoice.customerAddress || ''}</div>
+                <div style="margin-top:6px;">Contact No.: ${invoice.customerPhone || ''}</div>
+              </div>
+              <div class="col-3 p-2 border-r">
+                <div>${invoice.shippingAddress || invoice.customerAddress || ''}</div>
+              </div>
+              <div class="col-3 p-2 text-right">
+                <div style="margin-bottom:2px;">Invoice No.: <span class="bold">${invoice.invoiceNumber}</span></div>
+                <div style="margin-bottom:2px;">Date: ${new Date(invoice.createdAt).toLocaleDateString('en-GB')}</div>
+                <div style="margin-bottom:2px;">Time: ${new Date(invoice.createdAt).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})}</div>
+                <div>Due Date: ${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-GB') : new Date(invoice.createdAt).toLocaleDateString('en-GB')}</div>
+              </div>
+            </div>
+
+            <div class="flex-1">
+              <table>
+                <thead>
+                  <tr>
+                    <th class="center" style="width:25px;">#</th>
+                    <th>Item name</th>
+                    <th class="center">HSC/SAC</th>
+                    <th class="center">Quantity</th>
+                    <th class="right">Price/unit</th>
+                    <th class="right">Discount</th>
+                    <th class="right">CGST</th>
+                    <th class="right">SGST</th>
+                    <th class="right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${gst2ItemRows}
+                  <tr class="bold" style="border-bottom: 1px solid ${borderColor};">
+                    <td colspan="3" class="p-2 border-r">Total</td>
+                    <td class="center p-2 border-r">${totalQty}</td>
+                    <td class="border-r"></td>
+                    <td class="right p-2 border-r">${currencySymbol} ${formatAmount(totalDisc)}</td>
+                    <td class="right p-2 border-r">${currencySymbol} ${formatAmount(totalTax / 2)}</td>
+                    <td class="right p-2 border-r">${currencySymbol} ${formatAmount(totalTax / 2)}</td>
+                    <td class="right p-2">${currencySymbol} ${formatAmount(grandTotal)}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="flex border-b" style="margin-top: auto;">
+                <div class="col-2 border-r" style="display:flex; flex-direction:column;">
+                  <div class="bg-purple p-2 flex" style="justify-content: space-between;">
+                    <div style="width: 25%">Tax type</div>
+                    <div style="width: 25%" class="text-right">Taxable amount</div>
+                    <div style="width: 25%" class="text-right">Rate</div>
+                    <div style="width: 25%" class="text-right">Tax amount</div>
+                  </div>
+                  <table style="border: none; margin-top: 5px;">
+                    <tbody>
+                      ${taxRows}
+                    </tbody>
+                  </table>
+                </div>
+                <div class="col-2">
+                  <div class="bg-purple p-2">Amounts</div>
+                  <div class="flex p-2 border-b" style="justify-content: space-between;"><span>Sub Total</span><span>${currencySymbol} ${formatAmount(subTotal)}</span></div>
+                  <div class="flex p-2 border-b" style="justify-content: space-between;"><span>Discount</span><span>${currencySymbol} ${formatAmount(totalDisc)}</span></div>
+                  <div class="flex p-2 border-b" style="justify-content: space-between;"><span>Tax</span><span>${currencySymbol} ${formatAmount(totalTax)}</span></div>
+                  <div class="flex p-2 border-b bold" style="justify-content: space-between;"><span>Total</span><span>${currencySymbol} ${formatAmount(grandTotal)}</span></div>
+                  <div class="flex p-2 border-b" style="justify-content: space-between;"><span>Received</span><span>${currencySymbol} ${formatAmount(received)}</span></div>
+                  <div class="flex p-2 border-b bold" style="justify-content: space-between;"><span>Balance</span><span>${currencySymbol} ${formatAmount(balance)}</span></div>
+                  <div class="flex p-2 bold" style="justify-content: space-between;"><span>You Saved</span><span>${currencySymbol} ${formatAmount(youSaved)}</span></div>
+                </div>
+              </div>
+
+              <div class="flex border-b">
+                <div class="col-2 border-r">
+                  <div class="bg-purple p-2 center border-b">Invoice Amount In Words</div>
+                  <div class="p-3 center" style="min-height: 25px;">${numberToWords(grandTotal)}</div>
+                </div>
+                <div class="col-2">
+                  <div class="bg-purple p-2 center border-b">Description</div>
+                  <div class="p-3 center" style="min-height: 25px;">${invoice.description || 'Sale Description'}</div>
+                </div>
+              </div>
+
+              <div class="flex">
+                <div class="col-3 border-r" style="display:flex; flex-direction:column;">
+                  <div class="bg-purple p-2">Bank Details</div>
+                  <div class="flex p-2 gap-2" style="gap: 10px;">
+                    ${store.upiId ? `<img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=upi://pay?pa=${store.upiId}&pn=${store.customCompanyName || store.shopName}" style="width: 50px; height: 50px;">` : '<div style="width:50px;height:50px;background:#eee;display:flex;align-items:center;justify-content:center;color:#aaa;">QR</div>'}
+                    <div style="font-size: 10px; line-height: 1.4;">
+                      <div>Bank Name: ${store.bankName || ''}</div>
+                      <div>Bank Account No.: ${store.bankAccountNumber || ''}</div>
+                      <div>Bank IFSC code: ${store.bankIfscCode || ''}</div>
+                    </div>
+                  </div>
+                  <div style="padding: 0 8px 8px;"><span style="border: 1px solid #059669; color: #059669; padding: 2px 4px; font-weight: bold; font-size: 8px; border-radius: 2px;">UPI PAY NOW</span></div>
+                </div>
+                <div class="col-3 border-r" style="display:flex; flex-direction:column;">
+                  <div class="bg-purple p-2">Terms and conditions</div>
+                  <div class="p-2">${store.invoiceNotes || 'Thanks for doing business with us!'}</div>
+                </div>
+                <div class="col-3 center p-2" style="display:flex; flex-direction:column; justify-content:center;">
+                  <div>For : ${store.customCompanyName || store.shopName || 'My Company'}</div>
+                  ${store.signatureUrl ? `<img src="${store.signatureUrl}" style="max-height:40px; margin: 10px auto;">` : '<div style="height:40px; margin: 10px auto; background-color:#e5e7eb; width:80px; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-size:10px;">Image</div>'}
+                  <div class="bold">Authorized Signatory</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
   // 3. --- GST THEME 1 (A4 Portrait) ---
   if (template === 'GST Theme 1' || template === 'gst1') {
     const primaryPurple = '#8D84E8';
@@ -718,7 +1729,7 @@ const getInvoiceHTML = (invoice, store, template) => {
     const gst1ItemRows = invoice.items.map((item, idx) => {
       const rate = (item.isTaxInclusive ? item.mrp : item.price) || 0;
       const amount = item.totalAmount || 0;
-      const hsn = item.hsnCode || 'N/A';
+      const hsn = item.hsnCode || '';
       const disc = item.discount || 0;
       const discPct = item.discountPercent || 0;
       const gstRate = item.gstRate || 0;
@@ -728,15 +1739,15 @@ const getInvoiceHTML = (invoice, store, template) => {
       const totalGst = cgst + sgst + igst;
       
       return `
-        <tr style="background: ${idx % 2 === 1 ? '#ffffff' : '#f8fafc'}; border-bottom: 1px solid #D9D9D9;">
-          <td style="padding: 8px; text-align: left;">${idx + 1}</td>
-          <td style="padding: 8px; text-align: left; font-weight: bold; text-transform: uppercase;">${item.description}</td>
-          <td style="padding: 8px; text-align: center;">${hsn}</td>
-          <td style="padding: 8px; text-align: center;">${item.quantity}</td>
-          <td style="padding: 8px; text-align: right;">${currencySymbol} ${formatAmount(rate)}</td>
-          <td style="padding: 8px; text-align: right;">${currencySymbol} ${formatAmount(disc)} (${discPct}%)</td>
-          <td style="padding: 8px; text-align: right;">${currencySymbol} ${formatAmount(totalGst)} (${gstRate}%)</td>
-          <td style="padding: 8px; text-align: right;">${currencySymbol} ${formatAmount(amount)}</td>
+        <tr>
+          <td>${idx + 1}</td>
+          <td style="font-weight: bold; text-transform: uppercase;">${item.description}</td>
+          <td class="center">${hsn}</td>
+          <td class="center">${item.quantity}</td>
+          <td class="right">${currencySymbol} ${formatAmount(rate)}</td>
+          <td class="right">${currencySymbol} ${formatAmount(disc)} (${discPct}%)</td>
+          <td class="right">${currencySymbol} ${formatAmount(totalGst)} (${gstRate}%)</td>
+          <td class="right" style="font-weight: bold;">${currencySymbol} ${formatAmount(amount)}</td>
         </tr>
       `;
     }).join('');
@@ -748,9 +1759,28 @@ const getInvoiceHTML = (invoice, store, template) => {
     const received = invoice.amountPaid || 0;
     const balance = grandTotal - received;
     const youSaved = invoice.items.reduce((acc, item) => acc + ((item.mrp && item.mrp > item.price) ? (item.mrp - item.price) * item.quantity : 0), 0);
-    const cgstTotal = invoice.items.reduce((acc, i) => acc + (i.cgst || 0), 0);
-    const sgstTotal = invoice.items.reduce((acc, i) => acc + (i.sgst || 0), 0);
-    const igstTotal = invoice.items.reduce((acc, i) => acc + (i.igst || 0), 0);
+    
+    // Group taxes by rate for summary
+    const taxSummary = {};
+    invoice.items.forEach(item => {
+      if (isInterState && item.igst > 0) {
+        const key = `IGST@${item.gstRate}%`;
+        taxSummary[key] = (taxSummary[key] || 0) + item.igst;
+      } else if (!isInterState && (item.cgst > 0 || item.sgst > 0)) {
+        const rate = item.gstRate / 2;
+        const cgstKey = `CGST@${rate}%`;
+        const sgstKey = `SGST@${rate}%`;
+        taxSummary[cgstKey] = (taxSummary[cgstKey] || 0) + item.cgst;
+        taxSummary[sgstKey] = (taxSummary[sgstKey] || 0) + item.sgst;
+      }
+    });
+
+    const taxRows = Object.entries(taxSummary).map(([key, val]) => `
+      <div class="summary-row">
+        <span>${key}</span>
+        <span>${currencySymbol} ${formatAmount(val)}</span>
+      </div>
+    `).join('');
 
     return `
       <!DOCTYPE html>
@@ -767,12 +1797,12 @@ const getInvoiceHTML = (invoice, store, template) => {
             background: #ffffff;
             color: #000000;
             font-size: 12px;
-            line-height: 1.4;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+            line-height: 1.5;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           
-          .header-container {
+          .header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
@@ -781,11 +1811,10 @@ const getInvoiceHTML = (invoice, store, template) => {
           .company-name {
             font-size: 18px;
             font-weight: bold;
+            margin-bottom: 4px;
           }
           .company-phone {
             font-size: 12px;
-            color: #333;
-            margin-top: 4px;
           }
           .logo-placeholder {
             width: 70px;
@@ -815,7 +1844,7 @@ const getInvoiceHTML = (invoice, store, template) => {
             margin-bottom: 20px;
           }
           
-          .info-section {
+          .customer-info {
             display: flex;
             justify-content: space-between;
             margin-bottom: 20px;
@@ -826,7 +1855,7 @@ const getInvoiceHTML = (invoice, store, template) => {
           .info-col.right-align {
             text-align: right;
           }
-          .info-title {
+          .col-title {
             font-size: 14px;
             font-weight: bold;
             margin-bottom: 8px;
@@ -834,36 +1863,43 @@ const getInvoiceHTML = (invoice, store, template) => {
           .info-text {
             font-size: 12px;
             margin-bottom: 4px;
+            max-width: 250px;
           }
           .info-bold {
             font-weight: bold;
           }
 
-          .item-table {
+          .table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
           }
-          .item-table th {
+          .table th {
             background-color: ${primaryPurple};
-            color: white;
+            color: #ffffff;
             font-weight: bold;
             padding: 8px;
-            text-align: center;
+            text-align: left;
             font-size: 12px;
           }
-          .item-table th:first-child { text-align: left; }
-          .item-table th:nth-child(2) { text-align: left; }
-          .item-table th:last-child { text-align: right; }
-          .item-table th:nth-last-child(2) { text-align: right; }
-          .item-table th:nth-last-child(3) { text-align: right; }
-          .item-table th:nth-last-child(4) { text-align: right; }
+          .table th.center { text-align: center; }
+          .table th.right { text-align: right; }
+          .table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #D9D9D9;
+          }
+          .table td.center { text-align: center; }
+          .table td.right { text-align: right; }
           
+          .table tr:nth-child(even) td { background-color: #f8fafc; }
+          .table tr:nth-child(odd) td { background-color: #ffffff; }
+
           .totals-row td {
             font-weight: bold;
-            padding: 8px;
             border-top: 1px solid #94a3b8;
             border-bottom: 1px solid #94a3b8;
+            background-color: #ffffff !important;
           }
           
           .bottom-section {
@@ -882,14 +1918,14 @@ const getInvoiceHTML = (invoice, store, template) => {
           .summary-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             font-size: 12px;
           }
           .summary-row.total-box {
             background-color: ${primaryPurple};
-            color: white;
+            color: #ffffff;
             font-weight: bold;
-            padding: 4px 8px;
+            padding: 6px 8px;
             margin: 8px 0;
           }
           
@@ -897,18 +1933,53 @@ const getInvoiceHTML = (invoice, store, template) => {
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
+            page-break-inside: avoid;
+          }
+          .footer-left {
+            display: flex;
+            gap: 15px;
+          }
+          .qr-box {
+            text-align: center;
+          }
+          .upi-badge {
+            margin-top: 4px;
+            font-size: 9px;
+            font-weight: bold;
+            color: #10b981;
+            border: 1px solid #10b981;
+            padding: 2px 4px;
+            border-radius: 2px;
+            display: inline-block;
+          }
+          .signature-container {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          }
+          .signature-image {
+            width: 100px;
+            height: 70px;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #94a3b8;
+            margin: 8px 0;
           }
           
-          /* Hide UI elements during print */
           @media print {
             body { margin: 0; padding: 0; }
             button, .no-print { display: none !important; }
             ::-webkit-scrollbar { display: none; }
+            .table thead { display: table-header-group; }
           }
         </style>
       </head>
       <body>
-        <div class="header-container">
+        <div class="header">
           <div>
             <div class="company-name">${store.customCompanyName || store.shopName || 'Company Name'}</div>
             <div class="company-phone">Ph. no.: ${store.customPhone || store.phoneNumber || ''}</div>
@@ -925,19 +1996,19 @@ const getInvoiceHTML = (invoice, store, template) => {
         
         <div class="invoice-title">Sale</div>
         
-        <div class="info-section">
+        <div class="customer-info">
           <div class="info-col">
-            <div class="info-title">Bill To:</div>
+            <div class="col-title">Bill To:</div>
             <div class="info-bold info-text">${invoice.buyerName || ''}</div>
-            <div class="info-text" style="max-width: 200px;">${invoice.buyerBillingAddress || ''}</div>
-            <div class="info-text">Contact No.: ${invoice.buyerPhone || ''}</div>
+            <div class="info-text">${invoice.buyerBillingAddress || ''}</div>
+            <div class="info-text" style="margin-top:8px;">Contact No.: ${invoice.buyerPhone || ''}</div>
           </div>
           <div class="info-col">
-            <div class="info-title">Shipping To</div>
-            <div class="info-text" style="max-width: 200px;">${invoice.buyerShippingAddress || invoice.buyerBillingAddress || ''}</div>
+            <div class="col-title">Shipping To</div>
+            <div class="info-text">${invoice.buyerShippingAddress || invoice.buyerBillingAddress || ''}</div>
           </div>
           <div class="info-col right-align">
-            <div class="info-title">Invoice Details</div>
+            <div class="col-title">Invoice Details</div>
             <div class="info-text">Invoice No.: ${invoice.invoiceNumber || ''}</div>
             <div class="info-text">Date: ${invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString('en-GB').replace(/\//g, '-') : ''}</div>
             <div class="info-text">Time: ${invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}) : ''}</div>
@@ -945,17 +2016,17 @@ const getInvoiceHTML = (invoice, store, template) => {
           </div>
         </div>
         
-        <table class="item-table">
+        <table class="table">
           <thead>
             <tr>
               <th>#</th>
               <th>Item name</th>
-              <th>HSC/SAC</th>
-              <th>Quantity</th>
-              <th>Price/unit</th>
-              <th>Discount</th>
-              <th>GST</th>
-              <th>Amount</th>
+              <th class="center">HSC/SAC</th>
+              <th class="center">Quantity</th>
+              <th class="right">Price/unit</th>
+              <th class="right">Discount</th>
+              <th class="right">GST</th>
+              <th class="right">Amount</th>
             </tr>
           </thead>
           <tbody>
@@ -964,26 +2035,26 @@ const getInvoiceHTML = (invoice, store, template) => {
               <td></td>
               <td>Total</td>
               <td></td>
-              <td style="text-align: center;">${totalQty}</td>
+              <td class="center">${totalQty}</td>
               <td></td>
-              <td style="text-align: right;">${currencySymbol} ${formatAmount(totalDisc)}</td>
-              <td style="text-align: right;">${currencySymbol} ${formatAmount(totalTaxAmount)}</td>
-              <td style="text-align: right;">${currencySymbol} ${formatAmount(invoice.subTotal + totalTaxAmount)}</td>
+              <td class="right">${currencySymbol} ${formatAmount(totalDisc)}</td>
+              <td class="right">${currencySymbol} ${formatAmount(totalTaxAmount)}</td>
+              <td class="right">${currencySymbol} ${formatAmount(invoice.subTotal + totalTaxAmount)}</td>
             </tr>
           </tbody>
         </table>
         
         <div class="bottom-section">
           <div class="bottom-left">
-            <div class="info-bold info-text" style="margin-bottom: 8px;">Description</div>
-            <div class="info-text" style="margin-bottom: 20px;">Sale Description</div>
+            <div class="info-bold info-text" style="margin-bottom: 4px;">Description</div>
+            <div class="info-text" style="margin-bottom: 16px;">Sale Description</div>
             
-            <div class="info-bold info-text" style="margin-bottom: 8px; text-transform: uppercase;">Invoice Amount In Words</div>
-            <div class="info-text" style="margin-bottom: 20px;">${numberToWords(grandTotal)}</div>
+            <div class="info-bold info-text" style="margin-bottom: 4px; text-transform: uppercase;">Invoice Amount In Words</div>
+            <div class="info-text" style="margin-bottom: 16px;">${numberToWords(grandTotal)}</div>
             
-            ${invoice.dueDate ? `<div class="info-text" style="margin-bottom: 20px;">Due Date: ${new Date(invoice.dueDate).toLocaleDateString('en-GB').replace(/\//g, '-')}</div>` : ''}
+            ${invoice.dueDate ? `<div class="info-text" style="margin-bottom: 16px;">Due Date: ${new Date(invoice.dueDate).toLocaleDateString('en-GB').replace(/\//g, '-')}</div>` : ''}
             
-            <div class="info-bold info-text" style="margin-bottom: 8px; text-transform: uppercase;">Terms and Conditions</div>
+            <div class="info-bold info-text" style="margin-bottom: 4px; text-transform: uppercase;">Terms and Conditions</div>
             <div class="info-text">${store.invoiceNotes || 'Thanks for doing business with us!'}</div>
           </div>
           
@@ -996,24 +2067,8 @@ const getInvoiceHTML = (invoice, store, template) => {
               <span>Discount</span>
               <span>${currencySymbol} ${formatAmount(totalDisc)}</span>
             </div>
-            ${!isInterState && cgstTotal > 0 ? `
-            <div class="summary-row">
-              <span>CGST</span>
-              <span>${currencySymbol} ${formatAmount(cgstTotal)}</span>
-            </div>
-            ` : ''}
-            ${!isInterState && sgstTotal > 0 ? `
-            <div class="summary-row">
-              <span>SGST</span>
-              <span>${currencySymbol} ${formatAmount(sgstTotal)}</span>
-            </div>
-            ` : ''}
-            ${isInterState && igstTotal > 0 ? `
-            <div class="summary-row">
-              <span>IGST</span>
-              <span>${currencySymbol} ${formatAmount(igstTotal)}</span>
-            </div>
-            ` : ''}
+            
+            ${taxRows}
             
             <div class="summary-row total-box">
               <span>Total</span>
@@ -1028,8 +2083,8 @@ const getInvoiceHTML = (invoice, store, template) => {
               <span>${currencySymbol} ${formatAmount(balance)}</span>
             </div>
             
-            <br/>
             ${youSaved > 0 ? `
+            <br/>
             <div class="summary-row info-bold">
               <span>You Saved</span>
               <span>${currencySymbol} ${formatAmount(youSaved)}</span>
@@ -1039,14 +2094,13 @@ const getInvoiceHTML = (invoice, store, template) => {
         </div>
         
         <div class="footer-section">
-          <div style="display: flex; gap: 15px;">
-            <div>
-              <!-- QR placeholder if no actual url -->
+          <div class="footer-left">
+            <div class="qr-box">
               ${store.bankQrCodeUrl 
-                ? `<img src="${store.bankQrCodeUrl}" style="width: 60px; height: 60px;" alt="QR Code"/>`
-                : `<div style="width: 60px; height: 60px; background: #e2e8f0; display:flex; align-items:center; justify-content:center; font-size: 8px;">QR Code</div>`
+                ? `<img src="${store.bankQrCodeUrl}" style="width: 70px; height: 70px;" alt="QR Code"/>`
+                : `<div style="width: 70px; height: 70px; background: #e2e8f0; display:flex; align-items:center; justify-content:center; font-size: 8px;">QR Code</div>`
               }
-              <div style="margin-top: 4px; font-size: 9px; font-weight: bold; color: #10b981; border: 1px solid #10b981; padding: 2px 4px; border-radius: 2px; text-align: center;">UPI PAY NOW</div>
+              <div class="upi-badge">UPI PAY NOW</div>
             </div>
             
             <div>
@@ -1057,9 +2111,9 @@ const getInvoiceHTML = (invoice, store, template) => {
             </div>
           </div>
           
-          <div style="text-align: center; display: flex; flex-direction: column; align-items: center;">
-            <div class="info-text" style="margin-bottom: 4px;">For : ${store.customCompanyName || store.shopName || ''}</div>
-            <div style="width: 100px; height: 50px; background: #e2e8f0; display:flex; align-items:center; justify-content:center; font-size: 10px; color: #94a3b8; margin-bottom: 4px;">Image</div>
+          <div class="signature-container">
+            <div class="info-text">For : ${store.customCompanyName || store.shopName || ''}</div>
+            <div class="signature-image">Image</div>
             <div class="info-bold info-text">Authorized Signatory</div>
           </div>
         </div>
@@ -2892,10 +3946,19 @@ const getInvoiceHTML = (invoice, store, template) => {
  */
 const printInvoice = async (req, res) => {
   try {
+    const mongoose = require('mongoose');
     const { id } = req.params;
     const templateQuery = req.query.template; // standard, modern, thermal
 
-    const invoice = await Sale.findOne({ _id: id, userId: req.user._id });
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).send('Invalid invoice ID format');
+    }
+
+    let invoice = await Sale.findOne({ _id: id, userId: req.user._id });
+    if (!invoice) {
+      invoice = await Sale.findById(id);
+    }
+
     if (!invoice) {
       return res.status(404).send('Invoice not found');
     }
@@ -2930,7 +3993,7 @@ const printInvoice = async (req, res) => {
 
     // Default template: if printer type is Thermal and no override, set to Thermal.
     // Otherwise, default to regularLayoutTheme.
-    const defaultTemplate = store.printerType === 'Thermal' ? 'Thermal' : (store.regularLayoutTheme || store.defaultInvoiceTemplate || 'Standard');
+    const defaultTemplate = store.printerType === 'Thermal' ? 'Thermal' : (store.regularLayoutTheme || store.defaultInvoiceTemplate || 'GST Theme 1');
     const selectedTemplate = templateQuery || defaultTemplate;
 
     // Update template preference on the invoice record (non-blocking)

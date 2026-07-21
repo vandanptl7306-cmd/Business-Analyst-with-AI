@@ -70,8 +70,8 @@ const createInvoice = async (req, res) => {
 
         if (settings.stopSaleOnNegativeStock && product) {
           const qty = item.quantity || 1;
-          if (product.currentStock - qty < 0) {
-            return res.status(400).json({ success: false, error: `Sale blocked: Negative stock for item "${item.description}". Current stock is ${product.currentStock}.` });
+          if (product.quantity - qty < 0) {
+            return res.status(400).json({ success: false, error: `Sale blocked: Negative stock for item "${item.description}". Current stock is ${product.quantity}.` });
           }
         }
       }
@@ -129,7 +129,8 @@ const createInvoice = async (req, res) => {
       taxTotal += taxAmount;
 
       // Split CGST/SGST/IGST dynamically (interstate check based on first 2 digits of GSTIN)
-      const isInterState = sellerGSTIN.substring(0, 2) !== buyerGSTIN.substring(0, 2);
+      const isUnregistered = buyerGSTIN === 'CONSUMER' || buyerGSTIN === 'URP' || buyerGSTIN === 'UNREGISTERED';
+      const isInterState = !isUnregistered && (sellerGSTIN.substring(0, 2) !== buyerGSTIN.substring(0, 2));
       let cgst = 0, sgst = 0, igst = 0;
 
       if (isInterState) {
@@ -262,6 +263,20 @@ const createInvoice = async (req, res) => {
       distance: 120,
     });
 
+    // --- DEDUCT STOCK ---
+    // Update the stock (quantity) for each product sold
+    try {
+      for (const item of processedItems) {
+        const qty = item.quantity || 1;
+        await Product.findOneAndUpdate(
+          { name: item.description, userId: req.user._id },
+          { $inc: { quantity: -qty } }
+        );
+      }
+    } catch (stockErr) {
+      console.error('Failed to update product stock:', stockErr.message);
+    }
+
     let emailDelivery = { status: 'NotSent', message: 'Email delivery not evaluated' };
 
     // Auto-send Email Logic
@@ -307,7 +322,7 @@ const createInvoice = async (req, res) => {
     res.status(201).json({ success: true, invoice, emailDelivery });
   } catch (error) {
     console.error('Invoice creation error:', error.message);
-    res.status(500).json({ success: false, error: 'Server error during invoice creation' });
+    res.status(500).json({ success: false, error: 'Server error during invoice creation: ' + error.message });
   }
 };
 
@@ -319,16 +334,25 @@ const createInvoice = async (req, res) => {
  */
 const getInvoice = async (req, res) => {
   try {
-    const invoice = await Sale.findOne({ _id: req.params.id, userId: req.user._id });
+    const mongoose = require('mongoose');
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, error: 'Invalid invoice ID format' });
+    }
+
+    let invoice = await Sale.findOne({ _id: id, userId: req.user._id });
+    if (!invoice) {
+      // Fallback for legacy invoices created before userId indexing
+      invoice = await Sale.findById(id);
+    }
+
     if (!invoice) {
       return res.status(404).json({ success: false, error: 'Invoice not found' });
     }
 
     let responseInvoice = invoice.toObject();
 
-    // ROLE-BASED ACCESS CONTROL (RBAC) - API response stripping:
-    // If the requesting user has the role of 'Staff', we strip all sensitive cost, profit, and margin data
-    // fields from the invoice document structure to prevent unauthorized staff from seeing store profitability margins.
     if (req.user && req.user.role === 'Staff') {
       delete responseInvoice.totalCost;
       delete responseInvoice.netProfit;
@@ -344,7 +368,7 @@ const getInvoice = async (req, res) => {
     res.status(200).json({ success: true, invoice: responseInvoice });
   } catch (error) {
     console.error('Fetch invoice error:', error.message);
-    res.status(500).json({ success: false, error: 'Server error retrieving invoice' });
+    res.status(500).json({ success: false, error: 'Server error retrieving invoice: ' + error.message });
   }
 };
 
@@ -459,7 +483,11 @@ const sendInvoiceEmail = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: `Invoice email notification successfully sent to ${invoice.buyerName}.`,
+      message: response.deliveredVia === 'PrimarySMTP'
+        ? `Invoice email notification successfully sent to ${invoice.buyerName} via Gmail.`
+        : `Invoice email generated in test preview mode. (Gmail SMTP rejected App Password; view test email at: ${response.previewUrl || 'Ethereal inbox'}).`,
+      deliveredVia: response.deliveredVia,
+      previewUrl: response.previewUrl,
       messageId: response.messageId,
       sentAt: response.timestamp,
       invoice,

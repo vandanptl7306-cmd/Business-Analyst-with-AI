@@ -25,47 +25,26 @@ export default function Reports() {
     setLoading(true);
     setErrorMsg('');
     try {
-        if (activeTab === 'sales') {
-          // Dummy data for premium aesthetic presentation
-          setSalesTrend([
-            { _id: '2026-07-04', revenue: 14500, tax: 1450, salesCount: 42 },
-            { _id: '2026-07-05', revenue: 18200, tax: 1820, salesCount: 55 },
-            { _id: '2026-07-06', revenue: 16800, tax: 1680, salesCount: 48 },
-            { _id: '2026-07-07', revenue: 22400, tax: 2240, salesCount: 71 },
-            { _id: '2026-07-08', revenue: 28900, tax: 2890, salesCount: 98 },
-            { _id: '2026-07-09', revenue: 26500, tax: 2650, salesCount: 84 },
-            { _id: '2026-07-10', revenue: 32400, tax: 3240, salesCount: 112 }
-          ]);
-          setTopProducts([
-            { _id: 'Premium Widget A', quantitySold: 120, totalSalesVal: 15000 },
-            { _id: 'Enterprise Server B', quantitySold: 45, totalSalesVal: 45000 },
-            { _id: 'Consulting Hours', quantitySold: 80, totalSalesVal: 24000 }
-          ]);
+      if (activeTab === 'sales') {
+        const data = await getSalesReport(startDate, endDate);
+        if (data && data.success) {
+          setSalesTrend(data.salesTrend || []);
+          setTopProducts(data.topProducts || []);
+        }
       } else if (activeTab === 'profit') {
-          setPlSummary({
-            totalRevenue: 159700,
-            totalCogs: 45000,
-            grossProfit: 114700,
-            totalExpenses: 23500,
-            netProfit: 91200,
-            margin: 57.1
-          });
-          setExpenses([
-            { _id: 'Marketing', totalAmount: 8500 },
-            { _id: 'Software', totalAmount: 4200 },
-            { _id: 'Office', totalAmount: 10800 }
-          ]);
+        const data = await getProfitLossReport(startDate, endDate);
+        if (data && data.success) {
+          setPlSummary(data.summary || null);
+          setExpenses(data.expensesBreakdown || []);
+        }
       } else if (activeTab === 'gst') {
-          setGstLiability({
-            totalCollected: 15970,
-            inputTaxCredit: 4500,
-            netPayable: 11470,
-            cgst: 7985,
-            sgst: 7985,
-            igst: 0
-          });
+        const data = await getGSTLiabilityReport(startDate, endDate);
+        if (data && data.success) {
+          setGstLiability(data.liability || null);
+        }
       }
     } catch (err) {
+      console.error(err);
       setErrorMsg('Failed to compile reports data for the selected range.');
     } finally {
       setLoading(false);

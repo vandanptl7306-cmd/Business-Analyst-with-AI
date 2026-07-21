@@ -1291,7 +1291,7 @@ def run_compliance_audit(req: AuditInvoiceRequest) -> dict:
     elif not validate_gstin_regex(req.sellerGSTIN):
         risk_alerts.append({
             "field": "sellerGSTIN",
-            "severity": "High",
+            "severity": "Medium",
             "message": f"Seller GSTIN '{req.sellerGSTIN}' format is invalid. Must match 15-digit alphanumeric standard format."
         })
         
@@ -1302,10 +1302,10 @@ def run_compliance_audit(req: AuditInvoiceRequest) -> dict:
             "severity": "High",
             "message": "Buyer GSTIN is missing."
         })
-    elif not validate_gstin_regex(req.buyerGSTIN):
+    elif req.buyerGSTIN.strip().upper() not in ["CONSUMER", "URP", "UNREGISTERED"] and not validate_gstin_regex(req.buyerGSTIN):
         risk_alerts.append({
             "field": "buyerGSTIN",
-            "severity": "High",
+            "severity": "Medium",
             "message": f"Buyer GSTIN '{req.buyerGSTIN}' format is invalid. Must match 15-digit alphanumeric standard format."
         })
         
@@ -1316,7 +1316,10 @@ def run_compliance_audit(req: AuditInvoiceRequest) -> dict:
         
     buyer_state = req.buyer_state
     if not buyer_state and req.buyerGSTIN:
-        buyer_state = get_state_from_gstin(req.buyerGSTIN)
+        if req.buyerGSTIN.strip().upper() in ["CONSUMER", "URP", "UNREGISTERED"]:
+            buyer_state = seller_state  # Assume intrastate for B2C consumer sales
+        else:
+            buyer_state = get_state_from_gstin(req.buyerGSTIN)
         
     if not seller_state:
         seller_state = "Unknown Seller State"

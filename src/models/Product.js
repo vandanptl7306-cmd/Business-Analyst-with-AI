@@ -4,6 +4,11 @@ const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
     name: {
       type: String,
       required: true,
@@ -12,8 +17,16 @@ const productSchema = new mongoose.Schema(
     sku: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
+    },
+    hsnCode: {
+      type: String,
+      trim: true,
+      default: '0000',
+    },
+    taxRate: {
+      type: Number,
+      default: 0,
     },
     mrp: {
       type: Number,

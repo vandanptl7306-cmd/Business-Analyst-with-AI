@@ -234,7 +234,7 @@ export default function DashboardLayout() {
       </aside>
 
       {/* Main Workspace */}
-      <main className="dashboard-workspace">
+      <main className="dashboard-workspace" style={{ padding: location.pathname.includes('/create') ? 0 : undefined }}>
         <Outlet />
       </main>
     </div>

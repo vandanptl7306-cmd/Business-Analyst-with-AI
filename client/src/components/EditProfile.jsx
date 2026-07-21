@@ -1,5 +1,6 @@
 // client/src/components/EditProfile.jsx
 import React, { useRef, useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import {
   Camera, CloudUpload, ChevronDown, HelpCircle,
   Calendar, AlertCircle, CheckCircle, Loader2,
@@ -120,7 +121,8 @@ const ErrMsg = ({ msg }) => msg
 
 /* ── Main component ──────────────────────────────────────────────────────────── */
 export default function EditProfile({ onCancel, onSaved }) {
-  const LS_KEY = 'edit_profile_data';
+  const { user } = useAuth();
+  const LS_KEY = user ? `edit_profile_data_${user._id}` : 'edit_profile_data';
   const loadSaved = () => {
     try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch { return {}; }
   };
@@ -128,14 +130,14 @@ export default function EditProfile({ onCancel, onSaved }) {
   const saved = loadSaved();
 
   // Logo
-  const [logoUrl, setLogoUrl] = useState(saved.logoUrl || '');
+  const [logoUrl, setLogoUrl] = useState(saved.logoUrl || user?.avatarUrl || '');
   const logoRef = useRef(null);
 
   // Business Details
-  const [businessName, setBusinessName] = useState(saved.businessName || '');
-  const [phone, setPhone]               = useState(saved.phone        || '');
+  const [businessName, setBusinessName] = useState(saved.businessName || user?.companyName || '');
+  const [phone, setPhone]               = useState(saved.phone        || user?.phoneNumber || '');
   const [gstin, setGstin]               = useState(saved.gstin        || '');
-  const [email, setEmail]               = useState(saved.email        || '');
+  const [email, setEmail]               = useState(saved.email        || user?.email || '');
   const [beginDate, setBeginDate]       = useState(saved.beginDate    || '');
 
   // More Details

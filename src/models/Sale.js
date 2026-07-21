@@ -84,6 +84,12 @@ const invoiceSchema = new mongoose.Schema(
       default: Date.now,
     },
     
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+
     // Seller Info
     sellerName: {
       type: String,
@@ -112,7 +118,7 @@ const invoiceSchema = new mongoose.Schema(
     },
     buyerBillingAddress: {
       type: String,
-      required: true,
+      default: '',
     },
     buyerPIN: {
       type: String,
@@ -214,8 +220,7 @@ const invoiceSchema = new mongoose.Schema(
     },
     templateType: {
       type: String,
-      enum: ['Standard', 'Modern', 'Thermal', 'TaxInvoice', 'Minimalist', 'Commercial'],
-      default: 'Standard',
+      default: 'GST Theme 1',
     },
     invoiceThemeColor: {
       type: String,
@@ -276,3 +281,4 @@ invoiceSchema.index({ invoiceDate: -1 });
 invoiceSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Sale', invoiceSchema);
+// Triggering nodemon restart

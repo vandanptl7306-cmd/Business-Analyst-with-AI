@@ -10,7 +10,8 @@ dotenv.config();
 const app = express();
 
 // Body parser middleware
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Enable CORS for frontend requests
 app.use((req, res, next) => {
@@ -89,22 +90,31 @@ const startServer = async () => {
 
     server.on('error', (err) => {
       if (err.code === 'EADDRINUSE') {
-        console.warn(`Port ${port} in use.`);
+        console.warn(`Port ${port} in use. Waiting for it to free...`);
         if (attempt <= maxRetries) {
-          port += 1;
-          console.log(`Trying port ${port} (attempt ${attempt}/${maxRetries})`);
-          // Small delay before retrying to avoid tight loop
-          setTimeout(tryListen, 200);
+          console.log(`Retrying on port ${port} (attempt ${attempt}/${maxRetries})`);
+          // Delay before retrying to allow the previous process to release the port
+          setTimeout(tryListen, 1000);
           return;
         }
         console.error(`All ${maxRetries} retry attempts failed. Please free a port or set PORT env variable.`);
         process.exit(1);
+      } else {
+        // For other errors (like ECONNRESET from aborted requests during logout), just log them
+        console.error('Server error:', err);
+        // Do not exit the process for client disconnects
       }
-      // For other errors, rethrow
-      console.error('Server error:', err);
-      process.exit(1);
     });
   };
+
+  // Prevent server from crashing on unhandled promise rejections or exceptions
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  });
+  
+  process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+  });
 
   tryListen();
 };

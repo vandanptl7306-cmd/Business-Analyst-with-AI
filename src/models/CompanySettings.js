@@ -96,7 +96,7 @@ const storeSettingsSchema = new mongoose.Schema(
     // Regular Printer configuration
     regularLayoutTheme: {
       type: String,
-      default: 'Standard'
+      default: 'GST Theme 1'
     },
     regularThemeColor: {
       type: String,

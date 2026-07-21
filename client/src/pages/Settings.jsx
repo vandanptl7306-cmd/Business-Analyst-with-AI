@@ -143,7 +143,7 @@ export default function SettingsPage() {
   const [zoomLevel, setZoomLevel] = useState(100);
 
   // Print settings (preserved from old implementation)
-  const [regularLayoutTheme, setRegularLayoutTheme] = useState('Standard');
+  const [regularLayoutTheme, setRegularLayoutTheme] = useState('GST Theme 1');
   const [regularThemeColor, setRegularThemeColor] = useState('#2563eb');
   const [printCompanyName, setPrintCompanyName] = useState(true);
   const [customCompanyName, setCustomCompanyName] = useState('');
@@ -208,7 +208,7 @@ export default function SettingsPage() {
         if (res.success && res.settings) {
           const s = res.settings;
           setBusinessType(s.businessType || 'Retail');
-          setRegularLayoutTheme(s.regularLayoutTheme || 'Standard');
+          setRegularLayoutTheme(s.regularLayoutTheme || 'GST Theme 1');
           setRegularThemeColor(s.regularThemeColor || '#2563eb');
           setPrintRepeatHeader(s.printRepeatHeader ?? false);
           setPrintCompanyName(s.printCompanyName ?? true);

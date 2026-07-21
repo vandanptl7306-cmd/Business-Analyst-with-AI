@@ -21,7 +21,8 @@ const getStoreSettings = async (req, res) => {
           email: req.user.email || '',
           gstin: '',
           logoUrl: '',
-          defaultInvoiceTemplate: 'Standard'
+          defaultInvoiceTemplate: 'GST Theme 1',
+          regularLayoutTheme: 'GST Theme 1'
         }
       },
       { new: true, upsert: true }
