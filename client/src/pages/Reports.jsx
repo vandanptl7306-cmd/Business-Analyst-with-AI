@@ -100,7 +100,7 @@ export default function Reports() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `intellectbill_${activeTab}_report.csv`);
+    link.setAttribute("download", `business_analyst_${activeTab}_report.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

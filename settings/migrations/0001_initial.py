@@ -15,10 +15,10 @@ class Migration(migrations.Migration):
             name='StoreSettings',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('shop_name', models.CharField(default='IntellectBill AI Operations', max_length=255)),
+                ('shop_name', models.CharField(default='Business Analyst with AI Operations', max_length=255)),
                 ('address', models.TextField(default='101, Business Enclave, Cyber City, Sector 45, Gurgaon, Haryana')),
                 ('phone_number', models.CharField(default='+919876543210', max_length=20)),
-                ('email', models.EmailField(default='billing@intellectbill.ai', max_length=254)),
+                ('email', models.EmailField(default='billing@business-analyst.ai', max_length=254)),
                 ('gstin', models.CharField(default='27AAAAA1111A1Z1', max_length=15)),
                 ('logo_url', models.URLField(blank=True, null=True)),
                 ('default_invoice_template', models.CharField(choices=[('Standard', 'Standard'), ('Modern', 'Modern'), ('Thermal', 'Thermal'), ('TaxInvoice', 'TaxInvoice'), ('Minimalist', 'Minimalist'), ('Commercial', 'Commercial'), ('Proforma', 'Proforma')], default='Standard', max_length=50)),

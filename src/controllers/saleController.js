@@ -341,11 +341,7 @@ const getInvoice = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Invalid invoice ID format' });
     }
 
-    let invoice = await Sale.findOne({ _id: id, userId: req.user._id });
-    if (!invoice) {
-      // Fallback for legacy invoices created before userId indexing
-      invoice = await Sale.findById(id);
-    }
+    const invoice = await Sale.findOne({ _id: id, userId: req.user._id });
 
     if (!invoice) {
       return res.status(404).json({ success: false, error: 'Invoice not found' });
@@ -468,7 +464,7 @@ const sendInvoiceEmail = async (req, res) => {
       });
     }
 
-    const invoiceUrl = `https://intellectbill.ai/invoices/download/${invoice._id}`;
+    const invoiceUrl = `https://business-analyst.ai/invoices/download/${invoice._id}`;
 
     const response = await emailService.sendInvoiceNotification(email, {
       name: invoice.buyerName,

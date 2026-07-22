@@ -64,11 +64,7 @@ const createProduct = async (req, res) => {
  */
 const getProducts = async (req, res) => {
   try {
-    let products = await Product.find({ userId: req.user._id }).sort({ name: 1 });
-    if (products.length === 0) {
-      // Legacy fallback for products created without userId
-      products = await Product.find().sort({ name: 1 });
-    }
+    const products = await Product.find({ userId: req.user._id }).sort({ name: 1 });
     res.status(200).json({ success: true, products });
   } catch (error) {
     console.error('Fetch products error:', error.message);
@@ -83,10 +79,7 @@ const getProducts = async (req, res) => {
  */
 const getLowStockProducts = async (req, res) => {
   try {
-    let products = await Product.find({ userId: req.user._id }).sort({ name: 1 });
-    if (products.length === 0) {
-      products = await Product.find().sort({ name: 1 });
-    }
+    const products = await Product.find({ userId: req.user._id }).sort({ name: 1 });
 
     const now = new Date();
     const in30Days = new Date();
@@ -119,10 +112,7 @@ const updateProduct = async (req, res) => {
       barcode, batchNumber, averageCostPrice, hsnCode, taxRate,
     } = req.body;
 
-    let product = await Product.findOne({ _id: id, userId: req.user._id });
-    if (!product) {
-      product = await Product.findById(id);
-    }
+    const product = await Product.findOne({ _id: id, userId: req.user._id });
     if (!product) {
       return res.status(404).json({ success: false, error: 'Product not found' });
     }
@@ -161,10 +151,7 @@ const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
 
-    let product = await Product.findOne({ _id: id, userId: req.user._id });
-    if (!product) {
-      product = await Product.findById(id);
-    }
+    const product = await Product.findOne({ _id: id, userId: req.user._id });
     if (!product) {
       return res.status(404).json({ success: false, error: 'Product not found' });
     }

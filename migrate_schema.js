@@ -2,7 +2,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 
 // Connect to DB
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/intellectbill';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/business-analyst';
 
 async function migrate() {
   try {

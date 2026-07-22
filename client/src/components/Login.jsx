@@ -71,7 +71,7 @@ export default function Login({ onToggleMode }) {
           <h2 className="text-2xl font-extrabold tracking-tight text-slate-800">
             Welcome Back
           </h2>
-          <p className="text-xs text-slate-500 font-medium">Sign in to your IntellectBill AI account</p>
+          <p className="text-xs text-slate-500 font-medium">Sign in to your Business Analyst with AI account</p>
         </div>
 
         {/* Demo credentials hint */}

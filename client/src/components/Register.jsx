@@ -94,7 +94,7 @@ export default function Register({ onToggleMode }) {
           <h2 className="text-2xl font-extrabold tracking-tight text-slate-800">
             Create Account
           </h2>
-          <p className="text-xs text-slate-500 font-medium">Join IntellectBill AI as Administrator</p>
+          <p className="text-xs text-slate-500 font-medium">Join Business Analyst with AI as Administrator</p>
         </div>
 
         {/* Error Alert */}

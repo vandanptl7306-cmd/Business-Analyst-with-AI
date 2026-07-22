@@ -68,7 +68,7 @@ const templates = [
       <div className="border border-slate-700 rounded-lg p-3 bg-slate-950 space-y-1.5 text-[6px] text-slate-500 font-mono flex flex-col items-center">
         <div className="w-40 border-dashed border-b border-slate-700 pb-1 text-center text-[5px]">
           <div className="font-bold text-slate-400">RECEIPT</div>
-          <div>IntellectBill AI</div>
+          <div>Business Analyst with AI</div>
         </div>
         <div className="w-40 text-[4px] space-y-0.5 text-left border-dashed border-b border-slate-700 pb-1">
           <div>Ref: #INV-001</div>

@@ -154,16 +154,17 @@ const THEMES = [
 /* ─────────────────────────────────────────────────────────────────────────────
    SVG Theme Previews
 ───────────────────────────────────────────────────────────────────────────── */
-function ThemePreviewSVG({ id }) {
+function ThemePreviewSVG({ id, color }) {
   const base = 'fill-none stroke-gray-300 stroke-[1.5]';
   const line = 'stroke-gray-200 stroke-[1]';
-  const blue = '#2563EB';
+  const blue = color || '#2563EB';
+  const purple = color || '#8D84E8';
 
   const svgs = {
     tally: (
       <svg viewBox="0 0 80 90" className="w-full h-full">
         <rect width="80" height="90" fill="white" stroke="#D1D5DB" strokeWidth="1"/>
-        <rect x="2" y="2" width="76" height="14" fill="#EFF6FF" stroke={blue} strokeWidth="0.8"/>
+        <rect x="2" y="2" width="76" height="14" fill={blue} fillOpacity={0.15} stroke={blue} strokeWidth="0.8"/>
         <line x1="2" y1="8" x2="78" y2="8" stroke={blue} strokeWidth="0.5"/>
         <rect x="2" y="18" width="76" height="7" fill="#F3F4F6" stroke="#D1D5DB" strokeWidth="0.5"/>
         <rect x="2" y="27" width="76" height="4" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
@@ -172,7 +173,7 @@ function ThemePreviewSVG({ id }) {
         <rect x="2" y="45" width="76" height="4" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
         <rect x="2" y="51" width="76" height="4" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
         <rect x="2" y="57" width="76" height="4" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
-        <rect x="50" y="65" width="28" height="8" fill="#EFF6FF" stroke={blue} strokeWidth="0.5"/>
+        <rect x="50" y="65" width="28" height="8" fill={blue} fillOpacity={0.15} stroke={blue} strokeWidth="0.5"/>
         <rect x="2" y="76" width="76" height="12" fill="#F9FAFB" stroke="#E5E7EB" strokeWidth="0.5"/>
       </svg>
     ),
@@ -185,36 +186,36 @@ function ThemePreviewSVG({ id }) {
         <rect x="2" y="26" width="86" height="3" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
         <rect x="2" y="31" width="86" height="3" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
         <rect x="2" y="36" width="86" height="3" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
-        <rect x="55" y="42" width="33" height="6" fill="#EFF6FF" stroke={blue} strokeWidth="0.5"/>
+        <rect x="55" y="42" width="33" height="6" fill={blue} fillOpacity={0.15} stroke={blue} strokeWidth="0.5"/>
         <rect x="2" y="52" width="86" height="8" fill="#F9FAFB" stroke="#E5E7EB" strokeWidth="0.5"/>
       </svg>
     ),
     landscape2: (
       <svg viewBox="0 0 90 70" className="w-full h-full">
         <rect width="90" height="70" fill="white" stroke="#D1D5DB" strokeWidth="1"/>
-        <rect x="2" y="2" width="86" height="10" fill="#111827" stroke="none"/>
+        <rect x="2" y="2" width="86" height="10" fill={blue} stroke="none"/>
         <rect x="2" y="14" width="40" height="18" fill="#F3F4F6" stroke="#E5E7EB" strokeWidth="0.5"/>
         <rect x="44" y="14" width="44" height="18" fill="#F3F4F6" stroke="#E5E7EB" strokeWidth="0.5"/>
-        <rect x="2" y="34" width="86" height="4" fill="#EFF6FF" stroke={blue} strokeWidth="0.5"/>
+        <rect x="2" y="34" width="86" height="4" fill={blue} fillOpacity={0.15} stroke={blue} strokeWidth="0.5"/>
         <rect x="2" y="40" width="86" height="3" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
         <rect x="2" y="45" width="86" height="3" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
-        <rect x="55" y="51" width="33" height="5" fill="#EFF6FF" stroke={blue} strokeWidth="0.5"/>
+        <rect x="55" y="51" width="33" height="5" fill={blue} fillOpacity={0.15} stroke={blue} strokeWidth="0.5"/>
         <rect x="2" y="59" width="86" height="8" fill="#F9FAFB" stroke="#E5E7EB" strokeWidth="0.5"/>
       </svg>
     ),
     gst1: (
       <svg viewBox="0 0 80 90" className="w-full h-full">
         <rect width="80" height="90" fill="white" stroke="#D1D5DB" strokeWidth="1"/>
-        <rect x="2" y="2" width="76" height="4" fill="#8D84E8" stroke="none"/>
+        <rect x="2" y="2" width="76" height="4" fill={purple} stroke="none"/>
         <rect x="2" y="8" width="24" height="8" fill="#F3F4F6" stroke="#E5E7EB" strokeWidth="0.5"/>
         <rect x="28" y="8" width="24" height="8" fill="#F3F4F6" stroke="#E5E7EB" strokeWidth="0.5"/>
         <rect x="54" y="8" width="24" height="8" fill="#F3F4F6" stroke="#E5E7EB" strokeWidth="0.5"/>
-        <rect x="2" y="18" width="76" height="5" fill="#8D84E8" stroke="none"/>
+        <rect x="2" y="18" width="76" height="5" fill={purple} stroke="none"/>
         <rect x="2" y="25" width="76" height="4" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
         <rect x="2" y="31" width="76" height="4" fill="#F8FAFC" stroke="#E5E7EB" strokeWidth="0.5"/>
         <rect x="2" y="37" width="76" height="4" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
         <rect x="2" y="43" width="76" height="4" fill="#F8FAFC" stroke="#E5E7EB" strokeWidth="0.5"/>
-        <rect x="50" y="50" width="28" height="6" fill="#8D84E8" stroke="none"/>
+        <rect x="50" y="50" width="28" height="6" fill={purple} stroke="none"/>
         <rect x="2" y="60" width="76" height="10" fill="#F9FAFB" stroke="#E5E7EB" strokeWidth="0.5"/>
       </svg>
     ),
@@ -226,7 +227,7 @@ function ThemePreviewSVG({ id }) {
         <rect x="2" y="29" width="76" height="4" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
         <rect x="2" y="35" width="76" height="4" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
         <rect x="2" y="41" width="76" height="4" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
-        <rect x="50" y="48" width="28" height="7" fill="#EFF6FF" stroke={blue} strokeWidth="0.5"/>
+        <rect x="50" y="48" width="28" height="7" fill={blue} fillOpacity={0.15} stroke={blue} strokeWidth="0.5"/>
         <rect x="2" y="57" width="76" height="10" fill="#F9FAFB" stroke="#E5E7EB" strokeWidth="0.5"/>
       </svg>
     ),
@@ -234,26 +235,26 @@ function ThemePreviewSVG({ id }) {
       <svg viewBox="0 0 80 90" className="w-full h-full">
         <rect width="80" height="90" fill="white" stroke="#D1D5DB" strokeWidth="1"/>
         <rect x="2" y="2" width="20" height="14" fill="#F3F4F6" stroke="#E5E7EB" strokeWidth="0.5"/>
-        <rect x="24" y="2" width="54" height="14" fill="#EFF6FF" stroke={blue} strokeWidth="0.5"/>
-        <rect x="2" y="18" width="76" height="5" fill="#111827" stroke="none"/>
+        <rect x="24" y="2" width="54" height="14" fill={blue} fillOpacity={0.15} stroke={blue} strokeWidth="0.5"/>
+        <rect x="2" y="18" width="76" height="5" fill={blue} stroke="none"/>
         <rect x="2" y="25" width="76" height="4" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
         <rect x="2" y="31" width="76" height="4" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
         <rect x="2" y="37" width="76" height="4" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
         <rect x="2" y="43" width="76" height="4" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
-        <rect x="50" y="50" width="28" height="7" fill="#EFF6FF" stroke={blue} strokeWidth="0.5"/>
+        <rect x="50" y="50" width="28" height="7" fill={blue} fillOpacity={0.15} stroke={blue} strokeWidth="0.5"/>
         <rect x="2" y="60" width="76" height="10" fill="#F9FAFB" stroke="#E5E7EB" strokeWidth="0.5"/>
       </svg>
     ),
     modern: (
       <svg viewBox="0 0 80 90" className="w-full h-full">
         <rect width="80" height="90" fill="white" stroke="#D1D5DB" strokeWidth="1"/>
-        <rect x="0" y="0" width="80" height="20" fill="#1E293B" stroke="none"/>
+        <rect x="0" y="0" width="80" height="20" fill={blue} stroke="none"/>
         <circle cx="10" cy="10" r="6" fill="white" opacity="0.2"/>
         <rect x="2" y="22" width="76" height="4" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
         <rect x="2" y="28" width="76" height="4" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
         <rect x="2" y="34" width="76" height="4" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
         <rect x="2" y="40" width="76" height="4" fill="none" stroke="#E5E7EB" strokeWidth="0.5"/>
-        <rect x="50" y="47" width="28" height="7" fill="#EFF6FF" stroke={blue} strokeWidth="0.5"/>
+        <rect x="50" y="47" width="28" height="7" fill={blue} fillOpacity={0.15} stroke={blue} strokeWidth="0.5"/>
         <rect x="2" y="57" width="76" height="10" fill="#F9FAFB" stroke="#E5E7EB" strokeWidth="0.5"/>
       </svg>
     ),
@@ -430,7 +431,7 @@ function NumberStepper({ label, value, onChange, min = 0, max = 200, info }) {
 /* ─────────────────────────────────────────────────────────────────────────────
    Layout Theme Selector
 ───────────────────────────────────────────────────────────────────────────── */
-function ThemeSelector({ selected, onSelect }) {
+function ThemeSelector({ selected, onSelect, color }) {
   const scrollRef = useRef(null);
   const scroll = (dir) => {
     if (scrollRef.current) scrollRef.current.scrollBy({ left: dir * 140, behavior: 'smooth' });
@@ -454,7 +455,7 @@ function ThemeSelector({ selected, onSelect }) {
             style={{ width: 120, minHeight: 140 }}
           >
             <div className="w-full p-2" style={{ height: 100 }}>
-              <ThemePreviewSVG id={t.id} />
+              <ThemePreviewSVG id={t.id} color={color} />
             </div>
             <div className="w-full text-center text-[12px] font-medium text-gray-700 px-1 py-1.5 leading-tight">
               {t.name}
@@ -1617,15 +1618,15 @@ function RegularInvoicePreview({ s }) {
           {/* Header Section */}
           <div className="flex justify-between items-start mb-3">
             <div className="w-[200px]">
-              <div className="bg-[#0C7DA8] text-white text-[16px] font-bold text-center py-2 mb-2 tracking-wide uppercase">
+              <div className="text-white text-[16px] font-bold text-center py-2 mb-2 tracking-wide uppercase" style={{ backgroundColor: s.primaryColor || '#0C7DA8',  }}>
                 Tax Invoice
               </div>
-              <div className="text-[#0C7DA8] font-bold text-[14px] leading-tight mb-1">{s.companyName || 'My Company'}</div>
+              <div className="font-bold text-[14px] leading-tight mb-1" style={{ color: s.primaryColor || '#0C7DA8',  }}>{s.companyName || 'My Company'}</div>
               <div className="text-gray-700 leading-tight">
-                <span className="text-[#0C7DA8] text-[8px]">Phone:</span><br/>{s.phone || '9913039185'}
+                <span className="text-[8px]" style={{ color: s.primaryColor || '#0C7DA8',  }}>Phone:</span><br/>{s.phone || '9913039185'}
               </div>
               <div className="text-gray-700 leading-tight mt-1">
-                <span className="text-[#0C7DA8] text-[8px]">Email:</span><br/>{s.email || 'company@email.com'}
+                <span className="text-[8px]" style={{ color: s.primaryColor || '#0C7DA8',  }}>Email:</span><br/>{s.email || 'company@email.com'}
               </div>
             </div>
             <div className="w-[60px] h-[60px] bg-gray-200 flex items-center justify-center text-gray-500 text-[9px]">
@@ -1638,14 +1639,14 @@ function RegularInvoicePreview({ s }) {
           {/* 3 Column Grid */}
           <div className="grid grid-cols-3 gap-2 mb-3">
             <div>
-              <div className="text-gray-700 flex justify-between items-center mb-1"><span className="text-[#0C7DA8] text-[10px]">Invoice No.:</span><span className="text-[#0C7DA8] text-[12px] font-bold">#1</span></div>
+              <div className="text-gray-700 flex justify-between items-center mb-1"><span className="text-[10px]" style={{ color: s.primaryColor || '#0C7DA8',  }}>Invoice No.:</span><span className="text-[12px] font-bold" style={{ color: s.primaryColor || '#0C7DA8',  }}>#1</span></div>
               <div className="text-gray-700 flex justify-between"><span>Invoice Date:</span><span>29/05/2020</span></div>
               <div className="text-gray-700 flex justify-between"><span>Invoice Time:</span><span>12:30 PM</span></div>
               <div className="text-gray-700 flex justify-between"><span>Place of Supply:</span><span>29-Karnataka</span></div>
               <div className="text-gray-700 flex justify-between"><span>PO date:</span><span>29/05/2020</span></div>
             </div>
             <div>
-              <div className="text-[#0C7DA8] font-bold text-[10px] mb-1">Bill To:</div>
+              <div className="font-bold text-[10px] mb-1" style={{ color: s.primaryColor || '#0C7DA8',  }}>Bill To:</div>
               <div className="font-bold">Classic Enterprises Pvt Ltd.</div>
               <div className="text-gray-700 leading-tight">Mehta Textiles , Marathali Road, Bangalore, Karnataka, 560034</div>
               <div className="text-gray-700 flex justify-between mt-1"><span>Contact No.:</span><span>1237894560</span></div>
@@ -1653,7 +1654,7 @@ function RegularInvoicePreview({ s }) {
               <div className="text-gray-700 flex justify-between"><span>State:</span><span>29-Karnataka</span></div>
             </div>
             <div>
-              <div className="text-[#0C7DA8] font-bold text-[10px] mb-1">Transportation Details:</div>
+              <div className="font-bold text-[10px] mb-1" style={{ color: s.primaryColor || '#0C7DA8',  }}>Transportation Details:</div>
               <div className="text-gray-700 flex justify-between"><span>Transport Name:</span><span className="text-right">ARYION interstate Transport<br/>service</span></div>
               <div className="text-gray-700 flex justify-between mt-1"><span>Vehicle Number:</span><span>KA BABA 7878</span></div>
               <div className="text-gray-700 flex justify-between"><span>Delivery Date:</span><span>05- Jun - 2020</span></div>
@@ -1663,7 +1664,7 @@ function RegularInvoicePreview({ s }) {
           {/* Item Table */}
           <table className="w-full text-left border-collapse border border-[#CFCFCF] mb-3">
             <thead>
-              <tr className="bg-[#0C7DA8] text-white font-bold text-[9px]">
+              <tr className="text-white font-bold text-[9px]" style={{ backgroundColor: s.primaryColor || '#0C7DA8',  }}>
                 <th className="p-1 border-r border-[#CFCFCF]">#</th>
                 <th className="p-1 border-r border-[#CFCFCF]">Item name</th>
                 <th className="p-1 border-r border-[#CFCFCF]">HSN/ SAC</th>
@@ -1716,7 +1717,7 @@ function RegularInvoicePreview({ s }) {
                 <td className="p-1 text-right">₹ 50,400.00</td>
               </tr>
               {/* Total Row */}
-              <tr className="bg-[#0C7DA8] text-white font-bold border-b border-[#CFCFCF]">
+              <tr className="text-white font-bold border-b border-[#CFCFCF]" style={{ backgroundColor: s.primaryColor || '#0C7DA8',  }}>
                 <td colSpan="3" className="p-1 border-r border-[#CFCFCF]">Total</td>
                 <td className="p-1 text-center border-r border-[#CFCFCF]">9 + 1</td>
                 <td className="p-1 border-r border-[#CFCFCF]"></td>
@@ -1734,7 +1735,7 @@ function RegularInvoicePreview({ s }) {
               <div className="flex gap-2">
                 <div className="w-[45px] h-[45px] bg-gray-200 flex items-center justify-center text-[7px] text-gray-500 rounded">QR</div>
                 <div className="flex flex-col gap-0.5 justify-center">
-                  <div className="text-[#0C7DA8] font-bold text-[10px]">Pay To:</div>
+                  <div className="font-bold text-[10px]" style={{ color: s.primaryColor || '#0C7DA8',  }}>Pay To:</div>
                   <div>Bank Name: {s.bankName || 'ICICI BANK'}, Branch - HSR LAYOUT</div>
                   <div>Bank Account No.: {s.bankAccountNumber || '1234567890'}</div>
                   <div>Bank IFSC code: {s.bankIfscCode || 'IFSC000123'}</div>
@@ -1743,12 +1744,12 @@ function RegularInvoicePreview({ s }) {
               <div><span className="bg-emerald-500 text-white px-1 font-bold text-[8px] rounded italic">UPI</span><span className="bg-emerald-500 text-white px-1 font-bold text-[8px] rounded ml-0.5">PAY NOW</span></div>
               
               <div>
-                <div className="text-[#0C7DA8] font-bold text-[11px]">Invoice Amount In Words</div>
+                <div className="font-bold text-[11px]" style={{ color: s.primaryColor || '#0C7DA8',  }}>Invoice Amount In Words</div>
                 <div>One Lakh Two Thousand Four Hundred Fifty Two Rupees only</div>
               </div>
               
               <div>
-                <div className="text-[#0C7DA8] font-bold text-[11px]">Terms And Conditions</div>
+                <div className="font-bold text-[11px]" style={{ color: s.primaryColor || '#0C7DA8',  }}>Terms And Conditions</div>
                 <div>{s.invoiceNotes || 'Thanks for doing business with us!'}</div>
               </div>
 
@@ -1794,7 +1795,7 @@ function RegularInvoicePreview({ s }) {
                     <td className="p-1 border-r border-[#CFCFCF]">Round off</td>
                     <td className="p-1 text-right">₹ 0.11</td>
                   </tr>
-                  <tr className="bg-[#0C7DA8] text-white font-bold border-b border-[#CFCFCF]">
+                  <tr className="text-white font-bold border-b border-[#CFCFCF]" style={{ backgroundColor: s.primaryColor || '#0C7DA8',  }}>
                     <td className="p-1 border-r border-[#CFCFCF]">Total</td>
                     <td className="p-1 text-right">₹ 1,02,452.00</td>
                   </tr>
@@ -1806,7 +1807,7 @@ function RegularInvoicePreview({ s }) {
                     <td className="p-1 border-r border-[#CFCFCF]">Balance</td>
                     <td className="p-1 text-right">₹ 52,452.00</td>
                   </tr>
-                  <tr className="bg-[#0C7DA8] text-white font-bold border-b border-[#CFCFCF]">
+                  <tr className="text-white font-bold border-b border-[#CFCFCF]" style={{ backgroundColor: s.primaryColor || '#0C7DA8',  }}>
                     <td className="p-1 border-r border-[#CFCFCF]">You Saved</td>
                     <td className="p-1 text-right">₹ 30.32.00</td>
                   </tr>
@@ -1836,7 +1837,7 @@ function RegularInvoicePreview({ s }) {
         {/* Header Section */}
         <div className="relative h-[80px] w-full mb-4">
           {/* Red Banner */}
-          <div className="absolute top-0 right-0 h-[40px] bg-[#E61C35] flex items-center" style={{ left: '160px' }}>
+          <div className="absolute top-0 right-0 h-[40px]  flex items-center" style={{ backgroundColor: s.primaryColor || '#E61C35', left: '160px' }}>
             <div className="text-white text-[10px] ml-4 flex items-center gap-1">
               <svg viewBox="0 0 24 24" fill="white" className="w-3 h-3"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>
               {s.phone || '9913039185'}
@@ -1861,7 +1862,7 @@ function RegularInvoicePreview({ s }) {
           {/* 3 Column Grid */}
           <div className="grid grid-cols-3 gap-2 mb-3">
             <div>
-              <div className="text-[#E61C35] font-bold text-[10px] mb-1">Bill To:</div>
+              <div className="font-bold text-[10px] mb-1" style={{ color: s.primaryColor || '#E61C35',  }}>Bill To:</div>
               <div className="font-bold">Classic Enterprises Pvt Ltd.</div>
               <div className="text-gray-700 leading-tight">Mehta Textiles , Marathali Road, Bangalore, Karnataka, 560034</div>
               <div className="text-gray-700 flex justify-between mt-1"><span>Contact No.:</span><span>1237894560</span></div>
@@ -1869,7 +1870,7 @@ function RegularInvoicePreview({ s }) {
               <div className="text-gray-700 flex justify-between"><span>State:</span><span>29-Karnataka</span></div>
             </div>
             <div>
-              <div className="text-[#E61C35] font-bold text-[10px] mb-1">Transportation Details:</div>
+              <div className="font-bold text-[10px] mb-1" style={{ color: s.primaryColor || '#E61C35',  }}>Transportation Details:</div>
               <div className="text-gray-700 flex justify-between"><span>Transport Name:</span><span className="text-right">ARYION interstate Transport<br/>service</span></div>
               <div className="text-gray-700 flex justify-between mt-1"><span>Vehicle Number:</span><span>KA BABA 7878</span></div>
               <div className="text-gray-700 flex justify-between"><span>Delivery Date:</span><span>05- Jun - 2020</span></div>
@@ -1886,7 +1887,7 @@ function RegularInvoicePreview({ s }) {
           {/* Item Table */}
           <table className="w-full text-left border-collapse border border-[#D0D0D0] mb-2">
             <thead>
-              <tr className="bg-[#E61C35] text-white font-bold text-[9px]">
+              <tr className="text-white font-bold text-[9px]" style={{ backgroundColor: s.primaryColor || '#E61C35',  }}>
                 <th className="p-1 border-r border-[#D0D0D0]">#</th>
                 <th className="p-1 border-r border-[#D0D0D0]">Item name</th>
                 <th className="p-1 border-r border-[#D0D0D0]">HSN/ SAC</th>
@@ -1939,7 +1940,7 @@ function RegularInvoicePreview({ s }) {
                 <td className="p-1 text-right">₹ 50,400.00</td>
               </tr>
               {/* Total Row */}
-              <tr className="bg-[#E61C35] text-white font-bold border-b border-[#D0D0D0]">
+              <tr className="text-white font-bold border-b border-[#D0D0D0]" style={{ backgroundColor: s.primaryColor || '#E61C35',  }}>
                 <td colSpan="3" className="p-1 border-r border-[#D0D0D0]">Total</td>
                 <td className="p-1 text-center border-r border-[#D0D0D0]">9 + 1</td>
                 <td className="p-1 border-r border-[#D0D0D0]"></td>
@@ -1957,7 +1958,7 @@ function RegularInvoicePreview({ s }) {
               <div className="flex gap-2">
                 <div className="w-[45px] h-[45px] bg-gray-200 flex items-center justify-center text-[7px] text-gray-500 rounded">QR</div>
                 <div className="flex flex-col gap-0.5 justify-center">
-                  <div className="text-[#E61C35] font-bold text-[10px]">Pay To:</div>
+                  <div className="font-bold text-[10px]" style={{ color: s.primaryColor || '#E61C35',  }}>Pay To:</div>
                   <div>Bank Name: {s.bankName || 'ICICI BANK'}, Branch - HSR LAYOUT</div>
                   <div>A/C No.: {s.bankAccountNumber || '1234567890'}</div>
                   <div>IFSC code: {s.bankIfscCode || 'IFSC000123'}</div>
@@ -1966,12 +1967,12 @@ function RegularInvoicePreview({ s }) {
               <div><span className="bg-emerald-500 text-white px-1 font-bold text-[8px] rounded italic">UPI</span><span className="bg-emerald-500 text-white px-1 font-bold text-[8px] rounded ml-0.5">PAY NOW</span></div>
               
               <div>
-                <div className="text-[#E61C35] font-bold text-[11px]">Invoice Amount In Words</div>
+                <div className="font-bold text-[11px]" style={{ color: s.primaryColor || '#E61C35',  }}>Invoice Amount In Words</div>
                 <div>One Lakh Two Thousand Four Hundred Fifty Two Rupees only</div>
               </div>
               
               <div>
-                <div className="text-[#E61C35] font-bold text-[11px]">Terms And Conditions</div>
+                <div className="font-bold text-[11px]" style={{ color: s.primaryColor || '#E61C35',  }}>Terms And Conditions</div>
                 <div>{s.invoiceNotes || 'Thanks for doing business with us!'}</div>
               </div>
 
@@ -2017,7 +2018,7 @@ function RegularInvoicePreview({ s }) {
                     <td className="p-1 border-r border-[#D0D0D0]">Round off</td>
                     <td className="p-1 text-right">₹ 0.11</td>
                   </tr>
-                  <tr className="bg-[#E61C35] text-white font-bold border-b border-[#D0D0D0]">
+                  <tr className="text-white font-bold border-b border-[#D0D0D0]" style={{ backgroundColor: s.primaryColor || '#E61C35',  }}>
                     <td className="p-1 border-r border-[#D0D0D0]">Total</td>
                     <td className="p-1 text-right">₹ 1,02,452.00</td>
                   </tr>
@@ -2029,7 +2030,7 @@ function RegularInvoicePreview({ s }) {
                     <td className="p-1 border-r border-[#D0D0D0]">Balance</td>
                     <td className="p-1 text-right">₹ 52,452.00</td>
                   </tr>
-                  <tr className="bg-[#E61C35] text-white font-bold border-b border-[#D0D0D0]">
+                  <tr className="text-white font-bold border-b border-[#D0D0D0]" style={{ backgroundColor: s.primaryColor || '#E61C35',  }}>
                     <td className="p-1 border-r border-[#D0D0D0]">You Saved</td>
                     <td className="p-1 text-right">₹ 30.32.00</td>
                   </tr>
@@ -2077,7 +2078,7 @@ function RegularInvoicePreview({ s }) {
           </div>
 
           {/* 3 Column Info Header */}
-          <div className="grid grid-cols-3 bg-[#0C7DA8] text-white font-bold border-b border-[#BDBDBD]">
+          <div className="grid grid-cols-3  text-white font-bold border-b border-[#BDBDBD]" style={{ backgroundColor: s.primaryColor || '#0C7DA8',  }}>
             <div className="p-1 border-r border-[#BDBDBD]">Bill To:</div>
             <div className="p-1 border-r border-[#BDBDBD]">Shipping To</div>
             <div className="p-1 text-right">Invoice Details</div>
@@ -2103,7 +2104,7 @@ function RegularInvoicePreview({ s }) {
           <div className="flex-1 flex flex-col">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-[#0C7DA8] text-white font-bold">
+                <tr className="text-white font-bold" style={{ backgroundColor: s.primaryColor || '#0C7DA8',  }}>
                   <th className="p-1 text-center border-r border-[#BDBDBD] w-[15px]">#</th>
                   <th className="p-1 border-r border-[#BDBDBD]">Item name</th>
                   <th className="p-1 text-center border-r border-[#BDBDBD]">HSC/SAC</th>
@@ -2151,7 +2152,7 @@ function RegularInvoicePreview({ s }) {
             <div className="flex border-b border-[#BDBDBD]">
               {/* Left Tax Table */}
               <div className="w-[50%] border-r border-[#BDBDBD] flex flex-col">
-                <div className="grid grid-cols-4 bg-[#0C7DA8] text-white font-bold p-1">
+                <div className="grid grid-cols-4  text-white font-bold p-1" style={{ backgroundColor: s.primaryColor || '#0C7DA8',  }}>
                   <div>Tax type</div>
                   <div className="text-right">Taxable amount</div>
                   <div className="text-right">Rate</div>
@@ -2172,7 +2173,7 @@ function RegularInvoicePreview({ s }) {
               </div>
               {/* Right Amounts Table */}
               <div className="w-[50%] flex flex-col">
-                <div className="bg-[#0C7DA8] text-white font-bold p-1">Amounts</div>
+                <div className="text-white font-bold p-1" style={{ backgroundColor: s.primaryColor || '#0C7DA8',  }}>Amounts</div>
                 <div className="flex justify-between p-1"><span>Sub Total</span><span>₹ 45.80</span></div>
                 <div className="flex justify-between p-1"><span>Discount (12%)</span><span>₹ 5.50</span></div>
                 <div className="flex justify-between p-1 border-b border-[#BDBDBD]"><span>Tax (5%)</span><span>₹ 2.02</span></div>
@@ -2186,11 +2187,11 @@ function RegularInvoicePreview({ s }) {
             {/* Invoice Amount In Words */}
             <div className="grid grid-cols-2 border-b border-[#BDBDBD]">
               <div className="border-r border-[#BDBDBD]">
-                <div className="bg-[#0C7DA8] text-white font-bold p-1 text-center border-b border-[#BDBDBD]">Invoice Amount In Words</div>
+                <div className="text-white font-bold p-1 text-center border-b border-[#BDBDBD]" style={{ backgroundColor: s.primaryColor || '#0C7DA8',  }}>Invoice Amount In Words</div>
                 <div className="p-2 text-center text-gray-700 h-full">Forty Two Rupees and Thirty Two Paisa only</div>
               </div>
               <div>
-                <div className="bg-[#0C7DA8] text-white font-bold p-1 text-center border-b border-[#BDBDBD]">Description</div>
+                <div className="text-white font-bold p-1 text-center border-b border-[#BDBDBD]" style={{ backgroundColor: s.primaryColor || '#0C7DA8',  }}>Description</div>
                 <div className="p-2 text-center text-gray-700 h-full">Sale Description</div>
               </div>
             </div>
@@ -2198,7 +2199,7 @@ function RegularInvoicePreview({ s }) {
             {/* Footer */}
             <div className="flex mt-auto text-[8px]">
               <div className="w-[33.33%] border-r border-[#BDBDBD] flex flex-col">
-                <div className="bg-[#0C7DA8] text-white font-bold p-1">Bank Details</div>
+                <div className="text-white font-bold p-1" style={{ backgroundColor: s.primaryColor || '#0C7DA8',  }}>Bank Details</div>
                 <div className="p-2 flex gap-2">
                   <div className="w-[40px] h-[40px] bg-gray-200 flex items-center justify-center text-gray-500 rounded">QR</div>
                   <div className="flex flex-col gap-0.5 justify-center">
@@ -2210,7 +2211,7 @@ function RegularInvoicePreview({ s }) {
                 <div className="px-2 pb-2 text-[6px] font-bold text-emerald-600"><span className="border border-emerald-600 px-1 py-0.5 rounded">UPI PAY NOW</span></div>
               </div>
               <div className="w-[33.33%] border-r border-[#BDBDBD] flex flex-col">
-                <div className="bg-[#0C7DA8] text-white font-bold p-1">Terms and conditions</div>
+                <div className="text-white font-bold p-1" style={{ backgroundColor: s.primaryColor || '#0C7DA8',  }}>Terms and conditions</div>
                 <div className="p-2 text-gray-700">{s.invoiceNotes || 'Thanks for doing business with us!'}</div>
               </div>
               <div className="w-[33.33%] flex flex-col items-center justify-center p-2">
@@ -2260,7 +2261,7 @@ function RegularInvoicePreview({ s }) {
           </div>
 
           {/* 3 Column Info Header */}
-          <div className="grid grid-cols-3 bg-[#8D84E8] text-white font-bold border-b border-[#BDBDBD]">
+          <div className="grid grid-cols-3  text-white font-bold border-b border-[#BDBDBD]" style={{ backgroundColor: s.primaryColor || '#8D84E8',  }}>
             <div className="p-1 border-r border-[#BDBDBD]">Bill To:</div>
             <div className="p-1 border-r border-[#BDBDBD]">Shipping To</div>
             <div className="p-1 text-right">Invoice Details</div>
@@ -2286,7 +2287,7 @@ function RegularInvoicePreview({ s }) {
           <div className="flex-1 flex flex-col">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-[#8D84E8] text-white font-bold">
+                <tr className="text-white font-bold" style={{ backgroundColor: s.primaryColor || '#8D84E8',  }}>
                   <th className="p-1 text-center border-r border-[#BDBDBD] w-[15px]">#</th>
                   <th className="p-1 border-r border-[#BDBDBD]">Item name</th>
                   <th className="p-1 text-center border-r border-[#BDBDBD]">HSC/SAC</th>
@@ -2338,7 +2339,7 @@ function RegularInvoicePreview({ s }) {
             <div className="flex border-b border-[#BDBDBD]">
               {/* Left Tax Table */}
               <div className="w-[50%] border-r border-[#BDBDBD] flex flex-col">
-                <div className="grid grid-cols-4 bg-[#8D84E8] text-white font-bold p-1">
+                <div className="grid grid-cols-4  text-white font-bold p-1" style={{ backgroundColor: s.primaryColor || '#8D84E8',  }}>
                   <div>Tax type</div>
                   <div className="text-right">Taxable amount</div>
                   <div className="text-right">Rate</div>
@@ -2359,7 +2360,7 @@ function RegularInvoicePreview({ s }) {
               </div>
               {/* Right Amounts Table */}
               <div className="w-[50%] flex flex-col">
-                <div className="bg-[#8D84E8] text-white font-bold p-1">Amounts</div>
+                <div className="text-white font-bold p-1" style={{ backgroundColor: s.primaryColor || '#8D84E8',  }}>Amounts</div>
                 <div className="flex justify-between p-1"><span>Sub Total</span><span>₹ 45.80</span></div>
                 <div className="flex justify-between p-1"><span>Discount (12%)</span><span>₹ 5.50</span></div>
                 <div className="flex justify-between p-1 border-b border-[#BDBDBD]"><span>Tax (5%)</span><span>₹ 2.02</span></div>
@@ -2373,11 +2374,11 @@ function RegularInvoicePreview({ s }) {
             {/* Invoice Amount In Words */}
             <div className="grid grid-cols-2 border-b border-[#BDBDBD]">
               <div className="border-r border-[#BDBDBD]">
-                <div className="bg-[#8D84E8] text-white font-bold p-1 text-center border-b border-[#BDBDBD]">Invoice Amount In Words</div>
+                <div className="text-white font-bold p-1 text-center border-b border-[#BDBDBD]" style={{ backgroundColor: s.primaryColor || '#8D84E8',  }}>Invoice Amount In Words</div>
                 <div className="p-2 text-center text-gray-700 h-full">Forty Two Rupees and Thirty Two Paisa only</div>
               </div>
               <div>
-                <div className="bg-[#8D84E8] text-white font-bold p-1 text-center border-b border-[#BDBDBD]">Description</div>
+                <div className="text-white font-bold p-1 text-center border-b border-[#BDBDBD]" style={{ backgroundColor: s.primaryColor || '#8D84E8',  }}>Description</div>
                 <div className="p-2 text-center text-gray-700 h-full">Sale Description</div>
               </div>
             </div>
@@ -2385,7 +2386,7 @@ function RegularInvoicePreview({ s }) {
             {/* Footer */}
             <div className="flex mt-auto text-[8px]">
               <div className="w-[33.33%] border-r border-[#BDBDBD] flex flex-col">
-                <div className="bg-[#8D84E8] text-white font-bold p-1">Bank Details</div>
+                <div className="text-white font-bold p-1" style={{ backgroundColor: s.primaryColor || '#8D84E8',  }}>Bank Details</div>
                 <div className="p-2 flex gap-2">
                   <div className="w-[40px] h-[40px] bg-gray-200 flex items-center justify-center text-gray-500 rounded">QR</div>
                   <div className="flex flex-col gap-0.5 justify-center">
@@ -2397,7 +2398,7 @@ function RegularInvoicePreview({ s }) {
                 <div className="px-2 pb-2 text-[6px] font-bold text-emerald-600"><span className="border border-emerald-600 px-1 py-0.5 rounded">UPI PAY NOW</span></div>
               </div>
               <div className="w-[33.33%] border-r border-[#BDBDBD] flex flex-col">
-                <div className="bg-[#8D84E8] text-white font-bold p-1">Terms and conditions</div>
+                <div className="text-white font-bold p-1" style={{ backgroundColor: s.primaryColor || '#8D84E8',  }}>Terms and conditions</div>
                 <div className="p-2 text-gray-700">{s.invoiceNotes || 'Thanks for doing business with us!'}</div>
               </div>
               <div className="w-[33.33%] flex flex-col items-center justify-center p-2">
@@ -2444,10 +2445,10 @@ function RegularInvoicePreview({ s }) {
         </div>
 
         {/* Thin Purple Divider */}
-        <div className="h-[1px] bg-[#8D84E8] my-2" />
+        <div className="h-[1px]  my-2" style={{ backgroundColor: s.primaryColor || '#8D84E8',  }} />
 
         {/* Title */}
-        <div className="text-center text-xl font-bold text-[#8D84E8] mb-3">
+        <div className="text-center text-xl font-bold  mb-3" style={{ color: s.primaryColor || '#8D84E8',  }}>
           Sale
         </div>
 
@@ -2476,7 +2477,7 @@ function RegularInvoicePreview({ s }) {
         <div className="border border-gray-200 rounded overflow-hidden mb-4">
           <table className="w-full text-left text-[9px] border-collapse">
             <thead>
-              <tr className="bg-[#8D84E8] text-white font-bold">
+              <tr className="text-white font-bold" style={{ backgroundColor: s.primaryColor || '#8D84E8',  }}>
                 <th className="p-1 text-center w-[18px]">#</th>
                 <th className="p-1">Item name</th>
                 <th className="p-1 text-center">HSC/SAC</th>
@@ -2545,7 +2546,7 @@ function RegularInvoicePreview({ s }) {
             <div className="flex justify-between py-0.5"><span>SGST@9%</span><span>₹ 2.70</span></div>
             <div className="flex justify-between py-0.5"><span>CGST@9%</span><span>₹ 2.70</span></div>
             <div className="flex justify-between py-0.5"><span>Discount (12%)</span><span>₹ 5.50</span></div>
-            <div className="flex justify-between py-[#3px] px-1.5 bg-[#8D84E8] text-white font-bold my-1 rounded">
+            <div className="flex justify-between py-[#3px] px-1.5  text-white font-bold my-1 rounded" style={{ backgroundColor: s.primaryColor || '#8D84E8',  }}>
               <span>Total</span><span>₹ 42.32</span>
             </div>
             <div className="flex justify-between py-0.5"><span>Received</span><span>₹ 12.000</span></div>
@@ -3732,7 +3733,7 @@ export default function PrintSettings() {
           setRegular(prev => ({
             ...prev,
             selectedLayout: s.regularLayoutTheme || 'GST Theme 1',
-            themeColor: s.regularThemeColor || prev.themeColor,
+            primaryColor: s.regularThemeColor || prev.primaryColor,
             makeDefault: s.printerType === 'Regular',
             repeatHeader: s.printRepeatHeader ?? prev.repeatHeader,
             printCompanyName: s.printCompanyName ?? prev.printCompanyName,
@@ -3801,7 +3802,7 @@ export default function PrintSettings() {
         const payload = {
           regularLayoutTheme: regular.selectedLayout,
           printerType: regular.makeDefault ? 'Regular' : (thermal.makeDefault ? 'Thermal' : 'Regular'),
-          regularThemeColor: regular.themeColor,
+          regularThemeColor: regular.primaryColor,
           printRepeatHeader: regular.repeatHeader,
           printCompanyName: regular.printCompanyName,
           customCompanyName: regular.companyName,

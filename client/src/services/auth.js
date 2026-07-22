@@ -68,5 +68,5 @@ export const changeUserPassword = async (data) => {
 
 /** Log out user (clear credentials) */
 export const logoutUser = () => {
-  localStorage.removeItem('token');
+  localStorage.clear();
 };

@@ -49,7 +49,7 @@ class EmailService {
       });
       const info = await testTransporter.sendMail({
         ...mailOptions,
-        from: `"IntellectBill AI (Demo)" <${testAccount.user}>`,
+        from: `"Business Analyst with AI (Demo)" <${testAccount.user}>`,
       });
       const previewUrl = nodemailer.getTestMessageUrl(info);
       console.log('--- TEST EMAIL DELIVERED VIA ETHEREAL ---');
@@ -81,16 +81,16 @@ class EmailService {
       throw new Error(`Invalid email address: '${toEmail}'`);
     }
 
-    const senderEmail = process.env.EMAIL_USER || 'no-reply@intellectbill.ai';
+    const senderEmail = process.env.EMAIL_USER || 'no-reply@business-analyst.ai';
 
     const mailOptions = {
-      from: `"IntellectBill AI" <${senderEmail}>`,
+      from: `"Business Analyst with AI" <${senderEmail}>`,
       to: toEmail,
       subject: `Invoice #${invoiceNumber} — ₹${Number(grandTotal).toFixed(2)}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9fafb; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb;">
           <div style="background: linear-gradient(135deg, #3b82f6, #6366f1); padding: 28px 32px;">
-            <h1 style="margin: 0; color: #fff; font-size: 22px; letter-spacing: -0.3px;">🧾 New Invoice from IntellectBill AI</h1>
+            <h1 style="margin: 0; color: #fff; font-size: 22px; letter-spacing: -0.3px;">🧾 New Invoice from Business Analyst with AI</h1>
           </div>
           <div style="padding: 28px 32px; background: #fff;">
             <p style="margin: 0 0 16px; color: #374151; font-size: 15px;">Dear <strong>${name}</strong>,</p>
@@ -113,7 +113,7 @@ class EmailService {
             </a>
           </div>
           <div style="padding: 16px 32px; background: #f9fafb; border-top: 1px solid #e5e7eb; text-align: center;">
-            <p style="margin: 0; color: #9ca3af; font-size: 11px;">This is an automated message from IntellectBill AI. Please do not reply.</p>
+            <p style="margin: 0; color: #9ca3af; font-size: 11px;">This is an automated message from Business Analyst with AI. Please do not reply.</p>
           </div>
         </div>
       `,
@@ -145,10 +145,10 @@ class EmailService {
       throw new Error(`Invalid email address: '${toEmail}'`);
     }
 
-    const senderEmail = process.env.EMAIL_USER || 'no-reply@intellectbill.ai';
+    const senderEmail = process.env.EMAIL_USER || 'no-reply@business-analyst.ai';
 
     const mailOptions = {
-      from: `"IntellectBill AI" <${senderEmail}>`,
+      from: `"Business Analyst with AI" <${senderEmail}>`,
       to: toEmail,
       subject: `Payment Reminder — Outstanding Balance ₹${Number(outstandingBalance).toFixed(2)}`,
       html: `
@@ -172,7 +172,7 @@ class EmailService {
             </a>
           </div>
           <div style="padding: 16px 32px; background: #f9fafb; border-top: 1px solid #e5e7eb; text-align: center;">
-            <p style="margin: 0; color: #9ca3af; font-size: 11px;">This is an automated message from IntellectBill AI. Please do not reply.</p>
+            <p style="margin: 0; color: #9ca3af; font-size: 11px;">This is an automated message from Business Analyst with AI. Please do not reply.</p>
           </div>
         </div>
       `,

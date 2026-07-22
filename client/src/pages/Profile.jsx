@@ -157,7 +157,7 @@ export default function Profile() {
                   type="text"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="e.g. IntellectBill Pvt. Ltd."
+                  placeholder="e.g. Business Analyst Pvt. Ltd."
                   className={`${inputCls(false)} pl-10`}
                 />
               </div>

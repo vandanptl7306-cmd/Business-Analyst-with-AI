@@ -110,7 +110,7 @@ export default function DashboardLayout() {
             </div>
             {sidebarOpen && (
               <span className="text-xl font-bold tracking-tight text-white whitespace-nowrap">
-                IntellectBill AI
+                Business Analyst with AI
               </span>
             )}
           </div>

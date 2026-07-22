@@ -1,10 +1,10 @@
 from django.db import models
 
 class StoreSettings(models.Model):
-    shop_name = models.CharField(max_length=255, default='IntellectBill AI Operations')
+    shop_name = models.CharField(max_length=255, default='Business Analyst with AI Operations')
     address = models.TextField(default='101, Business Enclave, Cyber City, Sector 45, Gurgaon, Haryana')
     phone_number = models.CharField(max_length=20, default='+919876543210')
-    email = models.EmailField(default='billing@intellectbill.ai')
+    email = models.EmailField(default='billing@business-analyst.ai')
     gstin = models.CharField(max_length=15, default='27AAAAA1111A1Z1')
     logo_url = models.URLField(blank=True, null=True)
     

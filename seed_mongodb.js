@@ -41,7 +41,7 @@ const seedDB = async () => {
       role: 'Admin',
       isEmailVerified: true,
       phoneNumber: '',
-      companyName: 'IntellectBill AI Store',
+      companyName: 'Business Analyst with AI Store',
     });
 
     // Parties
@@ -93,11 +93,11 @@ const seedDB = async () => {
     await StoreSettings.create({
       _id: new mongoose.Types.ObjectId(),
       userId: ADMIN_USER_ID,
-      shopName: 'IntellectBill AI Store',
+      shopName: 'Business Analyst with AI Store',
       businessType: 'Retail',
       address: '101, Business Enclave, Cyber City, Sector 45, Gurgaon, Haryana',
       phoneNumber: '+919876543210',
-      email: 'billing@intellectbill.ai',
+      email: 'billing@business-analyst.ai',
       gstin: '27AAAAA1111A1Z1',
       logoUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150',
       defaultInvoiceTemplate: 'Standard',
@@ -167,7 +167,7 @@ const seedDB = async () => {
       name: 'My Company',
       address: '101, Business Enclave, Cyber City, Sector 45, Gurgaon, Haryana',
       phoneNumber: '+919876543210',
-      email: 'billing@intellectbill.ai',
+      email: 'billing@business-analyst.ai',
       gstin: '27AAAAA1111A1Z1',
       logoUrl: '',
       isDefault: true,

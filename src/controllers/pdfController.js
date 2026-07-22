@@ -713,7 +713,7 @@ const getInvoiceHTML = (invoice, store, template) => {
   
   // 3d. --- MINIMALIST THEME (A4 Portrait) ---
   if (template === 'Minimalist Theme' || template === 'minimalist') {
-    const primaryBlue = '#0C7DA8';
+    const primaryBlue = themeColor;
     const borderColor = '#CFCFCF';
 
     const minimalistItemRows = invoice.items.map((item, idx) => {
@@ -975,7 +975,7 @@ const getInvoiceHTML = (invoice, store, template) => {
 
   // 3e. --- MODERN THEME (A4 Portrait) ---
   if (template === 'Modern Theme' || template === 'modern') {
-    const primaryRed = '#E61C35';
+    const primaryRed = themeColor;
     const darkHeader = '#232A34';
     const borderColor = '#D0D0D0';
 
@@ -1269,7 +1269,7 @@ const getInvoiceHTML = (invoice, store, template) => {
 
   // 3c. --- GST THEME 3 (A4 Portrait) ---
   if (template === 'GST Theme 3' || template === 'gst3') {
-    const primaryBlue = '#0C7DA8';
+    const primaryBlue = themeColor;
     const borderColor = '#BDBDBD';
 
     const gst3ItemRows = invoice.items.map((item, idx) => {
@@ -1495,7 +1495,7 @@ const getInvoiceHTML = (invoice, store, template) => {
 
   // 3b. --- GST THEME 2 (A4 Portrait) ---
   if (template === 'GST Theme 2' || template === 'gst2') {
-    const primaryPurple = '#8D84E8';
+    const primaryPurple = themeColor;
     const borderColor = '#BDBDBD';
 
     const gst2ItemRows = invoice.items.map((item, idx) => {
@@ -1724,7 +1724,7 @@ const getInvoiceHTML = (invoice, store, template) => {
 
   // 3. --- GST THEME 1 (A4 Portrait) ---
   if (template === 'GST Theme 1' || template === 'gst1') {
-    const primaryPurple = '#8D84E8';
+    const primaryPurple = themeColor;
     
     const gst1ItemRows = invoice.items.map((item, idx) => {
       const rate = (item.isTaxInclusive ? item.mrp : item.price) || 0;
@@ -2834,7 +2834,7 @@ const getInvoiceHTML = (invoice, store, template) => {
               <div class="l2-totals-row" style="font-weight:800;"><span>Total</span><span style="display:flex;gap:8px;"><span style="color:#94a3b8;">:</span><span class="l2-totals-val">${currencySymbol}${formatAmount(l2Grand)}</span></span></div>
               <div style="padding:3px 0;border-bottom:1px solid #e2e8f0;">
                 <div style="font-size:7.5px;font-weight:600;color:#334155;margin-bottom:1px;">Invoice Amount In Words :</div>
-                <div style="color:#1d4ed8;font-style:italic;font-weight:600;font-size:7.5px;line-height:1.3;">${numberToWords(l2Grand)}</div>
+                <div style="color:;font-style:italic;font-weight:600;font-size:7.5px;line-height:1.3;">${numberToWords(l2Grand)}</div>
               </div>
               <div class="l2-totals-row"><span>Received</span><span style="display:flex;gap:8px;"><span style="color:#94a3b8;">:</span><span class="l2-totals-val">${currencySymbol}${formatAmount(l2Received)}</span></span></div>
               <div class="l2-totals-row"><span>Balance</span><span style="display:flex;gap:8px;"><span style="color:#94a3b8;">:</span><span class="l2-totals-val">${currencySymbol}${formatAmount(l2Balance)}</span></span></div>
@@ -2846,11 +2846,11 @@ const getInvoiceHTML = (invoice, store, template) => {
           <div class="l2-flex l2-border-b">
             <div class="l2-border-r l2-pad" style="width:50%;">
               <div class="l2-footer-label">Description:</div>
-              <div style="font-weight:600;color:#1d4ed8;">${invoice.description || 'Sale Description'}</div>
+              <div style="font-weight:600;color:;">${invoice.description || 'Sale Description'}</div>
             </div>
             <div class="l2-pad" style="width:50%;">
               <div class="l2-footer-label">Terms &amp; Conditions:</div>
-              <div style="font-weight:600;color:#1d4ed8;">${store.termsAndConditions || 'Thanks for doing business with us!'}</div>
+              <div style="font-weight:600;color:;">${store.termsAndConditions || 'Thanks for doing business with us!'}</div>
             </div>
           </div>
 
@@ -2870,7 +2870,7 @@ const getInvoiceHTML = (invoice, store, template) => {
                     <rect x="75" y="40" width="15" height="25" fill="#000"/>
                   </svg>
                 </div>
-                <div style="font-size:8px;line-height:1.5;color:#1d4ed8;font-weight:600;">
+                <div style="font-size:8px;line-height:1.5;color:;font-weight:600;">
                   <div>Bank Name: ${store.bankName || ''}</div>
                   <div>Bank Account No.: ${store.bankAccountNumber || ''}</div>
                   <div>Bank IFSC code: ${store.bankIfscCode || ''}</div>
@@ -3954,10 +3954,7 @@ const printInvoice = async (req, res) => {
       return res.status(400).send('Invalid invoice ID format');
     }
 
-    let invoice = await Sale.findOne({ _id: id, userId: req.user._id });
-    if (!invoice) {
-      invoice = await Sale.findById(id);
-    }
+    const invoice = await Sale.findOne({ _id: id, userId: req.user._id });
 
     if (!invoice) {
       return res.status(404).send('Invoice not found');
@@ -3967,10 +3964,10 @@ const printInvoice = async (req, res) => {
     let store = await CompanySettings.findOne({ userId: req.user._id });
     if (!store) {
       store = {
-        shopName: 'IntellectBill AI Operations',
+        shopName: 'Business Analyst with AI Operations',
         address: '101, Business Enclave, Cyber City, Gurgaon',
         phoneNumber: '+919876543210',
-        email: 'billing@intellectbill.ai',
+        email: 'billing@business-analyst.ai',
         gstin: '27AAAAA1111A1Z1',
         logoUrl: '',
         defaultInvoiceTemplate: 'Standard'
