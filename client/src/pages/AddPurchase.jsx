@@ -475,10 +475,6 @@ export default function AddPurchase() {
         </button>
         
         <div className="flex items-center gap-3">
-          <div className="flex rounded-[6px] border border-blue-400 overflow-hidden shadow-sm">
-            <button className="bg-white text-blue-600 px-4 py-2 text-[13px] font-bold hover:bg-blue-50 transition-colors">Generate e-Invoice</button>
-            <button className="bg-white text-blue-600 px-2 py-2 border-l border-blue-400 hover:bg-blue-50 transition-colors"><ChevronDown className="w-4 h-4" /></button>
-          </div>
           <button className="bg-blue-600 text-white px-8 py-2 rounded-[6px] text-[13px] font-bold hover:bg-blue-700 shadow-sm transition-colors cursor-pointer">
             Save
           </button>

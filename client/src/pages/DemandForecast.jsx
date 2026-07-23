@@ -1,25 +1,35 @@
-// client/src/pages/DemandForecast.jsx
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { getProductDemandForecast } from '../services/ml';
 import axios from 'axios';
-import { ArrowLeft, Sparkles, Sliders, Calendar, AlertTriangle, CheckCircle, ShieldAlert, Loader2, BarChart2 } from 'lucide-react';
+import { 
+  ArrowLeft, Sparkles, Sliders, Calendar, AlertTriangle, CheckCircle, 
+  ShieldAlert, Loader2, BarChart2, LineChart as LineChartIcon, 
+  Download, Info, Package, TrendingUp, AlertCircle, FileText, Table
+} from 'lucide-react';
+import ForecastChart from '../components/charts/ForecastChart';
+import { exportToCSV, exportToPDF } from '../utils/exportUtils';
 
 export default function DemandForecast() {
+  // Config States
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState('');
-  const [days, setDays] = useState(7);
+  const [days, setDays] = useState(14);
+  const [model, setModel] = useState('auto');
+  const [confidence, setConfidence] = useState(0.95);
+  
+  // UI States
+  const [chartType, setChartType] = useState('line');
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState('');
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [apiError, setApiError] = useState('');
+  const [showXai, setShowXai] = useState(false);
   
-  // Forecast output states
-  const [modelType, setModelType] = useState('');
-  const [forecastList, setForecastList] = useState([]);
-  const [totalPredicted, setTotalPredicted] = useState(0);
+  // Data States
+  const [forecastData, setForecastData] = useState(null);
 
-  // Mock product catalog fetcher
+  // Fetch Catalog
   useEffect(() => {
     const fetchCatalog = async () => {
       try {
@@ -31,16 +41,14 @@ export default function DemandForecast() {
         if (res.data.success) {
           setProducts(res.data.products);
           if (res.data.products.length > 0) {
-            setSelectedProduct(res.data.products[0].description || res.data.products[0].name);
+            setSelectedProduct(res.data.products[0].description || res.data.products[0].name || res.data.products[0]._id);
           }
         }
       } catch (err) {
-        console.error('Failed to load products catalogs:', err.message);
-        // Fallback options
+        console.error('Failed to load catalog:', err);
         setProducts([
-          { _id: '1', name: 'Premium Kirana Basmati Rice', description: 'Premium Kirana Basmati Rice' },
-          { _id: '2', name: 'Refined Sunflower Oil 5L', description: 'Refined Sunflower Oil 5L' },
-          { _id: '3', name: 'Organic Turmeric Powder 1kg', description: 'Organic Turmeric Powder 1kg' }
+          { _id: '1', name: 'Premium Kirana Basmati Rice', stock: 120, sku: 'RICE-001' },
+          { _id: '2', name: 'Refined Sunflower Oil 5L', stock: 45, sku: 'OIL-005' },
         ]);
         setSelectedProduct('Premium Kirana Basmati Rice');
       } finally {
@@ -50,250 +58,326 @@ export default function DemandForecast() {
     fetchCatalog();
   }, []);
 
-  const handleGenerateForecast = async (e) => {
-    if (e) e.preventDefault();
+  // Fetch Forecast Data
+  const handleGenerateForecast = async () => {
     if (!selectedProduct) return;
-
     setLoading(true);
     setApiError('');
-    setForecastList([]);
-    setTotalPredicted(0);
-
+    setForecastData(null);
+    
     try {
-      // Use dummy data for aesthetic demonstration
-      const dummyForecast = Array.from({ length: days }).map((_, i) => ({
-        date: `2026-07-${(i + 1).toString().padStart(2, '0')}`,
-        predicted_quantity: Math.floor(Math.random() * 50) + 20 + (i * 2) // Upward trending dummy data
-      }));
-      setForecastList(dummyForecast);
-      setModelType('RandomForestRegressor (Aesthetic Mock)');
-      const sum = dummyForecast.reduce((acc, curr) => acc + (curr.predicted_quantity || 0), 0);
-      setTotalPredicted(Math.round(sum));
+      setLoadingStep('Loading historical sales...');
+      await new Promise(r => setTimeout(r, 400));
+      
+      setLoadingStep('Preparing dataset and running AI model...');
+      const data = await getProductDemandForecast(selectedProduct, days, model, confidence);
+      
+      setLoadingStep('Calculating inventory recommendations...');
+      await new Promise(r => setTimeout(r, 400));
+      
+      setLoadingStep('Generating AI insights...');
+      setForecastData(data);
     } catch (err) {
-      setApiError(err.response?.data?.error || 'Failed to communicate with forecasting microservice.');
+      setApiError(err.response?.data?.detail || err.response?.data?.error || err.message || 'Failed to fetch forecast.');
     } finally {
       setLoading(false);
+      setLoadingStep('');
     }
   };
 
-  // Run automatically when product is resolved
   useEffect(() => {
     if (selectedProduct) {
-      handleGenerateForecast();
+      const timer = setTimeout(() => {
+        handleGenerateForecast();
+      }, 500); // Debounce
+      return () => clearTimeout(timer);
     }
-  }, [selectedProduct, days]);
+  }, [selectedProduct, days, model, confidence]);
 
-  const maxVal = Math.max(...forecastList.map(f => f.predicted_quantity || 0), 1);
+  const handleExportCSV = () => {
+    if (!forecastData) return;
+    exportToCSV(forecastData.forecast, `Forecast_${selectedProduct}_${days}d.csv`);
+  };
+
+  const handleExportPDF = () => {
+    if (!forecastData) return;
+    exportToPDF(
+      forecastData.forecast, 
+      forecastData.summary, 
+      forecastData.inventory, 
+      forecastData.insights,
+      `ForecastReport_${selectedProduct}.pdf`
+    );
+  };
+
+  const activeProduct = useMemo(() => products.find(p => (p.description || p.name || p._id) === selectedProduct), [products, selectedProduct]);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 py-10 px-4">
-      <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-300">
+    <div className="min-h-screen bg-slate-50 text-slate-800 py-8 px-4 lg:px-8">
+      <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300">
         
-        {/* Navigation */}
-        <Link
-          to="/dashboard"
-          className="inline-flex items-center space-x-2 text-sm text-slate-500 hover:text-slate-800 transition-colors group"
-        >
-          <ArrowLeft className="h-4 w-4 transform group-hover:-translate-x-1 transition-transform" />
-          <span>Back to Dashboard</span>
-        </Link>
-      
-        {/* Title Header */}
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 w-40 h-40 bg-indigo-50/5 rounded-full blur-2xl pointer-events-none"></div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-800">AI Demand Forecasting</h1>
-          <p className="text-xs text-slate-500 mt-1">Predict expected stock demand volumes per product using RandomForestRegressor time-series ML models</p>
-        </div>
-
-        {/* Configurator Form */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
-          <div className="flex items-center space-x-2 text-slate-800 font-bold pb-2 border-b border-slate-100 text-sm">
-            <Sliders className="h-5 w-5 text-indigo-650" />
-            <span>Forecasting Parameters Configuration</span>
+        {/* Header */}
+        <div className="flex justify-between items-end">
+          <div>
+            <Link to="/dashboard" className="inline-flex items-center space-x-2 text-sm text-slate-500 hover:text-slate-800 transition-colors group mb-4">
+              <ArrowLeft className="h-4 w-4 transform group-hover:-translate-x-1 transition-transform" />
+              <span>Back to Dashboard</span>
+            </Link>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
+              <Sparkles className="h-7 w-7 text-indigo-600" />
+              AI Demand Forecasting
+            </h1>
+            <p className="text-sm text-slate-500 mt-1 max-w-xl">
+              Production-ready intelligence. Predict stock demand, optimize inventory, and uncover hidden sales patterns using advanced machine learning models.
+            </p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-            {/* Product Selector */}
-            <div>
-              <label className="block text-[10px] font-bold text-slate-450 uppercase mb-1.5">Target Product Item</label>
-              {loadingProducts ? (
-                <div className="py-2.5 flex items-center text-slate-500 text-xs font-semibold">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Loading products...
-                </div>
-              ) : (
-                <select
-                  value={selectedProduct}
-                  onChange={(e) => setSelectedProduct(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
-                >
-                  {products.map((p) => (
-                    <option key={p._id} value={p.description || p.name}>
-                      {p.name || p.description}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {/* Days Slider */}
-            <div className="md:col-span-2">
-              <div className="flex justify-between items-center mb-1.5 text-xs">
-                <label className="font-bold text-slate-450 uppercase text-[10px]">Forecasting Horizon Timeframe</label>
-                <span className="font-mono text-indigo-600 font-bold">{days} Days Ahead</span>
-              </div>
-              <input
-                type="range"
-                min="7"
-                max="30"
-                value={days}
-                onChange={(e) => setDays(Number(e.target.value))}
-                className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600 border border-slate-200"
-              />
-              <div className="flex justify-between text-[10px] text-slate-400 mt-1 font-mono font-semibold">
-                <span>7 Days (Weekly)</span>
-                <span>15 Days</span>
-                <span>30 Days (Monthly)</span>
-              </div>
-            </div>
+          
+          <div className="flex gap-2">
+            <button onClick={handleExportCSV} disabled={!forecastData || loading} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-50 disabled:opacity-50 transition-colors">
+              <Table className="w-4 h-4" /> CSV
+            </button>
+            <button onClick={handleExportPDF} disabled={!forecastData || loading} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 border border-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+              <Download className="w-4 h-4" /> Export Report
+            </button>
           </div>
         </div>
 
-        {/* Global Notifications */}
         {apiError && (
-          <div className="p-4 rounded-xl border border-red-200 bg-red-50 text-red-800 text-xs font-semibold flex items-center space-x-2">
-            <ShieldAlert className="h-4.5 w-4.5 text-red-600 flex-shrink-0" />
+          <div className="p-4 rounded-xl border border-red-200 bg-red-50 text-red-800 text-sm font-semibold flex items-center space-x-2 shadow-sm">
+            <ShieldAlert className="h-5 w-5 text-red-600 flex-shrink-0" />
             <span>{apiError}</span>
+            <button onClick={handleGenerateForecast} className="ml-auto underline hover:text-red-900">Retry</button>
           </div>
         )}
 
-        {/* Output Dashboards */}
-        {loading ? (
-          <div className="py-24 flex justify-center">
-            <Loader2 className="h-10 w-10 text-indigo-650 animate-spin" />
-          </div>
-        ) : forecastList.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-            
-            {/* Forecast details list table */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6 md:col-span-2">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div className="flex items-center space-x-2">
-                  <BarChart2 className="h-5 w-5 text-indigo-650" />
-                  <h3 className="text-base font-bold text-slate-800">Daily Demand Projections</h3>
-                </div>
-                <span className="text-[10px] bg-slate-50 border border-slate-200 px-2.5 py-1 rounded text-slate-500 font-mono font-semibold">
-                  {modelType}
-                </span>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          
+          {/* LEFT: Config Panel */}
+          <div className="lg:col-span-1 space-y-6">
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-5">
+              <div className="flex items-center space-x-2 text-slate-800 font-bold pb-3 border-b border-slate-100 text-sm">
+                <Sliders className="h-4 w-4 text-indigo-600" />
+                <span>Forecast Configuration</span>
               </div>
 
-              {/* Dynamic Visual Graph Bar Charts */}
-              <div className="h-44 flex items-end justify-between gap-1.5 pt-4 bg-slate-50 p-4 rounded-xl border border-slate-150">
-                {forecastList.map((f, idx) => {
-                  const h = ((f.predicted_quantity || 0) / maxVal) * 100;
-                  return (
-                    <div key={idx} className="flex-1 flex flex-col items-center group relative">
-                      {/* Tooltip */}
-                      <span className="absolute bottom-full mb-1 bg-slate-800 text-[8px] font-mono text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                        {f.predicted_quantity !== null && f.predicted_quantity !== undefined ? Number(f.predicted_quantity).toFixed(1) : '0.0'}
-                      </span>
-                      <div
-                        style={{ height: `${Math.max(h, 6)}%` }}
-                        className="w-full bg-gradient-to-t from-indigo-600 to-indigo-400 rounded-sm shadow-sm transition-all group-hover:from-indigo-500 group-hover:to-indigo-350 cursor-pointer"
-                      />
-                      <span className="text-[8px] font-mono font-bold mt-1 text-slate-400">{f.date.split('-')[2]}</span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Data Table */}
-              <div className="border border-slate-200 rounded-xl overflow-hidden bg-white text-xs">
-                <table className="w-full text-left">
-                  <thead className="bg-slate-50 text-slate-450 font-bold uppercase tracking-wider text-[10px]">
-                    <tr>
-                      <th className="px-4 py-2.5">Date</th>
-                      <th className="px-4 py-2.5 text-right">Forecasted Quantity Demand</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-slate-650 font-mono font-medium">
-                    {forecastList.map((f, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/40 transition-colors">
-                        <td className="px-4 py-2.5 flex items-center space-x-1.5">
-                          <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                          <span>{f.date}</span>
-                        </td>
-                        <td className="px-4 py-2.5 text-right font-bold text-slate-800">
-                          {f.predicted_quantity !== null && f.predicted_quantity !== undefined ? Number(f.predicted_quantity).toFixed(2) : '0.00'} units
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* AI Action Alerts Panel */}
-            <div className="space-y-6">
-              
-              {/* Target Summary KPI Card */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm text-center space-y-1.5">
-                <span className="text-[10px] text-slate-450 uppercase font-bold tracking-wider">Cumulative Expected Demand</span>
-                <h4 className="text-3xl font-extrabold font-mono text-indigo-600">
-                  {totalPredicted} Units
-                </h4>
-                <p className="text-[10px] text-slate-400 font-semibold mt-1">Recommended buffer stock capacity setup</p>
-              </div>
-
-              {/* Alert Conditions */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-                <div className="pb-2 border-b border-slate-105 text-xs font-bold text-slate-800">
-                  Inventory Stockout & Overstock Warnings
-                </div>
-
-                {/* Stockout Risk (If total projected demand is large e.g. > 30 units) */}
-                {totalPredicted > 30 ? (
-                  <div className="p-4 rounded-xl border border-red-200 bg-red-50 text-red-800 text-xs space-y-2">
-                    <div className="flex items-center space-x-2 font-bold uppercase tracking-wider text-[10px]">
-                      <AlertTriangle className="h-4.5 w-4.5 flex-shrink-0 text-red-650" />
-                      <span>Stockout Risk Alert</span>
-                    </div>
-                    <p className="leading-relaxed">
-                      Expected demand of <strong>{totalPredicted} units</strong> is high. Restock item "{selectedProduct}" to prevent sales shortfalls.
-                    </p>
+              {/* Product */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Target Product</label>
+                {loadingProducts ? (
+                  <div className="py-2 flex items-center text-slate-500 text-xs font-semibold">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading catalog...
                   </div>
                 ) : (
-                  <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-850 text-xs space-y-2">
-                    <div className="flex items-center space-x-2 font-bold uppercase tracking-wider text-[10px]">
-                      <CheckCircle className="h-4.5 w-4.5 flex-shrink-0 text-emerald-600" />
-                      <span>Stock Levels Secure</span>
-                    </div>
-                    <p className="leading-relaxed text-slate-500 font-semibold">
-                      Steady demand of <strong>{totalPredicted} units</strong> matches standard inventory flows.
-                    </p>
+                  <select value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)} className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer">
+                    {products.map((p) => (
+                      <option key={p._id} value={p.description || p.name || p._id}>{p.name || p.description}</option>
+                    ))}
+                  </select>
+                )}
+                {activeProduct && (
+                  <div className="mt-2 text-[10px] text-slate-500 flex justify-between bg-slate-50 p-2 rounded">
+                    <span>SKU: {activeProduct.sku || 'N/A'}</span>
+                    <span>Current Stock: {activeProduct.stock || 0}</span>
                   </div>
                 )}
+              </div>
 
-                {/* Overstock Warning (If total projected demand is small e.g. < 15 units) */}
-                {totalPredicted < 15 && (
-                  <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-xs space-y-2">
-                    <div className="flex items-center space-x-2 font-bold uppercase tracking-wider text-[10px]">
-                      <AlertTriangle className="h-4.5 w-4.5 flex-shrink-0 text-amber-600" />
-                      <span>Overstock Risk Alert</span>
-                    </div>
-                    <p className="leading-relaxed text-slate-500 font-semibold">
-                      Expected demand is very low (<strong>{totalPredicted} units</strong>). Reduce replenishment schedules to prevent carrying costs.
-                    </p>
-                  </div>
-                )}
+              {/* Horizon */}
+              <div>
+                <div className="flex justify-between items-center mb-1.5 text-xs">
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase">Horizon ({days} Days)</label>
+                </div>
+                <input type="range" min="7" max="90" value={days} onChange={(e) => setDays(Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
+                <div className="flex justify-between text-[9px] text-slate-400 mt-1 font-mono font-bold">
+                  <span>7D</span><span>30D</span><span>90D</span>
+                </div>
+              </div>
 
+              {/* Model */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">ML Engine Model</label>
+                <select value={model} onChange={(e) => setModel(e.target.value)} className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer">
+                  <option value="auto">Auto (Recommended)</option>
+                  <option value="prophet">Facebook Prophet (Trend/Seasonality)</option>
+                  <option value="random_forest">Random Forest (Ensemble)</option>
+                  <option value="arima">ARIMA (Statistical)</option>
+                </select>
+              </div>
+
+              {/* Confidence */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Confidence Level</label>
+                <select value={confidence} onChange={(e) => setConfidence(Number(e.target.value))} className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer">
+                  <option value={0.80}>80% (Narrower Interval)</option>
+                  <option value={0.90}>90% (Standard)</option>
+                  <option value={0.95}>95% (Wider Safety Margin)</option>
+                </select>
               </div>
             </div>
 
+            {/* AI Insights Panel */}
+            {forecastData?.insights && (
+              <div className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-2xl p-5 text-white shadow-lg space-y-4 relative overflow-hidden">
+                <Sparkles className="absolute top-2 right-2 text-indigo-500/20 w-24 h-24 pointer-events-none" />
+                <div className="flex items-center space-x-2 font-bold pb-2 border-b border-indigo-700/50 text-sm relative z-10">
+                  <Info className="h-4 w-4 text-indigo-400" />
+                  <span>AI Business Insights</span>
+                </div>
+                <div className="space-y-3 relative z-10">
+                  {forecastData.insights.map((insight, idx) => (
+                    <div key={idx} className="bg-indigo-950/40 p-3 rounded-lg border border-indigo-800/50 text-xs">
+                      <div className="flex items-start gap-2 mb-1.5">
+                        {insight.severity === 'danger' ? <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" /> : <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0" />}
+                        <span className="font-semibold">{insight.text}</span>
+                      </div>
+                      <div className="text-indigo-200 pl-6 opacity-80">{insight.recommendation}</div>
+                    </div>
+                  ))}
+                </div>
+                
+                {forecastData.xai && (
+                  <button onClick={() => setShowXai(!showXai)} className="w-full mt-2 py-2 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-100 text-xs font-bold rounded-lg transition-colors border border-indigo-500/30">
+                    Why this Forecast? (XAI)
+                  </button>
+                )}
+                
+                {showXai && forecastData.xai && (
+                  <div className="mt-3 p-3 bg-slate-950 rounded-lg text-xs space-y-2 border border-slate-700">
+                    <p className="font-bold text-slate-300">Top Influencing Factors:</p>
+                    {forecastData.xai.factors.map((f, i) => (
+                      <div key={i} className="flex justify-between items-center">
+                        <span className="text-slate-400 truncate pr-2">{f.name}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-indigo-500" style={{width: `${f.impact * 100}%`}}></div></div>
+                          <span className="text-indigo-300 font-mono text-[10px]">{(f.impact*100).toFixed(0)}%</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        ) : (
-          <p className="text-xs text-slate-400 text-center font-bold py-12">No demand forecasts generated yet.</p>
-        )}
+
+          {/* RIGHT: Main Dash */}
+          <div className="lg:col-span-3 space-y-6">
+            
+            {loading ? (
+              <div className="bg-white border border-slate-200 rounded-2xl p-12 flex flex-col items-center justify-center h-full shadow-sm space-y-4">
+                <Loader2 className="w-12 h-12 text-indigo-500 animate-spin" />
+                <div className="text-slate-500 font-semibold">{loadingStep}</div>
+              </div>
+            ) : !forecastData ? (
+              <div className="bg-white border border-slate-200 rounded-2xl p-12 flex items-center justify-center h-full shadow-sm text-slate-400 font-bold">
+                Select a product to generate forecast.
+              </div>
+            ) : (
+              <>
+                {(!forecastData.summary || !forecastData.inventory) && (
+                  <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl shadow-sm flex flex-col gap-2 mb-4">
+                    <div className="flex items-center gap-2 font-bold">
+                      <AlertTriangle className="w-5 h-5" />
+                      Backend Update Required
+                    </div>
+                    <p className="text-sm">
+                      The ML Service is still running the old codebase. To see the new AI Insights, Inventory Logic, and KPI Dashboard, you <b>must</b> restart the Python server.
+                    </p>
+                    <p className="text-xs font-mono bg-amber-100 p-2 rounded w-fit">
+                      1. Go to terminal running "python run.py"<br/>
+                      2. Press Ctrl + C<br/>
+                      3. Run "python run.py" again
+                    </p>
+                  </div>
+                )}
+                {/* KPI Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Total Demand</div>
+                    <div className="text-2xl font-extrabold text-slate-800 font-mono">{forecastData?.summary?.totalDemand || 'N/A'}</div>
+                    <div className="text-[10px] text-slate-400 mt-1">Over next {days} days</div>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Available Stock</div>
+                    <div className="text-2xl font-extrabold text-slate-800 font-mono">{forecastData?.inventory?.availableStock || 'N/A'}</div>
+                    <div className="text-[10px] text-emerald-600 mt-1 font-semibold flex items-center gap-1"><Package className="w-3 h-3"/> Current Inventory</div>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Safety Stock Limit</div>
+                    <div className="text-2xl font-extrabold text-slate-800 font-mono">{forecastData?.inventory?.safetyStock || 'N/A'}</div>
+                    <div className="text-[10px] text-slate-400 mt-1">Buffer requirement</div>
+                  </div>
+                  <div className={`p-4 rounded-xl border shadow-sm ${forecastData?.inventory?.status === 'Stockout Risk' ? 'bg-red-50 border-red-200' : forecastData?.inventory?.status === 'Overstock Risk' ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'}`}>
+                    <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${forecastData?.inventory?.status === 'Stockout Risk' ? 'text-red-600' : 'text-emerald-700'}`}>Recommended Action</div>
+                    <div className={`text-xl font-extrabold font-mono ${forecastData?.inventory?.status === 'Stockout Risk' ? 'text-red-700' : 'text-emerald-800'}`}>
+                      {forecastData?.inventory?.suggestedOrder > 0 ? `Order ${forecastData.inventory.suggestedOrder}` : 'Optimal'}
+                    </div>
+                    <div className={`text-[10px] mt-1 font-semibold truncate ${forecastData?.inventory?.status === 'Stockout Risk' ? 'text-red-500' : 'text-emerald-600'}`}>{forecastData?.inventory?.status || 'Unknown'}</div>
+                  </div>
+                </div>
+
+                {/* Chart Section */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+                  <div className="flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-2">
+                      <BarChart2 className="w-5 h-5 text-indigo-600" />
+                      <h3 className="font-bold text-slate-800 text-sm">Demand Forecast Horizon</h3>
+                      <span className="ml-2 text-[10px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded border border-slate-200 font-mono font-semibold">{forecastData.model}</span>
+                    </div>
+                    <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+                      <button onClick={() => setChartType('line')} className={`p-1.5 rounded-md transition-colors ${chartType === 'line' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`} title="Line Chart"><LineChartIcon className="w-4 h-4" /></button>
+                      <button onClick={() => setChartType('bar')} className={`p-1.5 rounded-md transition-colors ${chartType === 'bar' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`} title="Bar Chart"><BarChart2 className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+                  
+                  <div className="w-full">
+                    <ForecastChart data={forecastData.forecast} chartType={chartType} />
+                  </div>
+                  
+                  {/* Accuracy Footer */}
+                  {forecastData?.summary?.accuracy && forecastData.summary.accuracy.MAE > 0 && (
+                    <div className="mt-4 pt-4 border-t border-slate-100 flex gap-6 text-[11px]">
+                      <span className="text-slate-400 font-bold uppercase">Model Accuracy (Backtest):</span>
+                      <span className="text-slate-600 font-mono">MAE: <span className="font-bold text-slate-800">{forecastData.summary.accuracy.MAE}</span></span>
+                      <span className="text-slate-600 font-mono">RMSE: <span className="font-bold text-slate-800">{forecastData.summary.accuracy.RMSE}</span></span>
+                      <span className="text-slate-600 font-mono">MAPE: <span className="font-bold text-slate-800">{forecastData.summary.accuracy.MAPE}%</span></span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Data Table */}
+                <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                  <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2"><Calendar className="w-4 h-4 text-slate-500"/> Daily Projections Table</h3>
+                    <span className="text-[10px] text-slate-500 font-semibold">{confidence * 100}% Confidence Interval</span>
+                  </div>
+                  <div className="max-h-[300px] overflow-y-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 text-slate-400 font-bold uppercase tracking-wider text-[10px] sticky top-0 shadow-[0_1px_2px_rgba(0,0,0,0.05)] z-10">
+                        <tr>
+                          <th className="px-5 py-3">Date</th>
+                          <th className="px-5 py-3 text-right text-indigo-600">Forecasted Qty</th>
+                          <th className="px-5 py-3 text-right">Lower Bound</th>
+                          <th className="px-5 py-3 text-right">Upper Bound</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-slate-600 font-mono font-medium">
+                        {forecastData.forecast.map((row, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-5 py-2.5 font-sans font-semibold text-slate-700">{row.date}</td>
+                            <td className="px-5 py-2.5 text-right font-extrabold text-indigo-700 bg-indigo-50/30">{row.predicted_quantity}</td>
+                            <td className="px-5 py-2.5 text-right text-slate-400">{row.lower_confidence}</td>
+                            <td className="px-5 py-2.5 text-right text-slate-400">{row.upper_confidence}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+              </>
+            )}
+          </div>
+        </div>
 
       </div>
     </div>

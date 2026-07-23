@@ -14,13 +14,15 @@ const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
 const getDemandForecast = async (req, res) => {
   try {
     const { productId } = req.params;
-    const { days } = req.query;
+    const { days, model, confidence } = req.query;
     const forecastHorizon = days || 7;
+    const selectedModel = model || 'auto';
+    const confLevel = confidence || 0.95;
 
     try {
       // Query the FastAPI Python Microservice
       const response = await axios.get(`${ML_SERVICE_URL}/api/ml/forecast/${encodeURIComponent(productId)}`, {
-        params: { days: forecastHorizon }
+        params: { days: forecastHorizon, model: selectedModel, confidence: confLevel }
       });
       return res.status(200).json(response.data);
     } catch (mlErr) {
@@ -70,7 +72,11 @@ const getDemandForecast = async (req, res) => {
         productId,
         model: 'Database Average Fallback (ML Microservice Offline)',
         days: forecastHorizon,
-        forecast: fallbackForecast
+        confidence: confLevel,
+        forecast: fallbackForecast,
+        summary: { totalDemand: fallbackForecast.reduce((acc, curr) => acc + curr.predicted_quantity, 0) },
+        insights: [{ icon: 'AlertTriangle', severity: 'warning', text: 'Using fallback logic due to ML service offline', recommendation: 'Check ML container status' }],
+        inventory: { status: 'Unknown', recommendation: 'Unable to calculate without ML Service' }
       });
     }
   } catch (error) {

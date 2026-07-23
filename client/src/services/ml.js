@@ -18,9 +18,9 @@ API.interceptors.request.use((config) => {
 /**
  * Fetch Machine Learning demand forecasts for a product
  */
-export const getProductDemandForecast = async (productId, days = 7) => {
+export const getProductDemandForecast = async (productId, days = 7, model = 'auto', confidence = 0.95) => {
   const response = await API.get(`/ml/forecast/${encodeURIComponent(productId)}`, {
-    params: { days },
+    params: { days, model, confidence },
   });
   return response.data;
 };
