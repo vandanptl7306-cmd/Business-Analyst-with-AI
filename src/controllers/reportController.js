@@ -47,7 +47,7 @@ const getSalesSummary = async (req, res) => {
         },
       },
       { $sort: { totalSalesVal: -1 } },
-      { $limit: 5 },
+      { $limit: 50 },
     ]);
 
     res.status(200).json({

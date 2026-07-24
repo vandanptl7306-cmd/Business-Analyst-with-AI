@@ -1,7 +1,9 @@
 import Papa from 'papaparse';
 import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
-export const exportToCSV = (data, filename = 'forecast.csv') => {
+export const exportToCSV = (data, filename = 'report.csv') => {
   const csv = Papa.unparse(data);
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
@@ -14,6 +16,52 @@ export const exportToCSV = (data, filename = 'forecast.csv') => {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+};
+
+export const exportToExcel = (data, filename = 'report.xlsx') => {
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Report");
+  XLSX.writeFile(workbook, filename);
+};
+
+export const exportReportToPDF = (reportTitle, summaryData, tableColumns, tableData, filename = 'report.pdf') => {
+  const doc = new jsPDF();
+  
+  // Title
+  doc.setFontSize(18);
+  doc.text(reportTitle, 14, 20);
+  
+  // Summary Data
+  doc.setFontSize(11);
+  let startY = 30;
+  if (summaryData && summaryData.length > 0) {
+    summaryData.forEach((item, index) => {
+      if (index > 0 && index % 2 === 0) startY += 10;
+      const x = (index % 2 === 0) ? 14 : 100;
+      doc.text(`${item.label}: ${item.value}`, x, startY);
+    });
+    startY += 15;
+  }
+  
+  // Table
+  if (tableData && tableData.length > 0 && tableColumns && tableColumns.length > 0) {
+    const tableColumnNames = tableColumns.map(col => col.header);
+    const tableRows = tableData.map(row => 
+      tableColumns.map(col => row[col.key] !== undefined ? row[col.key] : '')
+    );
+    
+    doc.autoTable({
+      head: [tableColumnNames],
+      body: tableRows,
+      startY: startY,
+      theme: 'grid',
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [79, 70, 229] } // Indigo-600
+    });
+  }
+  
+  doc.save(filename);
 };
 
 export const exportToPDF = (forecastList, summary, inventory, insights, filename = 'forecast_report.pdf') => {
